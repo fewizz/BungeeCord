@@ -49,7 +49,7 @@ public class PipelineUtils
     public static final ChannelInitializer<Channel> SERVER_CHILD = new ChannelInitializer<Channel>()
     {
         @Override
-        protected void initChannel(Channel ch) throws Exception
+        protected void initChannel(final Channel ch) throws Exception
         {
             if ( BungeeCord.getInstance().getConnectionThrottle() != null && BungeeCord.getInstance().getConnectionThrottle().throttle( ( (InetSocketAddress) ch.remoteAddress() ).getAddress() ) )
             {
@@ -60,7 +60,17 @@ public class PipelineUtils
             ListenerInfo listener = ch.attr( LISTENER ).get();
 
             BASE.initChannel( ch );
-            ch.pipeline().addBefore( FRAME_DECODER, LEGACY_DECODER, new LegacyDecoder() );
+            ch.pipeline().addBefore( FRAME_DECODER, LEGACY_DECODER, new LegacyDecoder() {
+
+				@Override
+				public void onLegacy(int protocolVersion) {
+					ch.pipeline().remove(FRAME_DECODER);
+					ch.pipeline().remove(FRAME_PREPENDER);
+					ch.pipeline().get( MinecraftDecoder.class ).setProtocolVersion(protocolVersion);
+					ch.pipeline().get( MinecraftEncoder.class ).setProtocolVersion(protocolVersion);
+				}
+            	
+            });
             ch.pipeline().addAfter( FRAME_DECODER, PACKET_DECODER, new MinecraftDecoder( Protocol.HANDSHAKE, true, ProxyServer.getInstance().getProtocolVersion() ) );
             ch.pipeline().addAfter( FRAME_PREPENDER, PACKET_ENCODER, new MinecraftEncoder( Protocol.HANDSHAKE, true, ProxyServer.getInstance().getProtocolVersion() ) );
             ch.pipeline().addBefore( FRAME_PREPENDER, LEGACY_KICKER, legacyKicker );

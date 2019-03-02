@@ -14,18 +14,23 @@ import net.md_5.bungee.protocol.DefinedPacket;
 public class LegacyPing extends DefinedPacket
 {
 
-    private final boolean v1_5;
-
+    //private final boolean v1_5;
+	public int customPayloadID;
+	public String branding;
+	public int len;
+	public int protocolVersion;
+	public String info;
+	
     @Override
     public void read(ByteBuf buf)
     {
-        throw new UnsupportedOperationException( "Not supported yet." ); //To change body of generated methods, choose Tools | Templates.
+        //throw new UnsupportedOperationException( "Not supported yet." ); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public void write(ByteBuf buf)
     {
-        throw new UnsupportedOperationException( "Not supported yet." ); //To change body of generated methods, choose Tools | Templates.
+        //throw new UnsupportedOperationException( "Not supported yet." ); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override

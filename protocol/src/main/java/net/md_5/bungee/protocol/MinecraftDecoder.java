@@ -5,6 +5,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import java.util.List;
 import lombok.AllArgsConstructor;
+import lombok.Builder.Default;
 import lombok.Setter;
 
 @AllArgsConstructor
@@ -16,6 +17,9 @@ public class MinecraftDecoder extends MessageToMessageDecoder<ByteBuf>
     private final boolean server;
     @Setter
     private int protocolVersion;
+    
+    //@Setter
+    //boolean legacy = false;
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception
@@ -25,7 +29,12 @@ public class MinecraftDecoder extends MessageToMessageDecoder<ByteBuf>
 
         try
         {
-            int packetId = DefinedPacket.readVarInt( in );
+            int packetId = -1;
+            
+            if(protocolVersion > 78)
+            	packetId = DefinedPacket.readVarInt( in );
+            else
+            	packetId = in.readUnsignedByte();
 
             DefinedPacket packet = prot.createPacket( packetId, protocolVersion );
             if ( packet != null )

@@ -232,7 +232,7 @@ public abstract class DefinedPacket
         throw new UnsupportedOperationException( "Packet must implement read method" );
     }
 
-    public void read(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
+    public void read(ByteBuf buf, Direction direction, int protocolVersion)
     {
         read( buf );
     }
@@ -242,7 +242,7 @@ public abstract class DefinedPacket
         throw new UnsupportedOperationException( "Packet must implement write method" );
     }
 
-    public void write(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
+    public void write(ByteBuf buf, Direction direction, int protocolVersion)
     {
         write( buf );
     }
@@ -257,4 +257,18 @@ public abstract class DefinedPacket
 
     @Override
     public abstract String toString();
+    
+    
+    
+    public static String readLegacyString(ByteBuf buf) {
+    	short len = buf.readShort();
+    	char[] arr = new char[len];
+    	for(int i = 0; i < len; i++)
+    		arr[i]=buf.readChar();
+    	return new String(arr);
+    }
+    
+    public static void skipLegacyString(ByteBuf buf) {
+    	buf.skipBytes(buf.readShort());
+    }
 }

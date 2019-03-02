@@ -8,7 +8,7 @@ import java.util.List;
 import net.md_5.bungee.protocol.packet.LegacyHandshake;
 import net.md_5.bungee.protocol.packet.LegacyPing;
 
-public class LegacyDecoder extends ByteToMessageDecoder
+public abstract class LegacyDecoder extends ByteToMessageDecoder
 {
 
     @Override
@@ -24,8 +24,14 @@ public class LegacyDecoder extends ByteToMessageDecoder
 
         if ( packetID == 0xFE )
         {
-            out.add( new PacketWrapper( new LegacyPing( in.isReadable() && in.readUnsignedByte() == 0x01 ), Unpooled.EMPTY_BUFFER ) );
-            return;
+            //out.add( new PacketWrapper( new LegacyPing( in.isReadable() && in.readUnsignedByte() == 0x01 ), Unpooled.EMPTY_BUFFER ) );
+            in.skipBytes(2);
+        	DefinedPacket.skipLegacyString(in);
+        	in.skipBytes(2);
+        	onLegacy(packetID);
+        	in.resetReaderIndex();
+        	out.add(in);
+        	return;
         } else if ( packetID == 0x02 && in.isReadable() )
         {
             in.skipBytes( in.readableBytes() );
@@ -36,4 +42,6 @@ public class LegacyDecoder extends ByteToMessageDecoder
         in.resetReaderIndex();
         ctx.pipeline().remove( this );
     }
+    
+    public abstract void onLegacy(int protocolVersion);
 }

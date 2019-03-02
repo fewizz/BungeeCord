@@ -1,6 +1,7 @@
 package net.md_5.bungee.protocol.packet;
 
 import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Direction;
 import io.netty.buffer.ByteBuf;
 import java.util.Locale;
 import lombok.AllArgsConstructor;
@@ -26,7 +27,7 @@ public class ScoreboardObjective extends DefinedPacket
     private byte action;
 
     @Override
-    public void read(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
+    public void read(ByteBuf buf, Direction direction, int protocolVersion)
     {
         name = readString( buf );
         if ( protocolVersion <= ProtocolConstants.MINECRAFT_1_7_6 )
@@ -48,7 +49,7 @@ public class ScoreboardObjective extends DefinedPacket
     }
 
     @Override
-    public void write(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
+    public void write(ByteBuf buf, Direction direction, int protocolVersion)
     {
         writeString( name, buf );
         if ( protocolVersion <= ProtocolConstants.MINECRAFT_1_7_6 )

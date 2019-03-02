@@ -1,6 +1,7 @@
 package net.md_5.bungee.protocol.packet;
 
 import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Direction;
 import io.netty.buffer.ByteBuf;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -35,7 +36,7 @@ public class TabCompleteRequest extends DefinedPacket
     }
 
     @Override
-    public void read(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
+    public void read(ByteBuf buf, Direction direction, int protocolVersion)
     {
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 )
         {
@@ -58,7 +59,7 @@ public class TabCompleteRequest extends DefinedPacket
     }
 
     @Override
-    public void write(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
+    public void write(ByteBuf buf, Direction direction, int protocolVersion)
     {
     	if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13)
     	{

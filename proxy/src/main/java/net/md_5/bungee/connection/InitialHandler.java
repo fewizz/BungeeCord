@@ -160,7 +160,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     public void handle(LegacyPing ping) throws Exception
     {
         this.legacy = true;
-        final boolean v1_5 = ping.isV1_5();
+        //final boolean v1_5 = ping.isV1_5();
 
         ServerPing legacy = new ServerPing( new ServerPing.Protocol( bungee.getName() + " " + bungee.getGameVersion(), bungee.getProtocolVersion() ),
                 new ServerPing.Players( listener.getMaxPlayers(), bungee.getOnlineCount(), null ),
@@ -179,21 +179,21 @@ public class InitialHandler extends PacketHandler implements PendingConnection
                 ServerPing legacy = result.getResponse();
                 String kickMessage;
 
-                if ( v1_5 )
-                {
+                //if ( v1_5 )
+                //{
                     kickMessage = ChatColor.DARK_BLUE
                             + "\00" + 127
                             + '\00' + legacy.getVersion().getName()
                             + '\00' + getFirstLine( legacy.getDescription() )
                             + '\00' + legacy.getPlayers().getOnline()
                             + '\00' + legacy.getPlayers().getMax();
-                } else
+                /*} else
                 {
                     // Clients <= 1.3 don't support colored motds because the color char is used as delimiter
                     kickMessage = ChatColor.stripColor( getFirstLine( legacy.getDescription() ) )
                             + '\u00a7' + legacy.getPlayers().getOnline()
                             + '\u00a7' + legacy.getPlayers().getMax();
-                }
+                }*/
 
                 ch.close( kickMessage );
             }

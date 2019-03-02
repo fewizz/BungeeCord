@@ -8,7 +8,7 @@ import io.netty.buffer.ByteBuf;
 import java.util.UUID;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.ProtocolConstants;
+import net.md_5.bungee.protocol.Direction;
 
 @Data
 @NoArgsConstructor
@@ -31,7 +31,7 @@ public class BossBar extends DefinedPacket
     }
 
     @Override
-    public void read(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
+    public void read(ByteBuf buf, Direction direction, int protocolVersion)
     {
         uuid = readUUID( buf );
         action = readVarInt( buf );
@@ -67,7 +67,7 @@ public class BossBar extends DefinedPacket
     }
 
     @Override
-    public void write(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
+    public void write(ByteBuf buf, Direction direction, int protocolVersion)
     {
         writeUUID( uuid, buf );
         writeVarInt( action, buf );

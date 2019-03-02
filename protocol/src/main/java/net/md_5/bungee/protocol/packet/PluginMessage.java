@@ -4,6 +4,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Direction;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.ByteArrayInputStream;
@@ -68,7 +69,7 @@ public class PluginMessage extends DefinedPacket
     private boolean allowExtendedPacket = false;
 
     @Override
-    public void read(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
+    public void read(ByteBuf buf, Direction direction, int protocolVersion)
     {
         if ( protocolVersion < ProtocolConstants.MINECRAFT_1_8 )
         {
@@ -77,7 +78,7 @@ public class PluginMessage extends DefinedPacket
         } else
         {
         	tag = ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 ) ? MODERNISE.apply( readString( buf ) ) : readString( buf );
-            int maxSize = direction == ProtocolConstants.Direction.TO_SERVER ? Short.MAX_VALUE : 0x100000;
+            int maxSize = direction == Direction.TO_SERVER ? Short.MAX_VALUE : 0x100000;
             Preconditions.checkArgument( buf.readableBytes() < maxSize );
             data = new byte[ buf.readableBytes() ];
             buf.readBytes( data );
@@ -85,7 +86,7 @@ public class PluginMessage extends DefinedPacket
     }
 
     @Override
-    public void write(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
+    public void write(ByteBuf buf, Direction direction, int protocolVersion)
     {
         if ( protocolVersion < ProtocolConstants.MINECRAFT_1_8 )
         {

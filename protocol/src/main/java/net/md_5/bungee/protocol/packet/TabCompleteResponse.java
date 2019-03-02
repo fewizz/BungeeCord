@@ -5,6 +5,7 @@ import com.mojang.brigadier.context.StringRange;
 import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.brigadier.suggestion.Suggestions;
 import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Direction;
 import io.netty.buffer.ByteBuf;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,7 +38,7 @@ public class TabCompleteResponse extends DefinedPacket
     }
 
     @Override
-    public void read(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
+    public void read(ByteBuf buf, Direction direction, int protocolVersion)
     {
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 )
         {
@@ -66,7 +67,7 @@ public class TabCompleteResponse extends DefinedPacket
     }
 
     @Override
-    public void write(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
+    public void write(ByteBuf buf, Direction direction, int protocolVersion)
     {
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 )
         {

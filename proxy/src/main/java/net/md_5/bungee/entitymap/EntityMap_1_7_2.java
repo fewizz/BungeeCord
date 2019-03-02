@@ -2,7 +2,7 @@ package net.md_5.bungee.entitymap;
 
 import io.netty.buffer.ByteBuf;
 import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.ProtocolConstants;
+import net.md_5.bungee.protocol.Direction;
 
 class EntityMap_1_7_2 extends EntityMap
 {
@@ -11,34 +11,34 @@ class EntityMap_1_7_2 extends EntityMap
 
     EntityMap_1_7_2()
     {
-        addRewrite( 0x04, ProtocolConstants.Direction.TO_CLIENT, false ); // Entity Equipment
-        addRewrite( 0x0A, ProtocolConstants.Direction.TO_CLIENT, false ); // Use bed
-        addRewrite( 0x0B, ProtocolConstants.Direction.TO_CLIENT, true ); // Animation
-        addRewrite( 0x0C, ProtocolConstants.Direction.TO_CLIENT, true ); // Spawn Player
-        addRewrite( 0x0D, ProtocolConstants.Direction.TO_CLIENT, false ); // Collect Item
-        addRewrite( 0x0E, ProtocolConstants.Direction.TO_CLIENT, true ); // Spawn Object
-        addRewrite( 0x0F, ProtocolConstants.Direction.TO_CLIENT, true ); // Spawn Mob
-        addRewrite( 0x10, ProtocolConstants.Direction.TO_CLIENT, true ); // Spawn Painting
-        addRewrite( 0x11, ProtocolConstants.Direction.TO_CLIENT, true ); // Spawn Experience Orb
-        addRewrite( 0x12, ProtocolConstants.Direction.TO_CLIENT, false ); // Entity Velocity
-        addRewrite( 0x14, ProtocolConstants.Direction.TO_CLIENT, false ); // Entity
-        addRewrite( 0x15, ProtocolConstants.Direction.TO_CLIENT, false ); // Entity Relative Move
-        addRewrite( 0x16, ProtocolConstants.Direction.TO_CLIENT, false ); // Entity Look
-        addRewrite( 0x17, ProtocolConstants.Direction.TO_CLIENT, false ); // Entity Look and Relative Move
-        addRewrite( 0x18, ProtocolConstants.Direction.TO_CLIENT, false ); // Entity Teleport
-        addRewrite( 0x19, ProtocolConstants.Direction.TO_CLIENT, false ); // Entity Head Look
-        addRewrite( 0x1A, ProtocolConstants.Direction.TO_CLIENT, false ); // Entity Status
-        addRewrite( 0x1B, ProtocolConstants.Direction.TO_CLIENT, false ); // Attach Entity
-        addRewrite( 0x1C, ProtocolConstants.Direction.TO_CLIENT, false ); // Entity Metadata
-        addRewrite( 0x1D, ProtocolConstants.Direction.TO_CLIENT, false ); // Entity Effect
-        addRewrite( 0x1E, ProtocolConstants.Direction.TO_CLIENT, false ); // Remove Entity Effect
-        addRewrite( 0x20, ProtocolConstants.Direction.TO_CLIENT, false ); // Entity Properties
-        addRewrite( 0x25, ProtocolConstants.Direction.TO_CLIENT, true ); // Block Break Animation
-        addRewrite( 0x2C, ProtocolConstants.Direction.TO_CLIENT, true ); // Spawn Global Entity
+        addRewrite( 0x04, Direction.TO_CLIENT, false ); // Entity Equipment
+        addRewrite( 0x0A, Direction.TO_CLIENT, false ); // Use bed
+        addRewrite( 0x0B, Direction.TO_CLIENT, true ); // Animation
+        addRewrite( 0x0C, Direction.TO_CLIENT, true ); // Spawn Player
+        addRewrite( 0x0D, Direction.TO_CLIENT, false ); // Collect Item
+        addRewrite( 0x0E, Direction.TO_CLIENT, true ); // Spawn Object
+        addRewrite( 0x0F, Direction.TO_CLIENT, true ); // Spawn Mob
+        addRewrite( 0x10, Direction.TO_CLIENT, true ); // Spawn Painting
+        addRewrite( 0x11, Direction.TO_CLIENT, true ); // Spawn Experience Orb
+        addRewrite( 0x12, Direction.TO_CLIENT, false ); // Entity Velocity
+        addRewrite( 0x14, Direction.TO_CLIENT, false ); // Entity
+        addRewrite( 0x15, Direction.TO_CLIENT, false ); // Entity Relative Move
+        addRewrite( 0x16, Direction.TO_CLIENT, false ); // Entity Look
+        addRewrite( 0x17, Direction.TO_CLIENT, false ); // Entity Look and Relative Move
+        addRewrite( 0x18, Direction.TO_CLIENT, false ); // Entity Teleport
+        addRewrite( 0x19, Direction.TO_CLIENT, false ); // Entity Head Look
+        addRewrite( 0x1A, Direction.TO_CLIENT, false ); // Entity Status
+        addRewrite( 0x1B, Direction.TO_CLIENT, false ); // Attach Entity
+        addRewrite( 0x1C, Direction.TO_CLIENT, false ); // Entity Metadata
+        addRewrite( 0x1D, Direction.TO_CLIENT, false ); // Entity Effect
+        addRewrite( 0x1E, Direction.TO_CLIENT, false ); // Remove Entity Effect
+        addRewrite( 0x20, Direction.TO_CLIENT, false ); // Entity Properties
+        addRewrite( 0x25, Direction.TO_CLIENT, true ); // Block Break Animation
+        addRewrite( 0x2C, Direction.TO_CLIENT, true ); // Spawn Global Entity
 
-        addRewrite( 0x02, ProtocolConstants.Direction.TO_SERVER, false ); // Use Entity
-        addRewrite( 0x0A, ProtocolConstants.Direction.TO_SERVER, false ); // Animation
-        addRewrite( 0x0B, ProtocolConstants.Direction.TO_SERVER, false ); // Entity Action
+        addRewrite( 0x02, Direction.TO_SERVER, false ); // Use Entity
+        addRewrite( 0x0A, Direction.TO_SERVER, false ); // Animation
+        addRewrite( 0x0B, Direction.TO_SERVER, false ); // Entity Action
     }
 
     @Override

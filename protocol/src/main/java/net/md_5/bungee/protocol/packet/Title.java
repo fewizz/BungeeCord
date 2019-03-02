@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import io.netty.buffer.ByteBuf;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.ProtocolConstants;
 
 @Data
@@ -26,7 +27,7 @@ public class Title extends DefinedPacket
     private int fadeOut;
 
     @Override
-    public void read(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
+    public void read(ByteBuf buf, Direction direction, int protocolVersion)
     {
         int index = readVarInt( buf );
 
@@ -53,7 +54,7 @@ public class Title extends DefinedPacket
     }
 
     @Override
-    public void write(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
+    public void write(ByteBuf buf, Direction direction, int protocolVersion)
     {
         int index = action.ordinal();
 

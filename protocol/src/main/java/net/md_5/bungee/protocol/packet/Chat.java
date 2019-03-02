@@ -1,6 +1,7 @@
 package net.md_5.bungee.protocol.packet;
 
 import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Direction;
 import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -25,20 +26,20 @@ public class Chat extends DefinedPacket
     }
 
     @Override
-    public void read(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
+    public void read(ByteBuf buf, Direction direction, int protocolVersion)
     {
         message = readString( buf );
-        if ( direction == ProtocolConstants.Direction.TO_CLIENT && protocolVersion >= ProtocolConstants.MINECRAFT_1_8 )
+        if ( direction == Direction.TO_CLIENT && protocolVersion >= ProtocolConstants.MINECRAFT_1_8 )
         {
             position = buf.readByte();
         }
     }
 
     @Override
-    public void write(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
+    public void write(ByteBuf buf, Direction direction, int protocolVersion)
     {
         writeString( message, buf );
-        if ( direction == ProtocolConstants.Direction.TO_CLIENT && protocolVersion >= ProtocolConstants.MINECRAFT_1_8 )
+        if ( direction == Direction.TO_CLIENT && protocolVersion >= ProtocolConstants.MINECRAFT_1_8 )
         {
             buf.writeByte( position );
         }

@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import io.netty.buffer.ByteBuf;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.ProtocolConstants;
+import net.md_5.bungee.protocol.Direction;
 
 @Data
 @NoArgsConstructor
@@ -21,14 +21,14 @@ public class PlayerListHeaderFooter extends DefinedPacket
     private String footer;
 
     @Override
-    public void read(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
+    public void read(ByteBuf buf, Direction direction, int protocolVersion)
     {
         header = readString( buf );
         footer = readString( buf );
     }
 
     @Override
-    public void write(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
+    public void write(ByteBuf buf, Direction direction, int protocolVersion)
     {
         writeString( header, buf );
         writeString( footer, buf );

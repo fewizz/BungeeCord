@@ -9,6 +9,7 @@ import java.io.IOException;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.ProtocolConstants;
 
 /**
@@ -59,9 +60,9 @@ public abstract class EntityMap
         throw new RuntimeException( "Version " + version + " has no entity map" );
     }
 
-    protected void addRewrite(int id, ProtocolConstants.Direction direction, boolean varint)
+    protected void addRewrite(int id, Direction direction, boolean varint)
     {
-        if ( direction == ProtocolConstants.Direction.TO_CLIENT )
+        if ( direction == Direction.TO_CLIENT )
         {
             if ( varint )
             {
