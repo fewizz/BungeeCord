@@ -1,14 +1,12 @@
 package net.md_5.bungee.protocol.packet;
 
+import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-
-import io.netty.buffer.ByteBuf;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.Direction;
 
 @Data
 @NoArgsConstructor
@@ -21,14 +19,14 @@ public class PlayerListHeaderFooter extends DefinedPacket
     private String footer;
 
     @Override
-    public void read(ByteBuf buf, Direction direction, int protocolVersion)
+    public void read(ByteBuf buf)
     {
         header = readString( buf );
         footer = readString( buf );
     }
 
     @Override
-    public void write(ByteBuf buf, Direction direction, int protocolVersion)
+    public void write(ByteBuf buf)
     {
         writeString( header, buf );
         writeString( footer, buf );

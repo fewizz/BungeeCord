@@ -1,13 +1,15 @@
 package net.md_5.bungee.connection;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
 import com.google.common.base.Preconditions;
 import com.mojang.brigadier.context.StringRange;
 import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.brigadier.suggestion.Suggestions;
+
 import io.netty.channel.Channel;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.Util;
@@ -22,7 +24,7 @@ import net.md_5.bungee.forge.ForgeConstants;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.protocol.PacketWrapper;
-import net.md_5.bungee.protocol.ProtocolConstants;
+import net.md_5.bungee.protocol.ProtocolVersion;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.ClientSettings;
 import net.md_5.bungee.protocol.packet.KeepAlive;
@@ -80,7 +82,7 @@ public class UpstreamBridge extends PacketHandler
             } );
             for ( ProxiedPlayer player : con.getServer().getInfo().getPlayers() )
             {
-                if ( player.getPendingConnection().getVersion() >= ProtocolConstants.MINECRAFT_1_8 )
+                if ( player.getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_8) )
                 {
                     player.unsafe().sendPacket( packet );
                 }
@@ -138,7 +140,7 @@ public class UpstreamBridge extends PacketHandler
     @Override
     public void handle(Chat chat) throws Exception
     {
-        int maxLength = ( con.getPendingConnection().getVersion() >= ProtocolConstants.MINECRAFT_1_11 ) ? 256 : 100;
+        int maxLength = ( con.getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_11 )) ? 256 : 100;
         Preconditions.checkArgument( chat.getMessage().length() <= maxLength, "Chat message too long" ); // Mojang limit, check on updates
 
         ChatEvent chatEvent = new ChatEvent( con, con.getServer(), chat.getMessage() );
@@ -176,7 +178,7 @@ public class UpstreamBridge extends PacketHandler
         {
             // Unclear how to handle 1.13 commands at this point. Because we don't inject into the command packets we are unlikely to get this far unless
             // Bungee plugins are adding results for commands they don't own anyway
-            if ( con.getPendingConnection().getVersion() < ProtocolConstants.MINECRAFT_1_13 )
+            if ( con.getPendingConnection().getVersion().olderThan(ProtocolVersion.MC_1_13 ))
             {
                 con.unsafe().sendPacket( new TabCompleteResponse( results ) );
             } else if ( BungeeCord.getInstance().config.isInjectCommands() )

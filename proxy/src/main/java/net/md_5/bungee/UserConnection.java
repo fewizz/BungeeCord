@@ -1,14 +1,5 @@
 package net.md_5.bungee;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
-import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.util.internal.PlatformDependent;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
@@ -20,6 +11,17 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.logging.Level;
+
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
+
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.util.internal.PlatformDependent;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +53,7 @@ import net.md_5.bungee.protocol.MinecraftDecoder;
 import net.md_5.bungee.protocol.MinecraftEncoder;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
-import net.md_5.bungee.protocol.ProtocolConstants;
+import net.md_5.bungee.protocol.ProtocolVersion;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.ClientSettings;
 import net.md_5.bungee.protocol.packet.Kick;
@@ -188,7 +190,7 @@ public final class UserConnection implements ProxiedPlayer
     public void setDisplayName(String name)
     {
         Preconditions.checkNotNull( name, "displayName" );
-        if( pendingConnection.getVersion() <= ProtocolConstants.MINECRAFT_1_7_6 )
+        if( pendingConnection.getVersion().olderOrEqual(ProtocolVersion. MC_1_7_6 ))
         {
             Preconditions.checkArgument( name.length() <= 16, "Display name cannot be longer than 16 characters" );
         }
@@ -463,7 +465,7 @@ public final class UserConnection implements ProxiedPlayer
         message = ChatComponentTransformer.getInstance().transform( this, message );
 
         // Action bar doesn't display the new JSON formattings, legacy works - send it using this for now
-        if ( position == ChatMessageType.ACTION_BAR && pendingConnection.getVersion() >= ProtocolConstants.MINECRAFT_1_8 )
+        if ( position == ChatMessageType.ACTION_BAR && pendingConnection.getVersion().newerOrEqual(ProtocolVersion.MC_1_8) )
         {
             sendMessage( position, ComponentSerializer.toString( new TextComponent( BaseComponent.toLegacyText( message ) ) ) );
         } else
@@ -478,7 +480,7 @@ public final class UserConnection implements ProxiedPlayer
         message = ChatComponentTransformer.getInstance().transform( this, message )[0];
 
         // Action bar doesn't display the new JSON formattings, legacy works - send it using this for now
-        if ( position == ChatMessageType.ACTION_BAR && pendingConnection.getVersion() >= ProtocolConstants.MINECRAFT_1_8 )
+        if ( position == ChatMessageType.ACTION_BAR && pendingConnection.getVersion().newerOrEqual(ProtocolVersion.MC_1_8) )
         {
             sendMessage( position, ComponentSerializer.toString( new TextComponent( BaseComponent.toLegacyText( message ) ) ) );
         } else
@@ -657,7 +659,7 @@ public final class UserConnection implements ProxiedPlayer
     @Override
     public void setTabHeader(BaseComponent header, BaseComponent footer)
     {
-        if ( pendingConnection.getVersion() >= ProtocolConstants.MINECRAFT_1_8 )
+        if ( pendingConnection.getVersion().newerOrEqual(ProtocolVersion.MC_1_8) )
         {
             header = ChatComponentTransformer.getInstance().transform( this, header )[0];
             footer = ChatComponentTransformer.getInstance().transform( this, footer )[0];
@@ -672,7 +674,7 @@ public final class UserConnection implements ProxiedPlayer
     @Override
     public void setTabHeader(BaseComponent[] header, BaseComponent[] footer)
     {
-        if ( pendingConnection.getVersion() >= ProtocolConstants.MINECRAFT_1_8 )
+        if ( pendingConnection.getVersion().newerOrEqual(ProtocolVersion.MC_1_8) )
         {
             header = ChatComponentTransformer.getInstance().transform( this, header );
             footer = ChatComponentTransformer.getInstance().transform( this, footer );
@@ -704,7 +706,7 @@ public final class UserConnection implements ProxiedPlayer
 
     public void setCompressionThreshold(int compressionThreshold)
     {
-        if ( !ch.isClosing() && this.compressionThreshold == -1 && getPendingConnection().getVersion() >= ProtocolConstants.MINECRAFT_1_8 && compressionThreshold >= 0 )
+        if ( !ch.isClosing() && this.compressionThreshold == -1 && getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_8) && compressionThreshold >= 0 )
         {
             this.compressionThreshold = compressionThreshold;
             unsafe.sendPacket( new SetCompression( compressionThreshold ) );

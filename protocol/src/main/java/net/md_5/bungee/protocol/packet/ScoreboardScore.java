@@ -1,14 +1,14 @@
 package net.md_5.bungee.protocol.packet;
 
-import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.Direction;
 import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
-import net.md_5.bungee.protocol.ProtocolConstants;
+import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Direction;
+import net.md_5.bungee.protocol.ProtocolVersion;
 
 @Data
 @NoArgsConstructor
@@ -26,11 +26,11 @@ public class ScoreboardScore extends DefinedPacket
     private int value;
 
     @Override
-    public void read(ByteBuf buf, Direction direction, int protocolVersion)
+    public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
         itemName = readString( buf );
         action = buf.readByte();
-        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_8 )
+        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8 ))
         {
             scoreName = readString( buf );
             if ( action != 1 )
@@ -48,11 +48,11 @@ public class ScoreboardScore extends DefinedPacket
     }
 
     @Override
-    public void write(ByteBuf buf, Direction direction, int protocolVersion)
+    public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
         writeString( itemName, buf );
         buf.writeByte( action );
-        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_8 )
+        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8 ))
         {
             writeString( scoreName, buf );
             if ( action != 1 )

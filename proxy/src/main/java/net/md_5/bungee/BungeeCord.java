@@ -1,23 +1,5 @@
 package net.md_5.bungee;
 
-import com.google.common.base.Charsets;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelException;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
-import io.netty.util.ResourceLeakDetector;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -43,6 +25,28 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.fusesource.jansi.AnsiConsole;
+
+import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelException;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.util.ResourceLeakDetector;
 import jline.console.ConsoleReader;
 import lombok.Getter;
 import lombok.Setter;
@@ -87,13 +91,12 @@ import net.md_5.bungee.log.LoggingOutputStream;
 import net.md_5.bungee.module.ModuleManager;
 import net.md_5.bungee.netty.PipelineUtils;
 import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.ProtocolConstants;
+import net.md_5.bungee.protocol.ProtocolVersion;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 import net.md_5.bungee.query.RemoteQuery;
 import net.md_5.bungee.scheduler.BungeeScheduler;
 import net.md_5.bungee.util.CaseInsensitiveMap;
-import org.fusesource.jansi.AnsiConsole;
 
 /**
  * Main BungeeCord proxy class.
@@ -160,7 +163,7 @@ public class BungeeCord extends ProxyServer
             .registerTypeAdapter( KeybindComponent.class, new KeybindComponentSerializer() )
             .registerTypeAdapter( ScoreComponent.class, new ScoreComponentSerializer() )
             .registerTypeAdapter( SelectorComponent.class, new SelectorComponentSerializer() )
-            .registerTypeAdapter( ServerPing.PlayerInfo.class, new PlayerInfoSerializer( ProtocolConstants.MINECRAFT_1_7_6 ) )
+            .registerTypeAdapter( ServerPing.PlayerInfo.class, new PlayerInfoSerializer( ProtocolVersion.MC_1_7_6 ) )
             .registerTypeAdapter( Favicon.class, Favicon.getFaviconTypeAdapter() ).create();
     public final Gson gsonLegacy = new GsonBuilder()
             .registerTypeAdapter( BaseComponent.class, new ComponentSerializer() )
@@ -169,7 +172,7 @@ public class BungeeCord extends ProxyServer
             .registerTypeAdapter( KeybindComponent.class, new KeybindComponentSerializer() )
             .registerTypeAdapter( ScoreComponent.class, new ScoreComponentSerializer() )
             .registerTypeAdapter( SelectorComponent.class, new SelectorComponentSerializer() )
-            .registerTypeAdapter( ServerPing.PlayerInfo.class, new PlayerInfoSerializer( ProtocolConstants.MINECRAFT_1_7_2 ) )
+            .registerTypeAdapter( ServerPing.PlayerInfo.class, new PlayerInfoSerializer( ProtocolVersion.MC_1_7_2 ) )
             .registerTypeAdapter( Favicon.class, Favicon.getFaviconTypeAdapter() ).create();
     @Getter
     private ConnectionThrottle connectionThrottle;
@@ -623,9 +626,9 @@ public class BungeeCord extends ProxyServer
         return Collections.unmodifiableCollection( pluginChannels );
     }
 
-    public PluginMessage registerChannels(int protocolVersion)
+    public PluginMessage registerChannels(ProtocolVersion protocolVersion)
     {
-        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 )
+        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13) )
         {
             return new PluginMessage( "minecraft:register", Util.format( Iterables.transform( pluginChannels, PluginMessage.MODERNISE ), "\00" ).getBytes( Charsets.UTF_8 ), false );
         }
@@ -634,15 +637,17 @@ public class BungeeCord extends ProxyServer
     }
 
     @Override
-    public int getProtocolVersion()
+    public ProtocolVersion getProtocolVersion()
     {
-        return ProtocolConstants.SUPPORTED_VERSION_IDS.get( ProtocolConstants.SUPPORTED_VERSION_IDS.size() - 1 );
+        //return ProtocolConstants.SUPPORTED_VERSION_IDS.get( ProtocolConstants.SUPPORTED_VERSION_IDS.size() - 1 );
+    	return ProtocolVersion.values()[ProtocolVersion.values().length-1];
     }
 
     @Override
     public String getGameVersion()
     {
-        return ProtocolConstants.SUPPORTED_VERSIONS.get( 0 ) + "-" + ProtocolConstants.SUPPORTED_VERSIONS.get( ProtocolConstants.SUPPORTED_VERSIONS.size() - 1 );
+        //return ProtocolConstants.SUPPORTED_VERSIONS.get( 0 ) + "-" + ProtocolConstants.SUPPORTED_VERSIONS.get( ProtocolConstants.SUPPORTED_VERSIONS.size() - 1 );
+    	return ProtocolVersion.GAME_VERSIONS.get(0) + "-" + ProtocolVersion.GAME_VERSIONS.get(ProtocolVersion.GAME_VERSIONS.size()-1);
     }
 
     @Override

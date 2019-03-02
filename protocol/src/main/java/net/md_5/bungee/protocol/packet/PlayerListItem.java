@@ -1,15 +1,15 @@
 package net.md_5.bungee.protocol.packet;
 
-import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.Direction;
+import java.util.UUID;
+
 import io.netty.buffer.ByteBuf;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
-import net.md_5.bungee.protocol.ProtocolConstants;
-
-import java.util.UUID;
+import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Direction;
+import net.md_5.bungee.protocol.ProtocolVersion;
 
 @Data
 @NoArgsConstructor
@@ -21,9 +21,9 @@ public class PlayerListItem extends DefinedPacket
     private Item[] items;
 
     @Override
-    public void read(ByteBuf buf, Direction direction, int protocolVersion)
+    public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-        if ( protocolVersion < ProtocolConstants.MINECRAFT_1_8 )
+        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8 ))
         {
             items = new Item[ 1 ];
             Item item = items[ 0 ] = new Item();
@@ -85,9 +85,9 @@ public class PlayerListItem extends DefinedPacket
     }
 
     @Override
-    public void write(ByteBuf buf, Direction direction, int protocolVersion)
+    public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-        if ( protocolVersion < ProtocolConstants.MINECRAFT_1_8 )
+        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8) )
         {
             Item item = items[0]; // Only one at a time
             writeString( item.displayName, buf ); // TODO: Server unique only!

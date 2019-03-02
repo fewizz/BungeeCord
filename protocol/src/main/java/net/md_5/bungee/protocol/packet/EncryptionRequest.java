@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.ProtocolConstants;
+import net.md_5.bungee.protocol.ProtocolVersion;
 
 @Data
 @NoArgsConstructor
@@ -22,10 +22,10 @@ public class EncryptionRequest extends DefinedPacket
     private byte[] verifyToken;
 
     @Override
-    public void read(ByteBuf buf, Direction direction, int protocolVersion)
+    public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
         serverId = readString( buf );
-        if ( protocolVersion < ProtocolConstants.MINECRAFT_1_8 )
+        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8) )
         {
             publicKey = readArrayLegacy( buf );
             verifyToken = readArrayLegacy( buf );
@@ -37,10 +37,10 @@ public class EncryptionRequest extends DefinedPacket
     }
 
     @Override
-    public void write(ByteBuf buf, Direction direction, int protocolVersion)
+    public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
         writeString( serverId, buf );
-        if ( protocolVersion < ProtocolConstants.MINECRAFT_1_8 )
+        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8) )
         {
             writeArrayLegacy( publicKey, buf, false );
             writeArrayLegacy( verifyToken, buf, false );

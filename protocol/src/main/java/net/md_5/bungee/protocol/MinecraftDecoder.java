@@ -16,7 +16,7 @@ public class MinecraftDecoder extends MessageToMessageDecoder<ByteBuf>
     private Protocol protocol;
     private final boolean server;
     @Setter
-    private int protocolVersion;
+    private ProtocolVersion protocolVersion;
     
     //@Setter
     //boolean legacy = false;
@@ -31,7 +31,7 @@ public class MinecraftDecoder extends MessageToMessageDecoder<ByteBuf>
         {
             int packetId = -1;
             
-            if(protocolVersion > 78)
+            if(protocolVersion.newerOrEqual(ProtocolVersion.MC_1_7_2))
             	packetId = DefinedPacket.readVarInt( in );
             else
             	packetId = in.readUnsignedByte();

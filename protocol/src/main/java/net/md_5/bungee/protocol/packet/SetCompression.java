@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Direction;
+import net.md_5.bungee.protocol.ProtocolVersion;
 
 @Data
 @NoArgsConstructor
@@ -19,13 +20,13 @@ public class SetCompression extends DefinedPacket
     private int threshold;
 
     @Override
-    public void read(ByteBuf buf, Direction direction, int protocolVersion)
+    public void read(ByteBuf buf)
     {
         threshold = DefinedPacket.readVarInt( buf );
     }
 
     @Override
-    public void write(ByteBuf buf, Direction direction, int protocolVersion)
+    public void write(ByteBuf buf)
     {
         DefinedPacket.writeVarInt( threshold, buf );
     }

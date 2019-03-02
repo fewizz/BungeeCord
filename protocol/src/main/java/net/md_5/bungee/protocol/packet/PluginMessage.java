@@ -1,23 +1,25 @@
 package net.md_5.bungee.protocol.packet;
 
-import com.google.common.base.Function;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
-import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.Direction;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import java.io.ByteArrayInputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.util.Locale;
+
+import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import net.md_5.bungee.protocol.MinecraftInput;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
-import net.md_5.bungee.protocol.ProtocolConstants;
+import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Direction;
+import net.md_5.bungee.protocol.MinecraftInput;
+import net.md_5.bungee.protocol.ProtocolVersion;
 
 @Data
 @NoArgsConstructor
@@ -69,15 +71,15 @@ public class PluginMessage extends DefinedPacket
     private boolean allowExtendedPacket = false;
 
     @Override
-    public void read(ByteBuf buf, Direction direction, int protocolVersion)
+    public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-        if ( protocolVersion < ProtocolConstants.MINECRAFT_1_8 )
+        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8) )
         {
         	tag = readString( buf );
             data = readArrayLegacy( buf );
         } else
         {
-        	tag = ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 ) ? MODERNISE.apply( readString( buf ) ) : readString( buf );
+        	tag = ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13 )) ? MODERNISE.apply( readString( buf ) ) : readString( buf );
             int maxSize = direction == Direction.TO_SERVER ? Short.MAX_VALUE : 0x100000;
             Preconditions.checkArgument( buf.readableBytes() < maxSize );
             data = new byte[ buf.readableBytes() ];
@@ -86,15 +88,15 @@ public class PluginMessage extends DefinedPacket
     }
 
     @Override
-    public void write(ByteBuf buf, Direction direction, int protocolVersion)
+    public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-        if ( protocolVersion < ProtocolConstants.MINECRAFT_1_8 )
+        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8 ))
         {
         	writeString( tag, buf );
             writeArrayLegacy( data, buf, allowExtendedPacket );
         } else
         {
-        	writeString( ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 ) ? MODERNISE.apply( tag ) : tag, buf );
+        	writeString( ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13 )) ? MODERNISE.apply( tag ) : tag, buf );
             buf.writeBytes( data );
         }
     }

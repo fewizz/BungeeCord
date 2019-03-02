@@ -1,14 +1,14 @@
 package net.md_5.bungee.protocol.packet;
 
-import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.Direction;
 import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
-import net.md_5.bungee.protocol.ProtocolConstants;
+import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Direction;
+import net.md_5.bungee.protocol.ProtocolVersion;
 
 @Data
 @NoArgsConstructor
@@ -41,28 +41,28 @@ public class Team extends DefinedPacket
     }
 
     @Override
-    public void read(ByteBuf buf, Direction direction, int protocolVersion)
+    public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
         name = readString( buf );
         mode = buf.readByte();
         if ( mode == 0 || mode == 2 )
         {
             displayName = readString( buf );
-            if ( protocolVersion < ProtocolConstants.MINECRAFT_1_13 )
+            if ( protocolVersion.olderThan(ProtocolVersion.MC_1_13 ))
             {
                 prefix = readString( buf );
                 suffix = readString( buf );
             }
             friendlyFire = buf.readByte();
-            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_8 )
+            if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8 ))
             {
                 nameTagVisibility = readString( buf );
-                if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_9 )
+                if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9 ))
                 {
                     collisionRule = readString(buf);
                 }
-                color = ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 ) ? readVarInt( buf ) : buf.readByte();
-                if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 )
+                color = ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13 )) ? readVarInt( buf ) : buf.readByte();
+                if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13 ))
                 {
                     prefix = readString( buf );
                     suffix = readString( buf );
@@ -71,7 +71,7 @@ public class Team extends DefinedPacket
         }
         if ( mode == 0 || mode == 3 || mode == 4 )
         {
-            int len = ( protocolVersion >= ProtocolConstants.MINECRAFT_1_8 ) ? readVarInt( buf ) : buf.readShort();
+            int len = ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8 )) ? readVarInt( buf ) : buf.readShort();
             players = new String[ len ];
             for ( int i = 0; i < len; i++ )
             {
@@ -81,28 +81,28 @@ public class Team extends DefinedPacket
     }
 
     @Override
-    public void write(ByteBuf buf, Direction direction, int protocolVersion)
+    public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
         writeString( name, buf );
         buf.writeByte( mode );
         if ( mode == 0 || mode == 2 )
         {
             writeString( displayName, buf );
-            if ( protocolVersion < ProtocolConstants.MINECRAFT_1_13 )
+            if ( protocolVersion.olderThan(ProtocolVersion.MC_1_13 ))
             {
                 writeString( prefix, buf );
                 writeString( suffix, buf );
             }
             buf.writeByte( friendlyFire );
-            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_8 )
+            if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8 ))
             {
                 writeString( nameTagVisibility, buf );
-                if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_9 )
+                if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9 ))
                 {
                     writeString( collisionRule, buf);
                 }
                 
-                if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 )
+                if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13 ))
                 {
                     writeVarInt( color, buf );
                     writeString( prefix, buf );
@@ -115,7 +115,7 @@ public class Team extends DefinedPacket
         }
         if ( mode == 0 || mode == 3 || mode == 4 )
         {
-            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_8 )
+            if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8 ))
             {
                 writeVarInt( players.length, buf );
             } else

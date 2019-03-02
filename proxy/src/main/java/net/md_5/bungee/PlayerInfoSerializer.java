@@ -10,12 +10,13 @@ import com.google.gson.JsonSerializer;
 import java.lang.reflect.Type;
 import java.util.UUID;
 import net.md_5.bungee.api.ServerPing;
+import net.md_5.bungee.protocol.ProtocolVersion;
 
 public class PlayerInfoSerializer implements JsonSerializer<ServerPing.PlayerInfo>, JsonDeserializer<ServerPing.PlayerInfo>
 {
-    private final int protocol;
+    private final ProtocolVersion protocol;
 
-    public PlayerInfoSerializer(int protocol)
+    public PlayerInfoSerializer(ProtocolVersion protocol)
     {
         this.protocol = protocol;
     }
@@ -26,7 +27,7 @@ public class PlayerInfoSerializer implements JsonSerializer<ServerPing.PlayerInf
         JsonObject js = json.getAsJsonObject();
         ServerPing.PlayerInfo info = new ServerPing.PlayerInfo( js.get( "name" ).getAsString(), (UUID) null );
         String id = js.get( "id" ).getAsString();
-        if ( protocol == 4 || !id.contains( "-" ) )
+        if ( protocol.version == 4 || !id.contains( "-" ) )
         {
             info.setId( id );
         } else
@@ -41,7 +42,7 @@ public class PlayerInfoSerializer implements JsonSerializer<ServerPing.PlayerInf
     {
         JsonObject out = new JsonObject();
         out.addProperty( "name", src.getName() );
-        if ( protocol == 4 )
+        if ( protocol.version == 4 )
         {
             out.addProperty( "id", src.getId() );
         } else

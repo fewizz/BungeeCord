@@ -15,6 +15,7 @@ import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.api.scheduler.TaskScheduler;
+import net.md_5.bungee.protocol.ProtocolVersion;
 
 public abstract class ProxyServer
 {
@@ -190,7 +191,7 @@ public abstract class ProxyServer
      * @return the Minecraft protocol version
      */
     @Deprecated
-    public abstract int getProtocolVersion();
+    public abstract ProtocolVersion getProtocolVersion();
 
     /**
      * Factory method to construct an implementation specific server info

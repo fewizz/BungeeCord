@@ -1,19 +1,21 @@
 package net.md_5.bungee.protocol.packet;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import com.mojang.brigadier.LiteralMessage;
 import com.mojang.brigadier.context.StringRange;
 import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.brigadier.suggestion.Suggestions;
-import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.Direction;
+
 import io.netty.buffer.ByteBuf;
-import java.util.LinkedList;
-import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
-import net.md_5.bungee.protocol.ProtocolConstants;
+import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Direction;
+import net.md_5.bungee.protocol.ProtocolVersion;
 
 @Data
 @NoArgsConstructor
@@ -38,9 +40,9 @@ public class TabCompleteResponse extends DefinedPacket
     }
 
     @Override
-    public void read(ByteBuf buf, Direction direction, int protocolVersion)
+    public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 )
+        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13 ))
         {
             transactionId = readVarInt( buf );
             int start = readVarInt( buf );
@@ -60,16 +62,16 @@ public class TabCompleteResponse extends DefinedPacket
             suggestions = new Suggestions( range, matches );
         }
 
-        if ( protocolVersion < ProtocolConstants.MINECRAFT_1_13 )
+        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_13 ))
         {
             commands = readStringArray( buf );
         }
     }
 
     @Override
-    public void write(ByteBuf buf, Direction direction, int protocolVersion)
+    public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 )
+        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13 ))
         {
             writeVarInt( transactionId, buf );
             writeVarInt( suggestions.getRange().getStart(), buf );
@@ -87,7 +89,7 @@ public class TabCompleteResponse extends DefinedPacket
             }
         }
 
-        if ( protocolVersion < ProtocolConstants.MINECRAFT_1_13 )
+        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_13 ))
         {
             writeStringArray( commands, buf );
         }

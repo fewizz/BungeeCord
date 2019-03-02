@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.ProtocolGen;
+import net.md_5.bungee.protocol.ProtocolVersion;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 
 @Data
@@ -15,7 +17,7 @@ import net.md_5.bungee.protocol.AbstractPacketHandler;
 public class Handshake extends DefinedPacket
 {
 
-    private int protocolVersion;
+    private ProtocolVersion protocolVersion;
     private String host;
     private int port;
     private int requestedProtocol;
@@ -23,7 +25,7 @@ public class Handshake extends DefinedPacket
     @Override
     public void read(ByteBuf buf)
     {
-        protocolVersion = readVarInt( buf );
+        protocolVersion = ProtocolVersion.getByNumber(readVarInt( buf ), ProtocolGen.MODERN );
         host = readString( buf );
         port = buf.readUnsignedShort();
         requestedProtocol = readVarInt( buf );
@@ -32,7 +34,7 @@ public class Handshake extends DefinedPacket
     @Override
     public void write(ByteBuf buf)
     {
-        writeVarInt( protocolVersion, buf );
+        writeVarInt( protocolVersion.version, buf );
         writeString( host, buf );
         buf.writeShort( port );
         writeVarInt( requestedProtocol, buf );

@@ -14,7 +14,7 @@ public class MinecraftEncoder extends MessageToByteEncoder<DefinedPacket>
     private Protocol protocol;
     private boolean server;
     @Setter
-    private int protocolVersion;
+    private ProtocolVersion protocolVersion;
 
     @Override
     protected void encode(ChannelHandlerContext ctx, DefinedPacket msg, ByteBuf out) throws Exception

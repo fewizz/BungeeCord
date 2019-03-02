@@ -1,5 +1,8 @@
 package net.md_5.bungee.protocol;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -25,7 +28,22 @@ public enum ProtocolVersion {
 	public final int version;
 	public final ProtocolGen generation;
 	
-	public boolean newerThan(ProtocolVersion ver) {
-		return ordinal() > ver.ordinal();
+	public boolean newerThan(ProtocolVersion ver) {return ordinal() > ver.ordinal();}
+	public boolean newerOrEqual(ProtocolVersion ver) {return ordinal() >= ver.ordinal();}
+	public boolean olderThan(ProtocolVersion ver) {return ordinal() < ver.ordinal();}
+	public boolean olderOrEqual(ProtocolVersion ver) {return ordinal() <= ver.ordinal();}
+	
+	public static ProtocolVersion getByNumber(int num, ProtocolGen gen) {
+		for(ProtocolVersion v : values())
+			if(v.version == num && gen == v.generation)
+				return v;
+		return null;
+	}
+	
+	public static final List<String> GAME_VERSIONS = new ArrayList<>();
+	
+	static {
+		for(ProtocolVersion v : values())
+			GAME_VERSIONS.add(v.name().substring("MC_".length()).replace('_', '.'));
 	}
 }

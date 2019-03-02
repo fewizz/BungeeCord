@@ -1,14 +1,14 @@
 package net.md_5.bungee.protocol.packet;
 
-import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.Direction;
 import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
-import net.md_5.bungee.protocol.ProtocolConstants;
+import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Direction;
+import net.md_5.bungee.protocol.ProtocolVersion;
 
 @Data
 @NoArgsConstructor
@@ -26,11 +26,11 @@ public class Login extends DefinedPacket
     private boolean reducedDebugInfo;
 
     @Override
-    public void read(ByteBuf buf, Direction direction, int protocolVersion)
+    public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
         entityId = buf.readInt();
         gameMode = buf.readUnsignedByte();
-        if ( protocolVersion > ProtocolConstants.MINECRAFT_1_9 )
+        if ( protocolVersion.newerThan(ProtocolVersion.MC_1_9 ))
         {
             dimension = buf.readInt();
         } else
@@ -40,18 +40,18 @@ public class Login extends DefinedPacket
         difficulty = buf.readUnsignedByte();
         maxPlayers = buf.readUnsignedByte();
         levelType = readString( buf );
-        if ( protocolVersion >= 29 )
+        if ( protocolVersion.version >= 29 )
         {
             reducedDebugInfo = buf.readBoolean();
         }
     }
 
     @Override
-    public void write(ByteBuf buf, Direction direction, int protocolVersion)
+    public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
         buf.writeInt( entityId );
         buf.writeByte( gameMode );
-        if ( protocolVersion > ProtocolConstants.MINECRAFT_1_9 )
+        if ( protocolVersion.newerThan(ProtocolVersion.MC_1_9 ))
         {
             buf.writeInt( dimension );
         } else
@@ -61,7 +61,7 @@ public class Login extends DefinedPacket
         buf.writeByte( difficulty );
         buf.writeByte( maxPlayers );
         writeString( levelType, buf );
-        if ( protocolVersion >= 29 )
+        if ( protocolVersion.version >= 29 )
         {
             buf.writeBoolean( reducedDebugInfo );
         }

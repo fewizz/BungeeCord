@@ -1,14 +1,15 @@
 package net.md_5.bungee;
 
-import com.google.common.base.Preconditions;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 
+import com.google.common.base.Preconditions;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.api.ChatColor;
@@ -36,7 +37,7 @@ import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.MinecraftOutput;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
-import net.md_5.bungee.protocol.ProtocolConstants;
+import net.md_5.bungee.protocol.ProtocolVersion;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.protocol.packet.EntityStatus;
 import net.md_5.bungee.protocol.packet.Handshake;
@@ -243,7 +244,7 @@ public class ServerConnector extends PacketHandler
 
             user.unsafe().sendPacket( modLogin );
 
-            if (user.getPendingConnection().getVersion() < ProtocolConstants.MINECRAFT_1_8)
+            if (user.getPendingConnection().getVersion().olderThan(ProtocolVersion.MC_1_8))
             {
                 MinecraftOutput out = new MinecraftOutput();
                 out.writeStringUTF8WithoutLengthHeaderBecauseDinnerboneStuffedUpTheMCBrandPacket(ProxyServer.getInstance().getName() + " (" + ProxyServer.getInstance().getVersion() + ")");
@@ -253,7 +254,7 @@ public class ServerConnector extends PacketHandler
             {
                 ByteBuf brand = ByteBufAllocator.DEFAULT.heapBuffer();
                 DefinedPacket.writeString( bungee.getName() + " (" + bungee.getVersion() + ")", brand );
-                user.unsafe().sendPacket( new PluginMessage( user.getPendingConnection().getVersion() >= ProtocolConstants.MINECRAFT_1_13 ? "minecraft:brand" : "MC|Brand", DefinedPacket.toArray( brand ), handshakeHandler.isServerForge() ) );
+                user.unsafe().sendPacket( new PluginMessage( user.getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_13) ? "minecraft:brand" : "MC|Brand", DefinedPacket.toArray( brand ), handshakeHandler.isServerForge() ) );
                 brand.release();
             }
             

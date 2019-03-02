@@ -15,6 +15,7 @@ import net.md_5.bungee.protocol.MinecraftDecoder;
 import net.md_5.bungee.protocol.MinecraftEncoder;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
+import net.md_5.bungee.protocol.ProtocolVersion;
 import net.md_5.bungee.protocol.packet.Kick;
 
 public class ChannelWrapper
@@ -41,7 +42,7 @@ public class ChannelWrapper
         ch.pipeline().get( MinecraftEncoder.class ).setProtocol( protocol );
     }
 
-    public void setVersion(int protocol)
+    public void setVersion(ProtocolVersion protocol)
     {
         ch.pipeline().get( MinecraftDecoder.class ).setProtocolVersion( protocol );
         ch.pipeline().get( MinecraftEncoder.class ).setProtocolVersion( protocol );

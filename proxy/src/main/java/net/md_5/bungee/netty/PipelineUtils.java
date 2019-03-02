@@ -37,6 +37,8 @@ import net.md_5.bungee.protocol.LegacyDecoder;
 import net.md_5.bungee.protocol.MinecraftDecoder;
 import net.md_5.bungee.protocol.MinecraftEncoder;
 import net.md_5.bungee.protocol.Protocol;
+import net.md_5.bungee.protocol.ProtocolGen;
+import net.md_5.bungee.protocol.ProtocolVersion;
 import net.md_5.bungee.protocol.Varint21FrameDecoder;
 import net.md_5.bungee.protocol.Varint21LengthFieldPrepender;
 
@@ -66,8 +68,9 @@ public class PipelineUtils
 				public void onLegacy(int protocolVersion) {
 					ch.pipeline().remove(FRAME_DECODER);
 					ch.pipeline().remove(FRAME_PREPENDER);
-					ch.pipeline().get( MinecraftDecoder.class ).setProtocolVersion(protocolVersion);
-					ch.pipeline().get( MinecraftEncoder.class ).setProtocolVersion(protocolVersion);
+					ProtocolVersion pv = ProtocolVersion.getByNumber(protocolVersion, ProtocolGen.PRE_NETTY);
+					ch.pipeline().get( MinecraftDecoder.class ).setProtocolVersion(pv);
+					ch.pipeline().get( MinecraftEncoder.class ).setProtocolVersion(pv);
 				}
             	
             });

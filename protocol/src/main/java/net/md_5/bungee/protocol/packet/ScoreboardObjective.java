@@ -1,15 +1,16 @@
 package net.md_5.bungee.protocol.packet;
 
-import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.Direction;
-import io.netty.buffer.ByteBuf;
 import java.util.Locale;
+
+import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
-import net.md_5.bungee.protocol.ProtocolConstants;
+import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Direction;
+import net.md_5.bungee.protocol.ProtocolVersion;
 
 @Data
 @NoArgsConstructor
@@ -27,18 +28,18 @@ public class ScoreboardObjective extends DefinedPacket
     private byte action;
 
     @Override
-    public void read(ByteBuf buf, Direction direction, int protocolVersion)
+    public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
         name = readString( buf );
-        if ( protocolVersion <= ProtocolConstants.MINECRAFT_1_7_6 )
+        if ( protocolVersion.olderOrEqual(ProtocolVersion.MC_1_7_6 ))
         {
             value = readString( buf );
         }
         action = buf.readByte();
-        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_8 && ( action == 0 || action == 2 ) )
+        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8) && ( action == 0 || action == 2 ) )
         {
             value = readString( buf );
-            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 )
+            if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13 ))
             {
                 type = HealthDisplay.values()[readVarInt( buf )];
             } else
@@ -49,18 +50,18 @@ public class ScoreboardObjective extends DefinedPacket
     }
 
     @Override
-    public void write(ByteBuf buf, Direction direction, int protocolVersion)
+    public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
         writeString( name, buf );
-        if ( protocolVersion <= ProtocolConstants.MINECRAFT_1_7_6 )
+        if ( protocolVersion.olderOrEqual(ProtocolVersion.MC_1_7_6 ))
         {
             writeString( value, buf );
         }
         buf.writeByte( action );
-        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_8 && ( action == 0 || action == 2 ) )
+        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8 ) && ( action == 0 || action == 2 ) )
         {
             writeString( value, buf );
-            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 )
+            if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13 ))
             {
                 writeVarInt( type.ordinal(), buf );
             } else

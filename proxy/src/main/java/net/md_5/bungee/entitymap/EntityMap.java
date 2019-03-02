@@ -10,7 +10,9 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.ProtocolConstants;
+import net.md_5.bungee.protocol.ProtocolVersion;
+
+import static net.md_5.bungee.protocol.ProtocolVersion.*;
 
 /**
  * Class to rewrite integers within packets.
@@ -26,35 +28,35 @@ public abstract class EntityMap
     private final boolean[] serverboundVarInts = new boolean[ 256 ];
 
     // Returns the correct entity map for the protocol version
-    public static EntityMap getEntityMap(int version)
+    public static EntityMap getEntityMap(ProtocolVersion version)
     {
         switch ( version )
         {
-            case ProtocolConstants.MINECRAFT_1_7_2:
+            case MC_1_7_2:
                 return EntityMap_1_7_2.INSTANCE;
-            case ProtocolConstants.MINECRAFT_1_7_6:
+            case MC_1_7_6:
                 return EntityMap_1_7_6.INSTANCE;
-            case ProtocolConstants.MINECRAFT_1_8:
+            case MC_1_8:
                 return EntityMap_1_8.INSTANCE;
-            case ProtocolConstants.MINECRAFT_1_9:
-            case ProtocolConstants.MINECRAFT_1_9_1:
-            case ProtocolConstants.MINECRAFT_1_9_2:
+            case MC_1_9:
+            case MC_1_9_1:
+            case MC_1_9_2:
                 return EntityMap_1_9.INSTANCE;
-            case ProtocolConstants.MINECRAFT_1_9_4:
+            case MC_1_9_4:
                 return EntityMap_1_9_4.INSTANCE;
-            case ProtocolConstants.MINECRAFT_1_10:
+            case MC_1_10:
                 return EntityMap_1_10.INSTANCE;
-            case ProtocolConstants.MINECRAFT_1_11:
-            case ProtocolConstants.MINECRAFT_1_11_1:
+            case MC_1_11:
+            case MC_1_11_1:
                 return EntityMap_1_11.INSTANCE;
-            case ProtocolConstants.MINECRAFT_1_12:
+            case MC_1_12:
                 return EntityMap_1_12.INSTANCE;
-            case ProtocolConstants.MINECRAFT_1_12_1:
-            case ProtocolConstants.MINECRAFT_1_12_2:
+            case MC_1_12_1:
+            case MC_1_12_2:
                 return EntityMap_1_12_1.INSTANCE;
-            case ProtocolConstants.MINECRAFT_1_13:
-            case ProtocolConstants.MINECRAFT_1_13_1:
-            case ProtocolConstants.MINECRAFT_1_13_2:
+            case MC_1_13:
+            case MC_1_13_1:
+            case MC_1_13_2:
                 return EntityMap_1_13.INSTANCE;
         }
         throw new RuntimeException( "Version " + version + " has no entity map" );
@@ -85,7 +87,7 @@ public abstract class EntityMap
         rewrite( packet, oldId, newId, serverboundInts, serverboundVarInts );
     }
 
-    public void rewriteServerbound(ByteBuf packet, int oldId, int newId, int protocolVersion)
+    public void rewriteServerbound(ByteBuf packet, int oldId, int newId, ProtocolVersion protocolVersion)
     {
         rewriteServerbound( packet, oldId, newId );
     }
@@ -95,7 +97,7 @@ public abstract class EntityMap
         rewrite( packet, oldId, newId, clientboundInts, clientboundVarInts );
     }
 
-    public void rewriteClientbound(ByteBuf packet, int oldId, int newId, int protocolVersion)
+    public void rewriteClientbound(ByteBuf packet, int oldId, int newId, ProtocolVersion protocolVersion)
     {
         rewriteClientbound( packet, oldId, newId );
     }
@@ -131,10 +133,10 @@ public abstract class EntityMap
 
     protected static void rewriteMetaVarInt(ByteBuf packet, int oldId, int newId, int metaIndex)
     {
-        rewriteMetaVarInt( packet, oldId, newId, metaIndex, -1 );
+        rewriteMetaVarInt( packet, oldId, newId, metaIndex, null );
     }
 
-    protected static void rewriteMetaVarInt(ByteBuf packet, int oldId, int newId, int metaIndex, int protocolVersion)
+    protected static void rewriteMetaVarInt(ByteBuf packet, int oldId, int newId, int metaIndex, ProtocolVersion protocolVersion)
     {
         int readerIndex = packet.readerIndex();
 
@@ -142,7 +144,7 @@ public abstract class EntityMap
         while ( ( index = packet.readUnsignedByte() ) != 0xFF )
         {
             int type = DefinedPacket.readVarInt( packet );
-            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 )
+            if ( protocolVersion != null && protocolVersion.newerOrEqual(MC_1_13) )
             {
                 switch ( type )
                 {
@@ -245,15 +247,15 @@ public abstract class EntityMap
         packet.readerIndex( readerIndex );
     }
 
-    private static void readSkipSlot(ByteBuf packet, int protocolVersion)
+    private static void readSkipSlot(ByteBuf packet, ProtocolVersion protocolVersion)
     {
-        if ( (protocolVersion >= ProtocolConstants.MINECRAFT_1_13_2) ? packet.readBoolean() : packet.readShort() != -1 )
+        if ( protocolVersion.newerOrEqual(MC_1_13_2) ? packet.readBoolean() : packet.readShort() != -1 )
         {
-            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13_2 )
+            if ( protocolVersion.newerOrEqual(MC_1_13_2) )
             {
                 DefinedPacket.readVarInt( packet );
             }
-            packet.skipBytes( ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 ) ? 1 : 3 ); // byte vs byte, short
+            packet.skipBytes( ( protocolVersion.newerOrEqual(MC_1_13) ) ? 1 : 3 ); // byte vs byte, short
 
             int position = packet.readerIndex();
             if ( packet.readByte() != 0 )
