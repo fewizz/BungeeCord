@@ -38,16 +38,16 @@ public class TabCompleteRequest extends DefinedPacket
     @Override
     public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13 ))
+        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13_0 ))
         {
         	transactionId = readVarInt( buf );
     	}
 
         cursor = readString( buf );
 
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8 ) && protocolVersion.olderThan(ProtocolVersion.MC_1_13 ))
+        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0 ) && protocolVersion.olderThan(ProtocolVersion.MC_1_13_0 ))
         {
-            if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9 ))
+            if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9_0 ))
             {
                 assumeCommand = buf.readBoolean();
             }
@@ -61,16 +61,16 @@ public class TabCompleteRequest extends DefinedPacket
     @Override
     public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-    	if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13))
+    	if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13_0))
     	{
     		writeVarInt( transactionId, buf );
     	}
 
         writeString( cursor, buf );
 
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8 ) && protocolVersion.olderThan(ProtocolVersion.MC_1_13 ))
+        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0 ) && protocolVersion.olderThan(ProtocolVersion.MC_1_13_0 ))
         {
-            if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9 ))
+            if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9_0 ))
             {
                 buf.writeBoolean( assumeCommand );
             }

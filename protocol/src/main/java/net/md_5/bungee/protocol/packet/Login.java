@@ -30,7 +30,7 @@ public class Login extends DefinedPacket
     {
         entityId = buf.readInt();
         gameMode = buf.readUnsignedByte();
-        if ( protocolVersion.newerThan(ProtocolVersion.MC_1_9 ))
+        if ( protocolVersion.newerThan(ProtocolVersion.MC_1_9_0 ))
         {
             dimension = buf.readInt();
         } else
@@ -51,7 +51,7 @@ public class Login extends DefinedPacket
     {
         buf.writeInt( entityId );
         buf.writeByte( gameMode );
-        if ( protocolVersion.newerThan(ProtocolVersion.MC_1_9 ))
+        if ( protocolVersion.newerThan(ProtocolVersion.MC_1_9_0 ))
         {
             buf.writeInt( dimension );
         } else

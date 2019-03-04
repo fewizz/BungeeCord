@@ -25,7 +25,7 @@ public class EncryptionRequest extends DefinedPacket
     public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
         serverId = readString( buf );
-        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8) )
+        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8_0) )
         {
             publicKey = readArrayLegacy( buf );
             verifyToken = readArrayLegacy( buf );
@@ -40,7 +40,7 @@ public class EncryptionRequest extends DefinedPacket
     public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
         writeString( serverId, buf );
-        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8) )
+        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8_0) )
         {
             writeArrayLegacy( publicKey, buf, false );
             writeArrayLegacy( verifyToken, buf, false );

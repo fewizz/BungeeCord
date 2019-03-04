@@ -31,7 +31,7 @@ public class MinecraftDecoder extends MessageToMessageDecoder<ByteBuf>
         {
             int packetId = -1;
             
-            if(protocolVersion.newerOrEqual(ProtocolVersion.MC_1_7_2))
+            if(protocolVersion != null && protocolVersion.newerOrEqual(ProtocolVersion.MC_1_7_2))
             	packetId = DefinedPacket.readVarInt( in );
             else
             	packetId = in.readUnsignedByte();

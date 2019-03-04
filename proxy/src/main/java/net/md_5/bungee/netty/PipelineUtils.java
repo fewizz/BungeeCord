@@ -72,11 +72,10 @@ public class PipelineUtils
 					ch.pipeline().get( MinecraftDecoder.class ).setProtocolVersion(pv);
 					ch.pipeline().get( MinecraftEncoder.class ).setProtocolVersion(pv);
 				}
-            	
             });
             ch.pipeline().addAfter( FRAME_DECODER, PACKET_DECODER, new MinecraftDecoder( Protocol.HANDSHAKE, true, ProxyServer.getInstance().getProtocolVersion() ) );
             ch.pipeline().addAfter( FRAME_PREPENDER, PACKET_ENCODER, new MinecraftEncoder( Protocol.HANDSHAKE, true, ProxyServer.getInstance().getProtocolVersion() ) );
-            ch.pipeline().addBefore( FRAME_PREPENDER, LEGACY_KICKER, legacyKicker );
+            //ch.pipeline().addBefore( FRAME_PREPENDER, LEGACY_KICKER, legacyKicker );
             ch.pipeline().get( HandlerBoss.class ).setHandler( new InitialHandler( BungeeCord.getInstance(), listener ) );
 
             if ( listener.isProxyProtocol() )

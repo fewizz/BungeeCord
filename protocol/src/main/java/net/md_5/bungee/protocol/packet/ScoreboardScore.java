@@ -30,7 +30,7 @@ public class ScoreboardScore extends DefinedPacket
     {
         itemName = readString( buf );
         action = buf.readByte();
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8 ))
+        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0 ))
         {
             scoreName = readString( buf );
             if ( action != 1 )
@@ -52,7 +52,7 @@ public class ScoreboardScore extends DefinedPacket
     {
         writeString( itemName, buf );
         buf.writeByte( action );
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8 ))
+        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0 ))
         {
             writeString( scoreName, buf );
             if ( action != 1 )

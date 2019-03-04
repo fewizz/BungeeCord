@@ -465,7 +465,7 @@ public final class UserConnection implements ProxiedPlayer
         message = ChatComponentTransformer.getInstance().transform( this, message );
 
         // Action bar doesn't display the new JSON formattings, legacy works - send it using this for now
-        if ( position == ChatMessageType.ACTION_BAR && pendingConnection.getVersion().newerOrEqual(ProtocolVersion.MC_1_8) )
+        if ( position == ChatMessageType.ACTION_BAR && pendingConnection.getVersion().newerOrEqual(ProtocolVersion.MC_1_8_0) )
         {
             sendMessage( position, ComponentSerializer.toString( new TextComponent( BaseComponent.toLegacyText( message ) ) ) );
         } else
@@ -480,7 +480,7 @@ public final class UserConnection implements ProxiedPlayer
         message = ChatComponentTransformer.getInstance().transform( this, message )[0];
 
         // Action bar doesn't display the new JSON formattings, legacy works - send it using this for now
-        if ( position == ChatMessageType.ACTION_BAR && pendingConnection.getVersion().newerOrEqual(ProtocolVersion.MC_1_8) )
+        if ( position == ChatMessageType.ACTION_BAR && pendingConnection.getVersion().newerOrEqual(ProtocolVersion.MC_1_8_0) )
         {
             sendMessage( position, ComponentSerializer.toString( new TextComponent( BaseComponent.toLegacyText( message ) ) ) );
         } else
@@ -659,7 +659,7 @@ public final class UserConnection implements ProxiedPlayer
     @Override
     public void setTabHeader(BaseComponent header, BaseComponent footer)
     {
-        if ( pendingConnection.getVersion().newerOrEqual(ProtocolVersion.MC_1_8) )
+        if ( pendingConnection.getVersion().newerOrEqual(ProtocolVersion.MC_1_8_0) )
         {
             header = ChatComponentTransformer.getInstance().transform( this, header )[0];
             footer = ChatComponentTransformer.getInstance().transform( this, footer )[0];
@@ -674,7 +674,7 @@ public final class UserConnection implements ProxiedPlayer
     @Override
     public void setTabHeader(BaseComponent[] header, BaseComponent[] footer)
     {
-        if ( pendingConnection.getVersion().newerOrEqual(ProtocolVersion.MC_1_8) )
+        if ( pendingConnection.getVersion().newerOrEqual(ProtocolVersion.MC_1_8_0) )
         {
             header = ChatComponentTransformer.getInstance().transform( this, header );
             footer = ChatComponentTransformer.getInstance().transform( this, footer );
@@ -706,7 +706,7 @@ public final class UserConnection implements ProxiedPlayer
 
     public void setCompressionThreshold(int compressionThreshold)
     {
-        if ( !ch.isClosing() && this.compressionThreshold == -1 && getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_8) && compressionThreshold >= 0 )
+        if ( !ch.isClosing() && this.compressionThreshold == -1 && getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_8_0) && compressionThreshold >= 0 )
         {
             this.compressionThreshold = compressionThreshold;
             unsafe.sendPacket( new SetCompression( compressionThreshold ) );

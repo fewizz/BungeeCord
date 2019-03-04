@@ -152,7 +152,7 @@ public class BungeeTitle implements Title
     @Override
     public Title send(ProxiedPlayer player)
     {
-        if ( player.getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_8 ))
+        if ( player.getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_8_0 ))
         {
             sendPacket( player, clear );
             sendPacket( player, reset );

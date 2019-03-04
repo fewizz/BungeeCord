@@ -261,14 +261,23 @@ public abstract class DefinedPacket
     
     
     public static String readLegacyString(ByteBuf buf) {
-    	short len = buf.readShort();
+    	int len = buf.readUnsignedShort();
     	char[] arr = new char[len];
     	for(int i = 0; i < len; i++)
     		arr[i]=buf.readChar();
     	return new String(arr);
     }
     
+    public static void writeLegacyString(String str, ByteBuf buf) {
+    	buf.writeShort(str.length());
+    	writeCharArray(str.toCharArray(), buf);
+    }
+    
     public static void skipLegacyString(ByteBuf buf) {
     	buf.skipBytes(buf.readShort());
+    }
+    
+    public static void writeCharArray(char[] arr, ByteBuf buf) {
+    	for(int i = 0; i < arr.length; i++) buf.writeChar(arr[i]);
     }
 }

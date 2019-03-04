@@ -23,7 +23,7 @@ public class EncryptionResponse extends DefinedPacket
     @Override
     public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8) )
+        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8_0) )
         {
             sharedSecret = readArrayLegacy( buf );
             verifyToken = readArrayLegacy( buf );
@@ -37,7 +37,7 @@ public class EncryptionResponse extends DefinedPacket
     @Override
     public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8) )
+        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8_0) )
         {
             writeArrayLegacy( sharedSecret, buf, false );
             writeArrayLegacy( verifyToken, buf, false );

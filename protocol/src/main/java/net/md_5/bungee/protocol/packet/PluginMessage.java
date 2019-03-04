@@ -73,13 +73,13 @@ public class PluginMessage extends DefinedPacket
     @Override
     public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8) )
+        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8_0) )
         {
         	tag = readString( buf );
             data = readArrayLegacy( buf );
         } else
         {
-        	tag = ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13 )) ? MODERNISE.apply( readString( buf ) ) : readString( buf );
+        	tag = ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13_0 )) ? MODERNISE.apply( readString( buf ) ) : readString( buf );
             int maxSize = direction == Direction.TO_SERVER ? Short.MAX_VALUE : 0x100000;
             Preconditions.checkArgument( buf.readableBytes() < maxSize );
             data = new byte[ buf.readableBytes() ];
@@ -90,13 +90,13 @@ public class PluginMessage extends DefinedPacket
     @Override
     public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8 ))
+        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8_0 ))
         {
         	writeString( tag, buf );
             writeArrayLegacy( data, buf, allowExtendedPacket );
         } else
         {
-        	writeString( ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13 )) ? MODERNISE.apply( tag ) : tag, buf );
+        	writeString( ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13_0 )) ? MODERNISE.apply( tag ) : tag, buf );
             buf.writeBytes( data );
         }
     }

@@ -25,7 +25,7 @@ public class KeepAlive extends DefinedPacket
         if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_12_2 ))
         {
             randomId = buf.readLong();
-        } else if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8 ))
+        } else if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0 ))
         {
             randomId = readVarInt( buf );
         } else
@@ -40,7 +40,7 @@ public class KeepAlive extends DefinedPacket
         if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_12_2 ))
         {
             buf.writeLong( randomId );
-        } else if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8 ))
+        } else if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0 ))
         {
             writeVarInt( (int) randomId, buf );
         } else

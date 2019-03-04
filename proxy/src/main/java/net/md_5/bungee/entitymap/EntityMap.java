@@ -36,25 +36,25 @@ public abstract class EntityMap
                 return EntityMap_1_7_2.INSTANCE;
             case MC_1_7_6:
                 return EntityMap_1_7_6.INSTANCE;
-            case MC_1_8:
+            case MC_1_8_0:
                 return EntityMap_1_8.INSTANCE;
-            case MC_1_9:
+            case MC_1_9_0:
             case MC_1_9_1:
             case MC_1_9_2:
                 return EntityMap_1_9.INSTANCE;
             case MC_1_9_4:
                 return EntityMap_1_9_4.INSTANCE;
-            case MC_1_10:
+            case MC_1_10_0:
                 return EntityMap_1_10.INSTANCE;
-            case MC_1_11:
+            case MC_1_11_0:
             case MC_1_11_1:
                 return EntityMap_1_11.INSTANCE;
-            case MC_1_12:
+            case MC_1_12_0:
                 return EntityMap_1_12.INSTANCE;
             case MC_1_12_1:
             case MC_1_12_2:
                 return EntityMap_1_12_1.INSTANCE;
-            case MC_1_13:
+            case MC_1_13_0:
             case MC_1_13_1:
             case MC_1_13_2:
                 return EntityMap_1_13.INSTANCE;
@@ -144,7 +144,7 @@ public abstract class EntityMap
         while ( ( index = packet.readUnsignedByte() ) != 0xFF )
         {
             int type = DefinedPacket.readVarInt( packet );
-            if ( protocolVersion != null && protocolVersion.newerOrEqual(MC_1_13) )
+            if ( protocolVersion != null && protocolVersion.newerOrEqual(MC_1_13_0) )
             {
                 switch ( type )
                 {
@@ -255,7 +255,7 @@ public abstract class EntityMap
             {
                 DefinedPacket.readVarInt( packet );
             }
-            packet.skipBytes( ( protocolVersion.newerOrEqual(MC_1_13) ) ? 1 : 3 ); // byte vs byte, short
+            packet.skipBytes( ( protocolVersion.newerOrEqual(MC_1_13_0) ) ? 1 : 3 ); // byte vs byte, short
 
             int position = packet.readerIndex();
             if ( packet.readByte() != 0 )

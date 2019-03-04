@@ -239,9 +239,9 @@ public class DownstreamBridge extends PacketHandler
             throw CancelSendSignal.INSTANCE;
         }
 
-        if ( pluginMessage.getTag().equals( con.getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_13) ? "minecraft:brand" : "MC|Brand" ) )
+        if ( pluginMessage.getTag().equals( con.getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_13_0) ? "minecraft:brand" : "MC|Brand" ) )
         {
-            if (con.getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_8))
+            if (con.getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_8_0))
             {
                 ByteBuf brand = Unpooled.wrappedBuffer(pluginMessage.getData());
                 String serverBrand = DefinedPacket.readString(brand);

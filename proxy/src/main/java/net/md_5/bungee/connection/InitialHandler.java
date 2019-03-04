@@ -49,6 +49,7 @@ import net.md_5.bungee.netty.cipher.CipherEncoder;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
+import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.ProtocolVersion;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.protocol.packet.EncryptionResponse;
@@ -59,8 +60,10 @@ import net.md_5.bungee.protocol.packet.LoginRequest;
 import net.md_5.bungee.protocol.packet.LoginSuccess;
 import net.md_5.bungee.protocol.packet.PingPacket;
 import net.md_5.bungee.protocol.packet.PluginMessage;
+import net.md_5.bungee.protocol.packet.StatusRequestOld;
 import net.md_5.bungee.protocol.packet.StatusRequest;
 import net.md_5.bungee.protocol.packet.StatusResponse;
+import net.md_5.bungee.protocol.packet.StatusResponseOld;
 import net.md_5.bungee.util.BoundedArrayList;
 import net.md_5.bungee.util.BufUtil;
 import net.md_5.bungee.util.QuietException;
@@ -642,5 +645,20 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     public boolean isConnected()
     {
         return !ch.isClosed();
+    }
+    
+    @Override
+    public void handle(StatusRequestOld request) throws Exception {
+        //ServerInfo forced = AbstractReconnectHandler.getForcedHost( this );
+
+    	StatusResponseOld old = new StatusResponseOld();
+    	old.setMcVersion(ProtocolVersion.getByNumber(request.getProtocolVer(), ProtocolGen.PRE_NETTY).mcVersion);
+    	old.setMotd("Fuck");
+    	old.setPlayers(0);//forced.getPlayers().size());
+    	old.setProtocolVersion(request.getProtocolVer());
+    	old.setMax(1);
+    	
+    	unsafe.sendPacket(old);
+    	ch.close();
     }
 }

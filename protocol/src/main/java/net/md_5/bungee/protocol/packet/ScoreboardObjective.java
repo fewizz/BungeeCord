@@ -36,10 +36,10 @@ public class ScoreboardObjective extends DefinedPacket
             value = readString( buf );
         }
         action = buf.readByte();
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8) && ( action == 0 || action == 2 ) )
+        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0) && ( action == 0 || action == 2 ) )
         {
             value = readString( buf );
-            if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13 ))
+            if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13_0 ))
             {
                 type = HealthDisplay.values()[readVarInt( buf )];
             } else
@@ -58,10 +58,10 @@ public class ScoreboardObjective extends DefinedPacket
             writeString( value, buf );
         }
         buf.writeByte( action );
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8 ) && ( action == 0 || action == 2 ) )
+        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0 ) && ( action == 0 || action == 2 ) )
         {
             writeString( value, buf );
-            if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13 ))
+            if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13_0 ))
             {
                 writeVarInt( type.ordinal(), buf );
             } else

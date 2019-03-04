@@ -42,7 +42,7 @@ public class TabCompleteResponse extends DefinedPacket
     @Override
     public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13 ))
+        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13_0 ))
         {
             transactionId = readVarInt( buf );
             int start = readVarInt( buf );
@@ -62,7 +62,7 @@ public class TabCompleteResponse extends DefinedPacket
             suggestions = new Suggestions( range, matches );
         }
 
-        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_13 ))
+        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_13_0 ))
         {
             commands = readStringArray( buf );
         }
@@ -71,7 +71,7 @@ public class TabCompleteResponse extends DefinedPacket
     @Override
     public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13 ))
+        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13_0 ))
         {
             writeVarInt( transactionId, buf );
             writeVarInt( suggestions.getRange().getStart(), buf );
@@ -89,7 +89,7 @@ public class TabCompleteResponse extends DefinedPacket
             }
         }
 
-        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_13 ))
+        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_13_0 ))
         {
             writeStringArray( commands, buf );
         }

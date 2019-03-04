@@ -30,14 +30,14 @@ public class ClientSettings extends DefinedPacket
     {
         locale = readString( buf );
         viewDistance = buf.readByte();
-        chatFlags = protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9) ? DefinedPacket.readVarInt( buf ) : buf.readUnsignedByte();
+        chatFlags = protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9_0) ? DefinedPacket.readVarInt( buf ) : buf.readUnsignedByte();
         chatColours = buf.readBoolean();
         if ( protocolVersion.olderOrEqual(ProtocolVersion.MC_1_7_6 ))
         {
             difficulty = buf.readByte();
         }
         skinParts = buf.readByte();
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9 ))
+        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9_0 ))
         {
             mainHand = DefinedPacket.readVarInt( buf );
         }
@@ -48,7 +48,7 @@ public class ClientSettings extends DefinedPacket
     {
         writeString( locale, buf );
         buf.writeByte( viewDistance );
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9 ))
+        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9_0 ))
         {
             DefinedPacket.writeVarInt( chatFlags, buf );
         } else
@@ -61,7 +61,7 @@ public class ClientSettings extends DefinedPacket
             buf.writeByte( difficulty );
         }
         buf.writeByte( skinParts );
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9) )
+        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9_0) )
         {
             DefinedPacket.writeVarInt( mainHand, buf );
         }
