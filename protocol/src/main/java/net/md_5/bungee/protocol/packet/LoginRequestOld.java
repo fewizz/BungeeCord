@@ -10,32 +10,23 @@ import net.md_5.bungee.protocol.DefinedPacket;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class StatusRequestOld extends DefinedPacket {
-	int payloadID = -1;
-	String branding;
-	int protocolVer = -1;
-	String ip;
-	int port;
+public class LoginRequestOld extends DefinedPacket {
+	int protocolVer;
+	String userName;
+	String host;
+	int port; 
 	
 	@Override
 	public void read(ByteBuf buf) {
-		buf.skipBytes(1);
-		payloadID = buf.readUnsignedByte();
-		branding = readLegacyString(buf, 255);
-		buf.skipBytes(2); //len
 		protocolVer = buf.readUnsignedByte();
-		ip = readLegacyString(buf, 255);
+		userName = readLegacyString(buf, 16);
+		host = readLegacyString(buf, 255);
 		port = buf.readInt();
 	}
-	
-	@Override
-	public void write(ByteBuf buf) {
-		//buf.writeByte(1);
-	}
-	
 	
 	@Override
 	public void handle(AbstractPacketHandler handler) throws Exception {
 		handler.handle(this);
 	}
+
 }

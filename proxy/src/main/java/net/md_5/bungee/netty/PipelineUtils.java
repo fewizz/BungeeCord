@@ -72,6 +72,12 @@ public class PipelineUtils
 					ch.pipeline().get( MinecraftDecoder.class ).setProtocolVersion(pv);
 					ch.pipeline().get( MinecraftEncoder.class ).setProtocolVersion(pv);
 				}
+
+				/*@Override
+				public boolean skip() {
+					InitialHandler i = ch.attr(USER).get().getPendingConnection();
+					return i == null || i.
+				}*/
             });
             ch.pipeline().addAfter( FRAME_DECODER, PACKET_DECODER, new MinecraftDecoder( Protocol.HANDSHAKE, true, ProxyServer.getInstance().getProtocolVersion() ) );
             ch.pipeline().addAfter( FRAME_PREPENDER, PACKET_ENCODER, new MinecraftEncoder( Protocol.HANDSHAKE, true, ProxyServer.getInstance().getProtocolVersion() ) );

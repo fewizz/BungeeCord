@@ -5,6 +5,7 @@ import java.util.List;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import net.md_5.bungee.protocol.packet.LoginRequestOld;
 import net.md_5.bungee.protocol.packet.StatusRequestOld;
 
 public abstract class LegacyDecoder extends ByteToMessageDecoder
@@ -29,8 +30,15 @@ public abstract class LegacyDecoder extends ByteToMessageDecoder
         	in.resetReaderIndex();
         	out.add(in);
         }
-
-        ctx.pipeline().remove( this );
+        if ( packetID == 0x02)
+        {
+        	LoginRequestOld lr = new LoginRequestOld();
+        	lr.read(in);
+        	onLegacy(lr.getProtocolVer());
+        	in.resetReaderIndex();
+        	out.add(in);
+        }
+        ctx.pipeline().remove(this);
     }
     
     public abstract void onLegacy(int protocolVersion);

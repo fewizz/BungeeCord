@@ -95,8 +95,8 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
         {
             PacketWrapper packet = (PacketWrapper) msg;
             boolean sendPacket = handler.shouldHandle( packet );
-            try
-            {
+            //try
+            //{
                 if ( sendPacket && packet.packet != null )
                 {
                     try
@@ -111,10 +111,11 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
                 {
                     handler.handle( packet );
                 }
-            } finally
+            //}
+            /* finally
             {
                 packet.trySingleRelease();
-            }
+            }*/
         }
     }
 

@@ -259,13 +259,11 @@ public abstract class DefinedPacket
     public abstract String toString();
     
     
-    
-    public static String readLegacyString(ByteBuf buf) {
+    public static String readLegacyString(ByteBuf buf, int maxSize) {
     	int len = buf.readUnsignedShort();
-    	char[] arr = new char[len];
-    	for(int i = 0; i < len; i++)
-    		arr[i]=buf.readChar();
-    	return new String(arr);
+    	if(len > maxSize)
+    		throw new OverflowPacketException("Legacy string is too wide");
+    	return new String(readCharArray(buf, len));
     }
     
     public static void writeLegacyString(String str, ByteBuf buf) {
@@ -279,5 +277,24 @@ public abstract class DefinedPacket
     
     public static void writeCharArray(char[] arr, ByteBuf buf) {
     	for(int i = 0; i < arr.length; i++) buf.writeChar(arr[i]);
+    }
+    
+    public static char[] readCharArray(ByteBuf buf, int size) {
+    	char[] arr = new char[size];
+    	for(int i = 0; i < size; i++)
+    		arr[i]=buf.readChar();
+    	return arr;
+    }
+    
+    public static void writeLegacyByteArray(ByteBuf buf, byte[] arr) {
+    	buf.writeShort(arr.length);
+    	buf.writeBytes(arr);
+    }
+    
+    public static byte [] readLegacyByteArray(ByteBuf buf) {
+    	int size = buf.readShort();
+    	byte[] arr = new byte[size];
+    	buf.readBytes(arr);
+    	return arr;
     }
 }

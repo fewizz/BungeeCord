@@ -54,6 +54,7 @@ import net.md_5.bungee.protocol.ProtocolVersion;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.protocol.packet.EncryptionResponse;
 import net.md_5.bungee.protocol.packet.Handshake;
+import net.md_5.bungee.protocol.packet.LoginRequestOld;
 import net.md_5.bungee.protocol.packet.Kick;
 import net.md_5.bungee.protocol.packet.LoginPayloadResponse;
 import net.md_5.bungee.protocol.packet.LoginRequest;
@@ -408,10 +409,13 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         Preconditions.checkState( thisState == State.ENCRYPT, "Not expecting ENCRYPT" );
 
         SecretKey sharedKey = EncryptionUtil.getSecret( encryptResponse, request );
-        BungeeCipher decrypt = EncryptionUtil.getCipher( false, sharedKey );
-        ch.addBefore( PipelineUtils.FRAME_DECODER, PipelineUtils.DECRYPT_HANDLER, new CipherDecoder( decrypt ) );
-        BungeeCipher encrypt = EncryptionUtil.getCipher( true, sharedKey );
-        ch.addBefore( PipelineUtils.FRAME_PREPENDER, PipelineUtils.ENCRYPT_HANDLER, new CipherEncoder( encrypt ) );
+        
+        if(getVersion().newerThan(ProtocolVersion.MC_1_6_4)) {
+        	BungeeCipher decrypt = EncryptionUtil.getCipher( false, sharedKey );
+        	ch.addBefore( PipelineUtils.FRAME_DECODER, PipelineUtils.DECRYPT_HANDLER, new CipherDecoder( decrypt ) );
+        	BungeeCipher encrypt = EncryptionUtil.getCipher( true, sharedKey );
+        	ch.addBefore( PipelineUtils.FRAME_PREPENDER, PipelineUtils.ENCRYPT_HANDLER, new CipherEncoder( encrypt ) );
+        }
 
         String encName = URLEncoder.encode( InitialHandler.this.getName(), "UTF-8" );
 
@@ -648,17 +652,43 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     }
     
     @Override
-    public void handle(StatusRequestOld request) throws Exception {
+    public void handle(final StatusRequestOld request) throws Exception {
+    	Preconditions.checkState( thisState == State.HANDSHAKE, "Not expecting HANDSHAKE" );
         //ServerInfo forced = AbstractReconnectHandler.getForcedHost( this );
+    	ServerInfo forced = AbstractReconnectHandler.getForcedHost( this );
+        final String motd = ( forced != null ) ? forced.getMotd() : listener.getMotd();
 
     	StatusResponseOld old = new StatusResponseOld();
     	old.setMcVersion(ProtocolVersion.getByNumber(request.getProtocolVer(), ProtocolGen.PRE_NETTY).mcVersion);
-    	old.setMotd("Fuck");
-    	old.setPlayers(0);//forced.getPlayers().size());
+    	old.setMotd(motd);
+    	old.setPlayers(bungee.getOnlineCount());//forced.getPlayers().size());
     	old.setProtocolVersion(request.getProtocolVer());
-    	old.setMax(1);
+    	old.setMax(listener.getMaxPlayers());
     	
     	unsafe.sendPacket(old);
     	ch.close();
+    }
+    
+    @Override
+    public void handle(LoginRequestOld handshakeOld) throws Exception {
+    	Preconditions.checkState( thisState == State.HANDSHAKE, "Not expecting NADSHAKE" );
+    	handshake = new Handshake();
+    	handshake.setProtocolVersion(ProtocolVersion.getByNumber(handshakeOld.getProtocolVer(), ProtocolGen.PRE_NETTY));
+    	handshake.setHost(handshakeOld.getHost());
+    	handshake.setPort(handshakeOld.getPort());
+    	
+    	loginRequest = new LoginRequest();
+    	loginRequest.setData(handshakeOld.getUserName());
+    	
+    	thisState = InitialHandler.State.ENCRYPT;
+    	ch.setProtocol(Protocol.LOGIN);
+    	
+    	EncryptionRequest request = EncryptionUtil.encryptRequest();
+    	this.request = request;
+    	
+    	if(!onlineMode) {
+    		request.setServerId("-");
+    	}
+    	unsafe.sendPacket(request);
     }
 }

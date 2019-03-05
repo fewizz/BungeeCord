@@ -23,6 +23,8 @@ import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.protocol.packet.EncryptionResponse;
 import net.md_5.bungee.protocol.packet.EntityStatus;
 import net.md_5.bungee.protocol.packet.Handshake;
+import net.md_5.bungee.protocol.packet.Ignore;
+import net.md_5.bungee.protocol.packet.LoginRequestOld;
 import net.md_5.bungee.protocol.packet.KeepAlive;
 import net.md_5.bungee.protocol.packet.Kick;
 import net.md_5.bungee.protocol.packet.Login;
@@ -67,6 +69,10 @@ public enum Protocol
             TO_CLIENT.registerPacket(
             		StatusResponseOld.class,
             		map( ProtocolVersion.MC_1_6_4, 0xFF)
+            );
+            TO_SERVER.registerPacket(
+            		LoginRequestOld.class,
+            		map( ProtocolVersion.MC_1_6_4, 0x02)
             );
         }
     },
@@ -287,6 +293,14 @@ public enum Protocol
                     map( ProtocolVersion.MC_1_8_0, 0x01 )
             );
             TO_CLIENT.registerPacket(
+                    EncryptionRequest.class,
+                    map( ProtocolVersion.MC_1_6_4, 0xFD )
+            );
+            TO_SERVER.registerPacket(
+            		Ignore.class,
+            		map( ProtocolVersion.MC_1_6_4, 0x02 )
+            );
+            TO_CLIENT.registerPacket(
                     LoginSuccess.class,
                     map( ProtocolVersion.MC_1_8_0, 0x02 )
             );
@@ -306,6 +320,10 @@ public enum Protocol
             TO_SERVER.registerPacket(
                     EncryptionResponse.class,
                     map( ProtocolVersion.MC_1_8_0, 0x01 )
+            );
+            TO_SERVER.registerPacket(
+                    EncryptionResponse.class,
+                    map( ProtocolVersion.MC_1_6_4, 0xFC )
             );
             TO_SERVER.registerPacket(
                     LoginPayloadResponse.class,
