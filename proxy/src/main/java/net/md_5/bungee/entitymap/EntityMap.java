@@ -17,7 +17,6 @@ import static net.md_5.bungee.protocol.ProtocolVersion.*;
 /**
  * Class to rewrite integers within packets.
  */
-@NoArgsConstructor(access = AccessLevel.PACKAGE)
 public abstract class EntityMap
 {
 
@@ -32,6 +31,8 @@ public abstract class EntityMap
     {
         switch ( version )
         {
+        	case MC_1_6_4:
+        		return EntityMap_1_6_4.INSTANCE;
             case MC_1_7_2:
                 return EntityMap_1_7_2.INSTANCE;
             case MC_1_7_6:
@@ -61,7 +62,11 @@ public abstract class EntityMap
         }
         throw new RuntimeException( "Version " + version + " has no entity map" );
     }
-
+    
+    protected void addRewrite(int id, Direction direction) {
+    	addRewrite(id, direction, false);
+    }
+    
     protected void addRewrite(int id, Direction direction, boolean varint)
     {
         if ( direction == Direction.TO_CLIENT )
@@ -82,24 +87,14 @@ public abstract class EntityMap
         }
     }
 
-    public void rewriteServerbound(ByteBuf packet, int oldId, int newId)
+    public void rewriteServerbound(ByteBuf packet, int oldId, int newId, ProtocolVersion pv)
     {
-        rewrite( packet, oldId, newId, serverboundInts, serverboundVarInts );
+        rewrite( packet, oldId, newId, serverboundInts, serverboundVarInts, pv);
     }
 
-    public void rewriteServerbound(ByteBuf packet, int oldId, int newId, ProtocolVersion protocolVersion)
+    public void rewriteClientbound(ByteBuf packet, int oldId, int newId, ProtocolVersion pv)
     {
-        rewriteServerbound( packet, oldId, newId );
-    }
-
-    public void rewriteClientbound(ByteBuf packet, int oldId, int newId)
-    {
-        rewrite( packet, oldId, newId, clientboundInts, clientboundVarInts );
-    }
-
-    public void rewriteClientbound(ByteBuf packet, int oldId, int newId, ProtocolVersion protocolVersion)
-    {
-        rewriteClientbound( packet, oldId, newId );
+        rewrite( packet, oldId, newId, clientboundInts, clientboundVarInts, pv );
     }
 
     protected static void rewriteInt(ByteBuf packet, int oldId, int newId, int offset)
@@ -274,10 +269,10 @@ public abstract class EntityMap
     }
 
     // Handles simple packets
-    private static void rewrite(ByteBuf packet, int oldId, int newId, boolean[] ints, boolean[] varints)
+    private static void rewrite(ByteBuf packet, int oldId, int newId, boolean[] ints, boolean[] varints, ProtocolVersion pv)
     {
         int readerIndex = packet.readerIndex();
-        int packetId = DefinedPacket.readVarInt( packet );
+        int packetId = pv.newerThan(MC_1_6_4) ? DefinedPacket.readVarInt( packet ) : packet.readUnsignedByte();
         int packetIdLength = packet.readerIndex() - readerIndex;
 
         if(packetId>=0) {

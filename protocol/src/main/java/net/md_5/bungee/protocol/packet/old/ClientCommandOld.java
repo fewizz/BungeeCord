@@ -1,6 +1,7 @@
-package net.md_5.bungee.protocol.packet;
+package net.md_5.bungee.protocol.packet.old;
 
 import io.netty.buffer.ByteBuf;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -9,24 +10,25 @@ import net.md_5.bungee.protocol.DefinedPacket;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class LoginRequestOld extends DefinedPacket {
-	int protocolVer;
-	String userName;
-	String host;
-	int port; 
+public class ClientCommandOld extends DefinedPacket {
+	public int command;
+
+	@Override
+	public void write(ByteBuf buf) {
+		buf.writeByte(command & 0xFF);
+	}
 	
 	@Override
 	public void read(ByteBuf buf) {
-		protocolVer = buf.readUnsignedByte();
-		userName = readLegacyString(buf, 16);
-		host = readLegacyString(buf, 255);
-		port = buf.readInt();
+		command = buf.readByte();
 	}
 	
 	@Override
 	public void handle(AbstractPacketHandler handler) throws Exception {
 		handler.handle(this);
 	}
-
+	
+	
 }

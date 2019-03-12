@@ -9,7 +9,6 @@ import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.protocol.packet.EncryptionResponse;
 import net.md_5.bungee.protocol.packet.EntityStatus;
 import net.md_5.bungee.protocol.packet.Handshake;
-import net.md_5.bungee.protocol.packet.LoginRequestOld;
 import net.md_5.bungee.protocol.packet.KeepAlive;
 import net.md_5.bungee.protocol.packet.Kick;
 import net.md_5.bungee.protocol.packet.Login;
@@ -26,13 +25,16 @@ import net.md_5.bungee.protocol.packet.ScoreboardDisplay;
 import net.md_5.bungee.protocol.packet.ScoreboardObjective;
 import net.md_5.bungee.protocol.packet.ScoreboardScore;
 import net.md_5.bungee.protocol.packet.SetCompression;
-import net.md_5.bungee.protocol.packet.StatusRequestOld;
 import net.md_5.bungee.protocol.packet.StatusRequest;
 import net.md_5.bungee.protocol.packet.StatusResponse;
 import net.md_5.bungee.protocol.packet.TabCompleteRequest;
 import net.md_5.bungee.protocol.packet.TabCompleteResponse;
 import net.md_5.bungee.protocol.packet.Team;
 import net.md_5.bungee.protocol.packet.Title;
+import net.md_5.bungee.protocol.packet.old.ClientCommandOld;
+import net.md_5.bungee.protocol.packet.old.LoginOld;
+import net.md_5.bungee.protocol.packet.old.LoginRequestOld;
+import net.md_5.bungee.protocol.packet.old.StatusRequestOld;
 
 public abstract class AbstractPacketHandler
 {
@@ -165,5 +167,11 @@ public abstract class AbstractPacketHandler
     }
 
 	public void handle(LoginRequestOld handshakeOld) throws Exception {
+	}
+
+	public void handle(ClientCommandOld clientCommandOld) throws Exception {
+	}
+
+	public void handle(LoginOld loginOld) {
 	}
 }

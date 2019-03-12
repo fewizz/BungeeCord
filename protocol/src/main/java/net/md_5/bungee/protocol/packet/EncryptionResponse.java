@@ -4,14 +4,12 @@ import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.ProtocolVersion;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class EncryptionResponse extends DefinedPacket
@@ -19,6 +17,11 @@ public class EncryptionResponse extends DefinedPacket
 
     private byte[] sharedSecret;
     private byte[] verifyToken;
+    
+    public EncryptionResponse() {
+    	sharedSecret = new byte[0];
+    	verifyToken = new byte[0];
+    }
 
     @Override
     public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)

@@ -1,10 +1,12 @@
 package net.md_5.bungee;
 
+import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
@@ -89,4 +91,31 @@ public class EncryptionUtil
         hasher.init( Cipher.ENCRYPT_MODE, key );
         return hasher.doFinal( b );
     }
+    
+    public static byte[] method_15240(String string_1, PublicKey publicKey_1, SecretKey secretKey_1) {
+        try {
+           return hash("SHA-1", string_1.getBytes("ISO_8859_1"), secretKey_1.getEncoded(), publicKey_1.getEncoded());
+        } catch (UnsupportedEncodingException var4) {
+           var4.printStackTrace();
+           return null;
+        }
+     }
+
+     private static byte[] hash(String string_1, byte[]... bytes_1) {
+        try {
+           MessageDigest messageDigest_1 = MessageDigest.getInstance(string_1);
+           byte[][] var3 = bytes_1;
+           int var4 = bytes_1.length;
+
+           for(int var5 = 0; var5 < var4; ++var5) {
+              byte[] bytes_2 = var3[var5];
+              messageDigest_1.update(bytes_2);
+           }
+
+           return messageDigest_1.digest();
+        } catch (NoSuchAlgorithmException var7) {
+           var7.printStackTrace();
+           return null;
+        }
+     }
 }

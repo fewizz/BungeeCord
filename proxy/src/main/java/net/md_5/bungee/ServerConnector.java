@@ -1,10 +1,14 @@
 package net.md_5.bungee;
 
+import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
+
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 
 import com.google.common.base.Preconditions;
 
@@ -30,15 +34,20 @@ import net.md_5.bungee.connection.LoginResult;
 import net.md_5.bungee.forge.ForgeConstants;
 import net.md_5.bungee.forge.ForgeServerHandler;
 import net.md_5.bungee.forge.ForgeUtils;
+import net.md_5.bungee.jni.cipher.BungeeCipher;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.PacketHandler;
+import net.md_5.bungee.netty.PipelineUtils;
+import net.md_5.bungee.netty.cipher.CipherDecoder;
+import net.md_5.bungee.netty.cipher.CipherEncoder;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.MinecraftOutput;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolVersion;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
+import net.md_5.bungee.protocol.packet.EncryptionResponse;
 import net.md_5.bungee.protocol.packet.EntityStatus;
 import net.md_5.bungee.protocol.packet.Handshake;
 import net.md_5.bungee.protocol.packet.Kick;
@@ -50,6 +59,9 @@ import net.md_5.bungee.protocol.packet.Respawn;
 import net.md_5.bungee.protocol.packet.ScoreboardObjective;
 import net.md_5.bungee.protocol.packet.ScoreboardScore;
 import net.md_5.bungee.protocol.packet.SetCompression;
+import net.md_5.bungee.protocol.packet.old.ClientCommandOld;
+import net.md_5.bungee.protocol.packet.old.LoginOld;
+import net.md_5.bungee.protocol.packet.old.LoginRequestOld;
 import net.md_5.bungee.util.BufUtil;
 import net.md_5.bungee.util.QuietException;
 
@@ -67,9 +79,10 @@ public class ServerConnector extends PacketHandler
     private ForgeServerHandler     handshakeHandler;
     private boolean                obsolete;
     
+    private SecretKey secret;
+    
     private enum State
-    {
-        
+    {  
         LOGIN_SUCCESS,
         ENCRYPT_RESPONSE,
         LOGIN,
@@ -134,11 +147,21 @@ public class ServerConnector extends PacketHandler
             // Restore the extra data
             copiedHandshake.setHost( copiedHandshake.getHost() + user.getExtraDataInHandshake() );
         }
-
-        channel.write( copiedHandshake );
-
-        channel.setProtocol( Protocol.LOGIN );
-        channel.write( new LoginRequest( user.getName() ) );
+        
+        if(originalHandshake.getProtocolVersion().newerThan(ProtocolVersion.MC_1_6_4)) {
+        	channel.write( copiedHandshake );
+        	channel.setProtocol( Protocol.LOGIN );
+        	channel.write( new LoginRequest( user.getName() ) );
+        }
+        else {
+        	LoginRequestOld lr = new LoginRequestOld();
+        	lr.setHost(copiedHandshake.getHost());
+        	lr.setPort(copiedHandshake.getPort());
+        	lr.setProtocolVer(copiedHandshake.getProtocolVersion().version);
+        	lr.setUserName(user.getName());
+        	channel.write(lr);
+        	channel.setProtocol( Protocol.LOGIN );
+        }
     }
     
     @Override
@@ -328,9 +351,57 @@ public class ServerConnector extends PacketHandler
     }
     
     @Override
+    public void handle(LoginOld loginOld) {
+    	ServerConnection server = new ServerConnection( ch, target );
+    	
+    	user.setClientEntityId( loginOld.getEntityId() );
+        user.setServerEntityId( loginOld.getEntityId() );
+        user.setDimension( loginOld.getDimension() );
+        
+        ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new DownstreamBridge(bungee, user, server));
+        user.unsafe().sendPacket(loginOld);
+    	target.addPlayer(user);
+        user.getPendingConnects().remove(target);
+        user.setServerJoinQueue(null);
+        user.setDimensionChange(false);
+        
+        user.setServer(server);
+        
+        bungee.getPluginManager().callEvent(new ServerSwitchEvent(user));
+        
+        thisState = State.FINISHED;
+        
+        throw CancelSendSignal.INSTANCE;
+    }
+    
+    @Override
     public void handle(EncryptionRequest encryptionRequest) throws Exception
     {
-        throw new QuietException( "Server is online mode!" );
+    	if(user.getPendingConnection().getVersion().newerThan(ProtocolVersion.MC_1_6_4))
+    		throw new QuietException( "Server is online mode!" );
+        PublicKey pub = EncryptionUtil.getPubkey(encryptionRequest);
+        KeyGenerator kg = KeyGenerator.getInstance("AES");
+        kg.init(128);
+        secret = kg.generateKey();
+        EncryptionResponse er = new EncryptionResponse();
+        er.setSharedSecret(EncryptionUtil.encrypt(pub, secret.getEncoded()));
+        er.setVerifyToken(EncryptionUtil.encrypt(pub, encryptionRequest.getVerifyToken()));
+        ch.write(er);
+    	
+    	BungeeCipher encrypt = EncryptionUtil.getCipher( true, secret );
+    	ch.addBefore( PipelineUtils.PACKET_ENCODER, PipelineUtils.ENCRYPT_HANDLER, new CipherEncoder( encrypt ) );
+    	throw CancelSendSignal.INSTANCE;
+    }
+    
+    @Override
+    public void handle(EncryptionResponse encryptionResponse) throws Exception {
+    	BungeeCipher encrypt = EncryptionUtil.getCipher( false, secret);
+    	ch.addBefore( PipelineUtils.PACKET_DECODER, PipelineUtils.DECRYPT_HANDLER, new CipherDecoder( encrypt ) );
+    	
+    	ch.setProtocol(Protocol.GAME);
+    	ch.write(new ClientCommandOld(0));
+        thisState = State.LOGIN;
+        throw CancelSendSignal.INSTANCE;
     }
     
     @Override

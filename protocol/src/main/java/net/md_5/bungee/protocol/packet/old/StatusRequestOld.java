@@ -1,4 +1,4 @@
-package net.md_5.bungee.protocol.packet;
+package net.md_5.bungee.protocol.packet.old;
 
 import io.netty.buffer.ByteBuf;
 import lombok.Data;
@@ -30,7 +30,13 @@ public class StatusRequestOld extends DefinedPacket {
 	
 	@Override
 	public void write(ByteBuf buf) {
-		//buf.writeByte(1);
+		buf.writeByte(1);
+		buf.writeByte(payloadID);
+		writeLegacyString(branding, buf);
+		buf.writeShort(-1);
+		buf.writeByte(protocolVer);
+		writeLegacyString(ip, buf);
+		buf.writeInt(port);
 	}
 	
 	

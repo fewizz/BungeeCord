@@ -29,6 +29,7 @@ public class EncryptionRequest extends DefinedPacket
         	serverId = readLegacyString(buf, 20);
         	publicKey = readLegacyByteArray(buf);
         	verifyToken = readLegacyByteArray(buf);
+        	return;
         }
         
         serverId = readString( buf );

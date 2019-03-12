@@ -5,8 +5,8 @@ import java.util.List;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import net.md_5.bungee.protocol.packet.LoginRequestOld;
-import net.md_5.bungee.protocol.packet.StatusRequestOld;
+import net.md_5.bungee.protocol.packet.old.LoginRequestOld;
+import net.md_5.bungee.protocol.packet.old.StatusRequestOld;
 
 public abstract class LegacyDecoder extends ByteToMessageDecoder
 {

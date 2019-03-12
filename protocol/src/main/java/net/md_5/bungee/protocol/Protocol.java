@@ -24,7 +24,6 @@ import net.md_5.bungee.protocol.packet.EncryptionResponse;
 import net.md_5.bungee.protocol.packet.EntityStatus;
 import net.md_5.bungee.protocol.packet.Handshake;
 import net.md_5.bungee.protocol.packet.Ignore;
-import net.md_5.bungee.protocol.packet.LoginRequestOld;
 import net.md_5.bungee.protocol.packet.KeepAlive;
 import net.md_5.bungee.protocol.packet.Kick;
 import net.md_5.bungee.protocol.packet.Login;
@@ -42,13 +41,16 @@ import net.md_5.bungee.protocol.packet.ScoreboardObjective;
 import net.md_5.bungee.protocol.packet.ScoreboardScore;
 import net.md_5.bungee.protocol.packet.SetCompression;
 import net.md_5.bungee.protocol.packet.StatusRequest;
-import net.md_5.bungee.protocol.packet.StatusRequestOld;
 import net.md_5.bungee.protocol.packet.StatusResponse;
-import net.md_5.bungee.protocol.packet.StatusResponseOld;
 import net.md_5.bungee.protocol.packet.TabCompleteRequest;
 import net.md_5.bungee.protocol.packet.TabCompleteResponse;
 import net.md_5.bungee.protocol.packet.Team;
 import net.md_5.bungee.protocol.packet.Title;
+import net.md_5.bungee.protocol.packet.old.ClientCommandOld;
+import net.md_5.bungee.protocol.packet.old.LoginOld;
+import net.md_5.bungee.protocol.packet.old.LoginRequestOld;
+import net.md_5.bungee.protocol.packet.old.StatusRequestOld;
+import net.md_5.bungee.protocol.packet.old.StatusResponseOld;
 
 public enum Protocol
 {
@@ -95,6 +97,10 @@ public enum Protocol
                     map( ProtocolVersion.MC_1_12_0, 0x23 ),
                     map( ProtocolVersion.MC_1_13_0, 0x25 )
             );
+            TO_CLIENT.registerPacket(
+            		LoginOld.class,
+            		map( ProtocolVersion.MC_1_6_4, 0x1 )
+    		);
             TO_CLIENT.registerPacket(
                     Chat.class,
                     map( ProtocolVersion.MC_1_8_0, 0x02 ),
@@ -165,6 +171,7 @@ public enum Protocol
             );
             TO_CLIENT.registerPacket(
                     PluginMessage.class,
+                    map( ProtocolVersion.MC_1_6_4, 0xFA),
                     map( ProtocolVersion.MC_1_8_0, 0x3F ),
                     map( ProtocolVersion.MC_1_9_0, 0x18 ),
                     map( ProtocolVersion.MC_1_12_0, 0x18 ),
@@ -248,11 +255,16 @@ public enum Protocol
             );
             TO_SERVER.registerPacket(
                     PluginMessage.class,
+                    map( ProtocolVersion.MC_1_6_4, 0xFA ),
                     map( ProtocolVersion.MC_1_8_0, 0x17 ),
                     map( ProtocolVersion.MC_1_9_0, 0x09 ),
                     map( ProtocolVersion.MC_1_12_0, 0x0A ),
                     map( ProtocolVersion.MC_1_12_1, 0x09 ),
                     map( ProtocolVersion.MC_1_13_0, 0x0A )
+            );
+            TO_SERVER.registerPacket(
+            		ClientCommandOld.class,
+            		map( ProtocolVersion.MC_1_6_4, 0xCD )
             );
         }
     },
@@ -286,6 +298,7 @@ public enum Protocol
         {
             TO_CLIENT.registerPacket(
                     Kick.class,
+                    map( ProtocolVersion.MC_1_6_4, 0xFF ),
                     map( ProtocolVersion.MC_1_8_0, 0x00 )
             );
             TO_CLIENT.registerPacket(
@@ -325,9 +338,17 @@ public enum Protocol
                     EncryptionResponse.class,
                     map( ProtocolVersion.MC_1_6_4, 0xFC )
             );
+            TO_CLIENT.registerPacket(
+                    EncryptionResponse.class,
+                    map( ProtocolVersion.MC_1_6_4, 0xFC )
+            );
             TO_SERVER.registerPacket(
                     LoginPayloadResponse.class,
                     map( ProtocolVersion.MC_1_13_0, 0x02 )
+            );
+            TO_SERVER.registerPacket(
+            		ClientCommandOld.class,
+            		map( ProtocolVersion.MC_1_6_4, 0xCD )
             );
         }
     };

@@ -54,17 +54,18 @@ import net.md_5.bungee.protocol.ProtocolVersion;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.protocol.packet.EncryptionResponse;
 import net.md_5.bungee.protocol.packet.Handshake;
-import net.md_5.bungee.protocol.packet.LoginRequestOld;
 import net.md_5.bungee.protocol.packet.Kick;
 import net.md_5.bungee.protocol.packet.LoginPayloadResponse;
 import net.md_5.bungee.protocol.packet.LoginRequest;
 import net.md_5.bungee.protocol.packet.LoginSuccess;
 import net.md_5.bungee.protocol.packet.PingPacket;
 import net.md_5.bungee.protocol.packet.PluginMessage;
-import net.md_5.bungee.protocol.packet.StatusRequestOld;
 import net.md_5.bungee.protocol.packet.StatusRequest;
 import net.md_5.bungee.protocol.packet.StatusResponse;
-import net.md_5.bungee.protocol.packet.StatusResponseOld;
+import net.md_5.bungee.protocol.packet.old.ClientCommandOld;
+import net.md_5.bungee.protocol.packet.old.LoginRequestOld;
+import net.md_5.bungee.protocol.packet.old.StatusRequestOld;
+import net.md_5.bungee.protocol.packet.old.StatusResponseOld;
 import net.md_5.bungee.util.BoundedArrayList;
 import net.md_5.bungee.util.BufUtil;
 import net.md_5.bungee.util.QuietException;
@@ -403,9 +404,11 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         bungee.getPluginManager().callEvent( new PreLoginEvent( InitialHandler.this, callback ) );
     }
 
+    EncryptionResponse encryptResponse;
     @Override
     public void handle(final EncryptionResponse encryptResponse) throws Exception
     {
+    	this.encryptResponse = encryptResponse;
         Preconditions.checkState( thisState == State.ENCRYPT, "Not expecting ENCRYPT" );
 
         SecretKey sharedKey = EncryptionUtil.getSecret( encryptResponse, request );
@@ -415,9 +418,22 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         	ch.addBefore( PipelineUtils.FRAME_DECODER, PipelineUtils.DECRYPT_HANDLER, new CipherDecoder( decrypt ) );
         	BungeeCipher encrypt = EncryptionUtil.getCipher( true, sharedKey );
         	ch.addBefore( PipelineUtils.FRAME_PREPENDER, PipelineUtils.ENCRYPT_HANDLER, new CipherEncoder( encrypt ) );
+        	
+        	checkAuth(sharedKey);
+        	ch.write(new EncryptionResponse());
         }
-
-        String encName = URLEncoder.encode( InitialHandler.this.getName(), "UTF-8" );
+        else {
+        	ch.write(new EncryptionResponse());
+        	
+        	BungeeCipher decrypt = EncryptionUtil.getCipher( false, sharedKey );
+        	ch.addBefore( PipelineUtils.PACKET_DECODER, PipelineUtils.DECRYPT_HANDLER, new CipherDecoder( decrypt ) );
+        	BungeeCipher encrypt = EncryptionUtil.getCipher( true, sharedKey );
+        	ch.addBefore( PipelineUtils.PACKET_ENCODER, PipelineUtils.ENCRYPT_HANDLER, new CipherEncoder( encrypt ) );
+        }
+    }
+    
+    private void checkAuth(SecretKey sharedKey) throws Exception {
+    	String encName = URLEncoder.encode( InitialHandler.this.getName(), "UTF-8" );
 
         MessageDigest sha = MessageDigest.getInstance( "SHA-1" );
         for ( byte[] bit : new byte[][]
@@ -456,8 +472,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
                 }
             }
         };
-
-        HttpClient.get( authURL, ch.getHandle().eventLoop(), handler );
+    	HttpClient.get( authURL, ch.getHandle().eventLoop(), handler );
     }
 
     private void finish()
@@ -523,8 +538,11 @@ public class InitialHandler extends PacketHandler implements PendingConnection
                             UserConnection userCon = new UserConnection( bungee, ch, getName(), InitialHandler.this );
                             userCon.setCompressionThreshold( BungeeCord.getInstance().config.getCompressionThreshold() );
                             userCon.init();
-
-                            if ( getVersion().newerOrEqual(ProtocolVersion.MC_1_7_6) )
+                            
+                            if( getVersion().olderOrEqual(ProtocolVersion.MC_1_6_4)) {
+                            //	unsafe.sendPacket(new EncryptionResponse()); // Strange name for this, isn't?
+                            }
+                            else if ( getVersion().newerOrEqual(ProtocolVersion.MC_1_7_6) )
                             {
                                 unsafe.sendPacket( new LoginSuccess( getUniqueId().toString(), getName() ) ); // With dashes in between
                             } else
@@ -690,5 +708,20 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     		request.setServerId("-");
     	}
     	unsafe.sendPacket(request);
+    }
+    
+    @Override
+    public void handle(ClientCommandOld clientCommandOld) {
+    	if(clientCommandOld.command != 0)
+    		 return;
+    	
+    	try {
+    		if(onlineMode)
+    			checkAuth(EncryptionUtil.getSecret( encryptResponse, request ));
+    		finish();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return;
+		}
     }
 }
