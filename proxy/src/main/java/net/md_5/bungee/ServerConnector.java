@@ -175,7 +175,12 @@ public class ServerConnector extends PacketHandler
     {
         if ( packet.packet == null )
         {
-            throw new QuietException( "Unexpected packet received during server login process!\n" + BufUtil.dump( packet.buf, 16 ) );
+            throw new QuietException( "Unexpected packet received during server login process!\n"
+            		+ "id: " + packet.id
+            		+ ", dump(16): " + BufUtil.dump( packet.buf, 16 ) 
+            		+ ", state: " + thisState.name()
+            		+ ", protocol: " + ch.getProtocol().name()
+            );
         }
     }
 
@@ -352,20 +357,105 @@ public class ServerConnector extends PacketHandler
     
     @Override
     public void handle(LoginOld loginOld) {
-    	ServerConnection server = new ServerConnection( ch, target );
-    	
-    	user.setClientEntityId( loginOld.getEntityId() );
-        user.setServerEntityId( loginOld.getEntityId() );
-        user.setDimension( loginOld.getDimension() );
+    	Preconditions.checkState( thisState == State.LOGIN, "Not expecting LOGIN" );
+
+        ServerConnection server = new ServerConnection( ch, target );
+        ServerConnectedEvent event = new ServerConnectedEvent( user, server );
+        bungee.getPluginManager().callEvent( event );
+
+        ch.write( BungeeCord.getInstance().registerChannels( user.getPendingConnection().getVersion() ) );
+
+        Queue<DefinedPacket> packetQueue = target.getPacketQueue();
+        synchronized (packetQueue)
+        {
+            while (!packetQueue.isEmpty())
+                ch.write(packetQueue.poll());
+        }
+
+        for ( PluginMessage message : user.getPendingConnection().getRelayMessages() )
+        {
+            ch.write( message );
+        }
+
+        if ( user.getSettings() != null )
+        {
+            ch.write( user.getSettings() );
+        }
+
+        if ( user.getForgeClientHandler().getClientModList() == null && !user.getForgeClientHandler().isHandshakeComplete() ) // Vanilla
+        {
+            user.getForgeClientHandler().setHandshakeComplete();
+        }
         
-        ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new DownstreamBridge(bungee, user, server));
-        user.unsafe().sendPacket(loginOld);
-    	target.addPlayer(user);
+        if (user.getServer() == null)
+        {
+            // Once again, first connection
+            user.setClientEntityId( loginOld.getEntityId() );
+            user.setServerEntityId( loginOld.getEntityId() );
+
+            user.unsafe().sendPacket( loginOld );
+            
+            user.setDimension( loginOld.getDimension() );
+        }
+        else
+        {
+            /*user.getServer().setObsolete(true);
+            user.getTabListHandler().onServerChange();
+            
+            Scoreboard serverScoreboard = user.getServerSentScoreboard();
+            for ( Objective objective : serverScoreboard.getObjectives() )
+            {
+                //user.unsafe().sendPacket( new ScoreboardObjective( objective.getName(), objective.getValue(), ScoreboardObjective.HealthDisplay.fromString( objective.getType() ), (byte) 1 ) );
+                user.unsafe().sendPacket( new ScoreboardObjective( objective.getName(), objective.getValue(), objective.getType() == null ? null : ScoreboardObjective.HealthDisplay.fromString(objective.getType()), (byte) 1 ) ); // Travertine - 1.7
+            }
+            for ( Score score : serverScoreboard.getScores() )
+            {
+                user.unsafe().sendPacket( new ScoreboardScore( score.getItemName(), (byte) 1, score.getScoreName(), score.getValue() ) );
+            }
+            for ( Team team : serverScoreboard.getTeams() )
+                user.unsafe().sendPacket(new net.md_5.bungee.protocol.packet.Team(team.getName()));
+            serverScoreboard.clear();
+            
+            for (UUID bossbar : user.getSentBossBars())
+                // Send remove bossbar packet
+                user.unsafe().sendPacket(new net.md_5.bungee.protocol.packet.BossBar(bossbar, 1));
+            user.getSentBossBars().clear();
+
+            // Update debug info from login packet
+            user.unsafe().sendPacket( new EntityStatus( user.getClientEntityId(), login.isReducedDebugInfo() ? EntityStatus.DEBUG_INFO_REDUCED : EntityStatus.DEBUG_INFO_NORMAL ) );
+
+            user.setDimensionChange( true );
+            if ( login.getDimension() == user.getDimension() )
+            {
+                user.unsafe().sendPacket( new Respawn( ( login.getDimension() >= 0 ? -1 : 0 ), login.getDifficulty(), login.getGameMode(), login.getLevelType() ) );
+            }
+
+            user.setServerEntityId( login.getEntityId() );
+            user.unsafe().sendPacket( new Respawn( login.getDimension(), login.getDifficulty(), login.getGameMode(), login.getLevelType() ) );
+            user.setDimension( login.getDimension() );
+
+            // Remove from old servers
+            user.getServer().disconnect("Quitting");*///TODO
+        }
+        
+        // TODO: Fix this?
+        if (!user.isActive())
+        {
+            server.disconnect("Quitting");
+            // Silly server admins see stack trace and die
+            bungee.getLogger().warning("No client connected for pending server!");
+            return;
+        }
+        
+        // Add to new server
+        // TODO: Move this to the connected() method of DownstreamBridge
+        target.addPlayer(user);
         user.getPendingConnects().remove(target);
         user.setServerJoinQueue(null);
         user.setDimensionChange(false);
         
         user.setServer(server);
+        ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new DownstreamBridge(bungee, user, server));
         
         bungee.getPluginManager().callEvent(new ServerSwitchEvent(user));
         

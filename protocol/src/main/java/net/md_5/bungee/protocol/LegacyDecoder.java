@@ -1,19 +1,17 @@
 package net.md_5.bungee.protocol;
 
-import java.util.List;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import net.md_5.bungee.protocol.packet.old.LoginRequestOld;
 import net.md_5.bungee.protocol.packet.old.StatusRequestOld;
 
-public abstract class LegacyDecoder extends ByteToMessageDecoder
+public abstract class LegacyDecoder extends ChannelInboundHandlerAdapter
 {
 
-    @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception
-    {
+	@Override
+	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+		ByteBuf in = (ByteBuf) msg;
         if ( !in.isReadable() )
         {
             return;
@@ -28,7 +26,7 @@ public abstract class LegacyDecoder extends ByteToMessageDecoder
         	old.read(in);
         	onLegacy(old.getProtocolVer());
         	in.resetReaderIndex();
-        	out.add(in);
+        	ctx.fireChannelRead(in);
         }
         if ( packetID == 0x02)
         {
@@ -36,7 +34,7 @@ public abstract class LegacyDecoder extends ByteToMessageDecoder
         	lr.read(in);
         	onLegacy(lr.getProtocolVer());
         	in.resetReaderIndex();
-        	out.add(in);
+        	ctx.fireChannelRead(in);
         }
         ctx.pipeline().remove(this);
     }

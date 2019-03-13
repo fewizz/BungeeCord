@@ -1,6 +1,7 @@
 package net.md_5.bungee.protocol;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.util.ReferenceCountUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
@@ -10,6 +11,7 @@ public class PacketWrapper
 
     public final DefinedPacket packet;
     public final ByteBuf buf;
+    public final int id;
     @Setter
     private boolean released;
 
@@ -17,7 +19,7 @@ public class PacketWrapper
     {
         if ( !released )
         {
-            buf.release();
+            ReferenceCountUtil.release(buf);
             released = true;
         }
     }
