@@ -8,7 +8,7 @@ import io.netty.handler.codec.MessageToMessageDecoder;
 import lombok.Getter;
 import lombok.Setter;
 
-public class ModernMinecraftPacketDecoder extends MessageToMessageDecoder<ByteBuf> implements PacketDecoder
+public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implements PacketDecoder
 {
     @Setter
     @Getter
@@ -18,7 +18,7 @@ public class ModernMinecraftPacketDecoder extends MessageToMessageDecoder<ByteBu
     @Getter
     private ProtocolVersion protocolVersion;
     
-    public ModernMinecraftPacketDecoder(Direction dir, int pv) {
+    public ModernPacketDecoder(Direction dir, int pv) {
 		this.direction = dir;
 		protocolVersion = ProtocolVersion.getByNumber(pv, ProtocolGen.MODERN);
 	}

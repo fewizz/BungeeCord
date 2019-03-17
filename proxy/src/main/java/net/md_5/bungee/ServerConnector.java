@@ -484,7 +484,7 @@ public class ServerConnector extends PacketHandler
         ch.write(er);
     	
         BungeeCipher encrypt = EncryptionUtil.getCipher( true, secret );
-        ch.addBefore( PipelineUtil.PACKET, PipelineUtil.ENCRYPT, new CipherEncoder( encrypt ) );
+        ch.addBefore( PipelineUtil.PACKET_ENC, PipelineUtil.ENCRYPT, new CipherEncoder( encrypt ) );
     	
         throw CancelSendSignal.INSTANCE;
     }

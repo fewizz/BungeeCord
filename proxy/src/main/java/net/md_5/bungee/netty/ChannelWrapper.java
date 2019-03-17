@@ -11,7 +11,7 @@ import lombok.Getter;
 import lombok.Setter;
 import net.md_5.bungee.compress.PacketCompressor;
 import net.md_5.bungee.compress.PacketDecompressor;
-import net.md_5.bungee.protocol.ModernMinecraftPacketDecoder;
+import net.md_5.bungee.protocol.ModernPacketDecoder;
 import net.md_5.bungee.protocol.PacketDecoder;
 import net.md_5.bungee.protocol.PacketEncoder;
 import net.md_5.bungee.protocol.PacketWrapper;
@@ -40,7 +40,7 @@ public class ChannelWrapper
     public void setProtocol(Protocol protocol)
     {
         ((PacketDecoder)ch.pipeline().get( PipelineUtil.PACKET_DEC)).setProtocol( protocol );
-        ((PacketEncoder)ch.pipeline().get( PipelineUtil.PACKET )).setProtocol( protocol );
+        ((PacketEncoder)ch.pipeline().get( PipelineUtil.PACKET_ENC )).setProtocol( protocol );
     }
     
     public Protocol getProtocol() { return ch.pipeline().get(PacketEncoder.class).getProtocol(); }
@@ -51,7 +51,7 @@ public class ChannelWrapper
     	if(dec.getProtocolVersion().generation != protocol.generation)
     		throw new RuntimeException( "Incompatible decoder generation" );
     	
-    	PacketEncoder enc = (PacketEncoder) ch.pipeline().get(PipelineUtil.PACKET);
+    	PacketEncoder enc = (PacketEncoder) ch.pipeline().get(PipelineUtil.PACKET_ENC);
     	if(enc.getProtocolVersion().generation != protocol.generation)
     		throw new RuntimeException( "Incompatible encoder generation" );
     	
@@ -146,7 +146,7 @@ public class ChannelWrapper
     {
         if ( ch.pipeline().get( PacketCompressor.class ) == null && compressionThreshold != -1 )
         {
-            addBefore( PipelineUtil.PACKET, "compress", new PacketCompressor() );
+            addBefore( PipelineUtil.PACKET_ENC, "compress", new PacketCompressor() );
         }
         if ( compressionThreshold != -1 )
         {

@@ -14,9 +14,9 @@ import net.md_5.bungee.BungeeServerInfo;
 import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.api.config.ListenerInfo;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.LegacyMinecraftPacketDecoder;
+import net.md_5.bungee.protocol.LegacyPacketDecoder;
 import net.md_5.bungee.protocol.PacketEncoder;
-import net.md_5.bungee.protocol.ModernMinecraftPacketDecoder;
+import net.md_5.bungee.protocol.ModernPacketDecoder;
 import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.ProtocolVersion;
 import net.md_5.bungee.protocol.Varint21FrameDecoder;
@@ -37,7 +37,7 @@ public class PipelineUtil {
     	FRAME_DEC = "frame_decoder",
     	PACKET_DEC = "packet_decoder",
     	FRAME_ENC = "frame_encoder",
-    	PACKET = "frame_encoder",
+    	PACKET_ENC = "frame_encoder",
     	TIMEOUT = "timeout",
     	DECRYPT = "decrypt",
     	ENCRYPT = "encrypt";
@@ -47,8 +47,8 @@ public class PipelineUtil {
 		ch.pipeline().addAfter(
 			FRAME_DEC,
 			PACKET_DEC,
-			new ModernMinecraftPacketDecoder(
-				dir,
+			new ModernPacketDecoder(
+				dir.opposite(),
 				protocolVersion
 			)
 		);
@@ -56,7 +56,7 @@ public class PipelineUtil {
 		ch.pipeline().addFirst(FRAME_ENC, new Varint21LengthFieldPrepender());
 		ch.pipeline().addAfter(
 			FRAME_ENC,
-			PACKET,
+			PACKET_ENC,
 			new PacketEncoder(
 				dir,
 				ProtocolVersion.getByNumber(protocolVersion, ProtocolGen.MODERN)
@@ -67,14 +67,14 @@ public class PipelineUtil {
     public static void legacyPacketHandlers(Channel ch, int protocolVersion, Direction dir) {
 		ch.pipeline().addFirst(
 			PACKET_DEC,
-			new LegacyMinecraftPacketDecoder(
-				dir,
+			new LegacyPacketDecoder(
+				dir.opposite(),
 				protocolVersion
 			)
 		);
 		
 		ch.pipeline().addFirst(
-			PACKET,
+			PACKET_ENC,
 			new PacketEncoder(
 				dir,
 				ProtocolVersion.getByNumber(protocolVersion, ProtocolGen.PRE_NETTY)
@@ -90,10 +90,10 @@ public class PipelineUtil {
         ch.config().setAllocator( PooledByteBufAllocator.DEFAULT );
         ch.config().setWriteBufferWaterMark( MARK );
 
-        ch.pipeline().addLast(
-    		TIMEOUT,
-    		new ReadTimeoutHandler( BungeeCord.getInstance().config.getTimeout(), TimeUnit.MILLISECONDS )
-    	);
+        //ch.pipeline().addLast(
+    	//	TIMEOUT,
+    	//	new ReadTimeoutHandler( BungeeCord.getInstance().config.getTimeout(), TimeUnit.MILLISECONDS )
+    	//);
         
     	ch.pipeline().addLast(PipelineUtil.BOSS, new HandlerBoss().setHandler(ph));
     }

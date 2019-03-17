@@ -10,7 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @AllArgsConstructor
-public class LegacyMinecraftPacketDecoder extends ByteToMessageDecoder
+public class LegacyPacketDecoder extends ByteToMessageDecoder
 {
     @Setter
     @Getter
@@ -19,7 +19,7 @@ public class LegacyMinecraftPacketDecoder extends ByteToMessageDecoder
     @Setter
     private ProtocolVersion protocolVersion;
     
-    public LegacyMinecraftPacketDecoder(Direction dir, int pv) {
+    public LegacyPacketDecoder(Direction dir, int pv) {
 		this.direction = dir;
 		protocolVersion = ProtocolVersion.getByNumber(pv, ProtocolGen.PRE_NETTY);
 	}

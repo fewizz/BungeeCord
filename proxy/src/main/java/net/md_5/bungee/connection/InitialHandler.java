@@ -43,7 +43,7 @@ import net.md_5.bungee.jni.cipher.BungeeCipher;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.PacketHandler;
-import net.md_5.bungee.netty.PipelineUtils;
+import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.netty.cipher.CipherDecoder;
 import net.md_5.bungee.netty.cipher.CipherEncoder;
 import net.md_5.bungee.protocol.DefinedPacket;
@@ -362,9 +362,9 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         
         if(getVersion().newerThan(ProtocolVersion.MC_1_6_4)) {
         	BungeeCipher decrypt = EncryptionUtil.getCipher( false, sharedKey );
-        	ch.addBefore( PipelineUtils.FRAME_DECODER, PipelineUtils.DECRYPT_HANDLER, new CipherDecoder( decrypt ) );
+        	ch.addBefore( PipelineUtil.FRAME_DEC, PipelineUtil.DECRYPT, new CipherDecoder( decrypt ) );
         	BungeeCipher encrypt = EncryptionUtil.getCipher( true, sharedKey );
-        	ch.addBefore( PipelineUtils.FRAME_PREPENDER, PipelineUtils.ENCRYPT_HANDLER, new CipherEncoder( encrypt ) );
+        	ch.addBefore( PipelineUtil.FRAME_ENC, PipelineUtil.ENCRYPT, new CipherEncoder( encrypt ) );
         	
         	checkAuth(sharedKey);
         }
@@ -372,9 +372,9 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         	ch.write(new EncryptionResponse());
         	
         	BungeeCipher decrypt = EncryptionUtil.getCipher( false, sharedKey );
-        	ch.addBefore( PipelineUtils.PACKET_DECODER, PipelineUtils.DECRYPT_HANDLER, new CipherDecoder( decrypt ) );
+        	ch.addBefore( PipelineUtil.PACKET_DEC, PipelineUtil.DECRYPT, new CipherDecoder( decrypt ) );
         	BungeeCipher encrypt = EncryptionUtil.getCipher( true, sharedKey );
-        	ch.addBefore( PipelineUtils.PACKET_ENCODER, PipelineUtils.ENCRYPT_HANDLER, new CipherEncoder( encrypt ) );
+        	ch.addBefore( PipelineUtil.PACKET_ENC, PipelineUtil.ENCRYPT, new CipherEncoder( encrypt ) );
         }
     }
     

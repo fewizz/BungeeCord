@@ -330,11 +330,13 @@ public class BungeeCord extends ProxyServer
             .childHandler( new ChannelInitializer<Channel>() {
 				@Override
 				protected void initChannel(Channel ch) throws Exception {
+					PipelineUtil.basicHandlers(ch, new InitialHandler(getInstance(), info));
+					
 					ch.pipeline().addFirst(new GenerationIdentifier() {
 						@Override
 						public void onIdentified(ProtocolGen gen, ChannelHandlerContext ctx) {
 							ProtocolVersion pv = gen == ProtocolGen.MODERN ? getProtocolVersion() : ProtocolVersion.MC_1_6_4;
-							PipelineUtil.addHandlers(ch, pv, Direction.TO_SERVER, new InitialHandler(getInstance(), info));
+							PipelineUtil.packetHandlers(ch, pv, Direction.TO_CLIENT);
 						}
 					});
 				}

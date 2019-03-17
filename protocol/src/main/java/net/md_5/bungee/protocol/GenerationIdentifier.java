@@ -17,6 +17,7 @@ public abstract class GenerationIdentifier extends ChannelInboundHandlerAdapter
 
         onIdentified(packetID == 0xFE || packetID == 0x02 ? ProtocolGen.PRE_NETTY : ProtocolGen.MODERN, ctx);
         ctx.pipeline().remove(this);
+        ctx.channel().pipeline().fireChannelRead(msg);
     }
     
     public abstract void onIdentified(ProtocolGen gen, ChannelHandlerContext ctx);

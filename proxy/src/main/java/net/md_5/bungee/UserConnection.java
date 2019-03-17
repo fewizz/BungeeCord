@@ -21,6 +21,8 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.epoll.EpollSocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.internal.PlatformDependent;
 import lombok.Getter;
 import lombok.NonNull;
@@ -46,13 +48,10 @@ import net.md_5.bungee.forge.ForgeClientHandler;
 import net.md_5.bungee.forge.ForgeConstants;
 import net.md_5.bungee.forge.ForgeServerHandler;
 import net.md_5.bungee.netty.ChannelWrapper;
-import net.md_5.bungee.netty.HandlerBoss;
-import net.md_5.bungee.netty.PipelineUtils;
+import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.ModernMinecraftPacketDecoder;
-import net.md_5.bungee.protocol.PacketEncoder;
+import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.PacketWrapper;
-import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolVersion;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.ClientSettings;
@@ -331,15 +330,7 @@ public final class UserConnection implements ProxiedPlayer
             @Override
             protected void initChannel(Channel ch) throws Exception
             {
-                PipelineUtils.BASE.initChannel( ch );
-                
-                ch.pipeline().addAfter( PipelineUtils.FRAME_DECODER, PipelineUtils.PACKET_DECODER, new ModernMinecraftPacketDecoder( Protocol.HANDSHAKE, false, getPendingConnection().getVersion() ) );
-            	ch.pipeline().addAfter( PipelineUtils.FRAME_PREPENDER, PipelineUtils.PACKET_ENCODER, new PacketEncoder( Protocol.HANDSHAKE, false, getPendingConnection().getVersion() ) );
-                ch.pipeline().get( HandlerBoss.class ).setHandler( new ServerConnector( bungee, UserConnection.this, target ) );
-                if(pendingConnection.getVersion().olderOrEqual(ProtocolVersion.MC_1_6_4)) {
-                	ch.pipeline().remove(PipelineUtils.FRAME_DECODER);
-                	ch.pipeline().remove(PipelineUtils.FRAME_PREPENDER);
-                }
+                PipelineUtil.addHandlers(ch, pendingConnection.getVersion(), Direction.TO_SERVER, new ServerConnector( bungee, UserConnection.this, target ));
             }
         };
         ChannelFutureListener listener = new ChannelFutureListener()
@@ -374,7 +365,7 @@ public final class UserConnection implements ProxiedPlayer
             }
         };
         Bootstrap b = new Bootstrap()
-                .channel( PipelineUtils.getChannel() )
+                .channel( BungeeCord.USE_EPOLL ? EpollSocketChannel.class : NioSocketChannel.class )
                 .group( ch.getHandle().eventLoop() )
                 .handler( initializer )
                 .option( ChannelOption.CONNECT_TIMEOUT_MILLIS, request.getConnectTimeout() )
