@@ -4,7 +4,6 @@ import net.md_5.bungee.protocol.PacketWrapper;
 
 public abstract class PacketHandler extends net.md_5.bungee.protocol.AbstractPacketHandler
 {
-
     @Override
     public abstract String toString();
 

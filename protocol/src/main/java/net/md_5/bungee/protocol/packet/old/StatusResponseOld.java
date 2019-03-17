@@ -41,6 +41,7 @@ public class StatusResponseOld extends DefinedPacket {
 	
 	@Override
 	public void handle(AbstractPacketHandler handler) throws Exception {
+		handler.handle(this);
 	}
 
 }

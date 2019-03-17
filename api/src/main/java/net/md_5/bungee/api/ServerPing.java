@@ -28,7 +28,6 @@ public class ServerPing
     @AllArgsConstructor
     public static class Protocol
     {
-
         private String name;
         private int protocol;
     }
@@ -38,7 +37,6 @@ public class ServerPing
     @AllArgsConstructor
     public static class Players
     {
-
         private int max;
         private int online;
         private PlayerInfo[] sample;
@@ -48,7 +46,6 @@ public class ServerPing
     @AllArgsConstructor
     public static class PlayerInfo
     {
-
         private String name;
         private UUID uniqueId;
 
@@ -84,7 +81,6 @@ public class ServerPing
     @Data
     public static class ModInfo
     {
-
         private String type = "FML";
         private List<ModItem> modList = new ArrayList<>();
     }
@@ -93,7 +89,6 @@ public class ServerPing
     @AllArgsConstructor
     public static class ModItem
     {
-
         private String modid;
         private String version;
     }

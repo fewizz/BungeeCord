@@ -258,23 +258,6 @@ public abstract class DefinedPacket
     @Override
     public abstract String toString();
     
-    
-    public static String readLegacyString(ByteBuf buf, int maxSize) {
-    	int len = buf.readUnsignedShort();
-    	if(len > maxSize)
-    		throw new OverflowPacketException("Legacy string is too wide");
-    	return new String(readCharArray(buf, len));
-    }
-    
-    public static void writeLegacyString(String str, ByteBuf buf) {
-    	buf.writeShort(str.length());
-    	writeCharArray(str.toCharArray(), buf);
-    }
-    
-    public static void skipLegacyString(ByteBuf buf) {
-    	buf.skipBytes(buf.readShort());
-    }
-    
     public static void writeCharArray(char[] arr, ByteBuf buf) {
     	for(int i = 0; i < arr.length; i++) buf.writeChar(arr[i]);
     }
@@ -296,5 +279,36 @@ public abstract class DefinedPacket
     	byte[] arr = new byte[size];
     	buf.readBytes(arr);
     	return arr;
+    }
+    
+    public static String readLegacyString(ByteBuf buf, int maxSize) {
+    	int len = buf.readShort();
+    	if(len > maxSize)
+    		throw new OverflowPacketException("Legacy string is too wide to read");
+    	if(len < 0)
+    		throw new RuntimeException("Legacy string size is less than zero");
+    	return new String(readCharArray(buf, len));
+    }
+    
+    public static void writeLegacyString(String str, ByteBuf buf) {
+    	if(str.length() > Short.MAX_VALUE)
+    		throw new RuntimeException("Legacy string is too wide to write");
+    	buf.writeShort(str.length());
+    	writeCharArray(str.toCharArray(), buf);
+    }
+    
+    public static boolean canReadLegacyString(ByteBuf buf, int maxSize) {
+    	if(!buf.isReadable(Short.BYTES))
+    		return false;
+    	int len = buf.getShort(buf.readerIndex());
+    	if(len > maxSize)
+    		throw new OverflowPacketException("Legacy string is too wide to read");
+    	if(len < 0)
+    		throw new RuntimeException("Legacy string size is less than zero");
+    	return buf.isReadable(Character.BYTES*len + Short.BYTES);
+    }
+    
+    public static void skipLegacyString(ByteBuf buf) {
+    	buf.skipBytes(buf.readShort());
     }
 }

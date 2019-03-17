@@ -1,10 +1,5 @@
 package net.md_5.bungee;
 
-import com.google.common.base.Preconditions;
-import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelOption;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,6 +8,15 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Objects;
 import java.util.Queue;
+
+import com.google.common.base.Preconditions;
+
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Synchronized;
@@ -26,8 +30,9 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.connection.Server;
 import net.md_5.bungee.connection.PingHandler;
 import net.md_5.bungee.netty.HandlerBoss;
-import net.md_5.bungee.netty.PipelineUtils;
+import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.ProtocolVersion;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 
@@ -118,36 +123,30 @@ public class BungeeServerInfo implements ServerInfo
     }
 
     @Override
-    public void ping(final Callback<ServerPing> callback)
-    {
+    public void ping(final Callback<ServerPing> callback) {
         ping( callback, ProxyServer.getInstance().getProtocolVersion() );
     }
 
-    public void ping(final Callback<ServerPing> callback, final ProtocolVersion protocolVersion)
-    {
+    public void ping(final Callback<ServerPing> callback, final ProtocolVersion protocolVersion) {
         Preconditions.checkNotNull( callback, "callback" );
 
-        ChannelFutureListener listener = new ChannelFutureListener()
-        {
-            @Override
-            public void operationComplete(ChannelFuture future) throws Exception
-            {
-                if ( future.isSuccess() )
-                {
-                    future.channel().pipeline().get( HandlerBoss.class ).setHandler( new PingHandler( BungeeServerInfo.this, callback, protocolVersion ) );
-                } else
-                {
-                    callback.done( null, future.cause() );
-                }
-            }
-        };
         new Bootstrap()
-                .channel( PipelineUtils.getChannel() )
-                .group( BungeeCord.getInstance().eventLoops )
-                .handler( PipelineUtils.BASE )
-                .option( ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000 ) // TODO: Configurable
-                .remoteAddress( getAddress() )
-                .connect()
-                .addListener( listener );
+            .channel( NioSocketChannel.class )
+            .group( BungeeCord.getInstance().eventLoops )
+            .handler( new ChannelInitializer<Channel>() {
+				@Override
+				protected void initChannel(Channel ch) throws Exception {
+					PipelineUtil.addHandlers(ch, protocolVersion, Direction.TO_SERVER, null);
+				}
+			} )
+            .option( ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000 ) // TODO: Configurable
+            .remoteAddress( getAddress() )
+            .connect()
+            .addListener( (ChannelFuture future) -> {
+            	if ( future.isSuccess() )
+                    future.channel().pipeline().get( HandlerBoss.class ).setHandler( new PingHandler( BungeeServerInfo.this, callback, protocolVersion ) );
+                else
+                    callback.done( null, future.cause() );
+            });
     }
 }

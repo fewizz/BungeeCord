@@ -71,10 +71,8 @@ public class Configuration implements ProxyConfig
         adapter.load();
 
         File fav = new File( "server-icon.png" );
-        if ( fav.exists() )
-        {
-            try
-            {
+        if ( fav.exists() ) {
+            try {
                 favicon = Favicon.create( ImageIO.read( fav ) );
             } catch ( IOException | IllegalArgumentException ex )
             {
@@ -99,9 +97,7 @@ public class Configuration implements ProxyConfig
         forgeSupport = adapter.getBoolean( "forge_support", forgeSupport );
         injectCommands = adapter.getBoolean( "inject_commands", injectCommands );
         if ( injectCommands )
-        {
             System.setProperty( "net.md-5.bungee.protocol.register_commands", "true" );
-        }
 
         disabledCommands = new CaseInsensitiveSet( (Collection<String>) adapter.getList( "disabled_commands", Arrays.asList( "disabledcommandhere" ) ) );
 
@@ -111,10 +107,8 @@ public class Configuration implements ProxyConfig
         Preconditions.checkArgument( newServers != null && !newServers.isEmpty(), "No servers defined" );
 
         if ( servers == null )
-        {
             servers = new CaseInsensitiveMap<>( newServers );
-        } else
-        {
+        else {
             for ( ServerInfo oldServer : servers.values() )
             {
                 // Don't allow servers to be removed
@@ -122,12 +116,9 @@ public class Configuration implements ProxyConfig
             }
 
             // Add new servers
-            for ( Map.Entry<String, ServerInfo> newServer : newServers.entrySet() )
-            {
+            for ( Map.Entry<String, ServerInfo> newServer : newServers.entrySet() ) {
                 if ( !servers.containsValue( newServer.getValue() ) )
-                {
                     servers.put( newServer.getKey(), newServer.getValue() );
-                }
             }
         }
 

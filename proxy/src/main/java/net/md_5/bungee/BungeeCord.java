@@ -19,6 +19,7 @@ import java.util.ResourceBundle;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -44,8 +45,18 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelException;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.epoll.Epoll;
+import io.netty.channel.epoll.EpollDatagramChannel;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollServerSocketChannel;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.AttributeKey;
 import io.netty.util.ResourceLeakDetector;
 import jline.console.ConsoleReader;
 import lombok.Getter;
@@ -85,13 +96,19 @@ import net.md_5.bungee.command.ConsoleCommandSender;
 import net.md_5.bungee.compress.CompressFactory;
 import net.md_5.bungee.conf.Configuration;
 import net.md_5.bungee.conf.YamlConfig;
+import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.forge.ForgeConstants;
 import net.md_5.bungee.log.BungeeLogger;
 import net.md_5.bungee.log.LoggingOutputStream;
 import net.md_5.bungee.module.ModuleManager;
-import net.md_5.bungee.netty.PipelineUtils;
+import net.md_5.bungee.netty.HandlerBoss;
+import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Direction;
+import net.md_5.bungee.protocol.GenerationIdentifier;
+import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol.DirectionData;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 import net.md_5.bungee.query.RemoteQuery;
@@ -177,7 +194,9 @@ public class BungeeCord extends ProxyServer
     @Getter
     private ConnectionThrottle connectionThrottle;
     private final ModuleManager moduleManager = new ModuleManager();
-
+    public static final boolean USE_EPOLL =
+    		Boolean.valueOf(System.getProperty( "bungee.epoll", "true" )) && Epoll.isAvailable();
+    public static final AttributeKey<ListenerInfo> LISTENER = AttributeKey.valueOf( "ListerInfo" );
     
     {
         // TODO: Proper fallback when we interface the manager
@@ -197,11 +216,9 @@ public class BungeeCord extends ProxyServer
 
         System.setSecurityManager( new BungeeSecurityManager() );
 
-        try
-        {
+        try {
             baseBundle = ResourceBundle.getBundle( "messages" );
-        } catch ( MissingResourceException ex )
-        {
+        } catch ( MissingResourceException ex ) {
             baseBundle = ResourceBundle.getBundle( "messages", Locale.ENGLISH );
         }
         reloadMessages();
@@ -232,22 +249,15 @@ public class BungeeCord extends ProxyServer
         getPluginManager().registerCommand( null, new CommandBungee() );
         getPluginManager().registerCommand( null, new CommandPerms() );
 
-        if ( !Boolean.getBoolean( "net.md_5.bungee.native.disable" ) )
-        {
+        if ( !Boolean.getBoolean( "net.md_5.bungee.native.disable" ) ) {
             if ( EncryptionUtil.nativeFactory.load() )
-            {
-                logger.info( "Using mbed TLS based native cipher." );
-            } else
-            {
+            	logger.info( "Using mbed TLS based native cipher." );
+            else
                 logger.info( "Using standard Java JCE cipher." );
-            }
             if ( CompressFactory.zlib.load() )
-            {
                 logger.info( "Using zlib based native compressor." );
-            } else
-            {
+            else
                 logger.info( "Using standard Java compressor." );
-            }
         }
     }
 
@@ -258,15 +268,13 @@ public class BungeeCord extends ProxyServer
      * @throws Exception
      */
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
-    public void start() throws Exception
-    {
+    public void start() throws Exception {
         System.setProperty( "io.netty.selectorAutoRebuildThreshold", "0" ); // Seems to cause Bungee to stop accepting connections
         if ( System.getProperty( "io.netty.leakDetectionLevel" ) == null )
-        {
             ResourceLeakDetector.setLevel( ResourceLeakDetector.Level.DISABLED ); // Eats performance
-        }
-
-        eventLoops = PipelineUtils.newEventLoopGroup( 0, new ThreadFactoryBuilder().setNameFormat( "Netty IO Thread #%1$d" ).build() );
+        
+        ThreadFactory tf = new ThreadFactoryBuilder().setNameFormat( "Netty IO Thread #%1$d" ).build();
+        eventLoops = USE_EPOLL ? new EpollEventLoopGroup(0, tf) : new NioEventLoopGroup(0, tf);
 
         File moduleDirectory = new File( "modules" );
         moduleManager.load( this, moduleDirectory );
@@ -278,8 +286,7 @@ public class BungeeCord extends ProxyServer
         pluginManager.loadPlugins();
         config.load();
 
-        if ( config.isForgeSupport() )
-        {
+        if ( config.isForgeSupport() ) {
             registerChannel( ForgeConstants.FML_TAG );
             registerChannel( ForgeConstants.FML_HANDSHAKE_TAG );
             registerChannel( ForgeConstants.FORGE_REGISTER );
@@ -292,20 +299,15 @@ public class BungeeCord extends ProxyServer
         pluginManager.enablePlugins();
 
         if ( config.getThrottle() > 0 )
-        {
             connectionThrottle = new ConnectionThrottle( config.getThrottle(), config.getThrottleLimit() );
-        }
+        
         startListeners();
 
-        saveThread.scheduleAtFixedRate( new TimerTask()
-        {
+        saveThread.scheduleAtFixedRate( new TimerTask() {
             @Override
-            public void run()
-            {
+            public void run() {
                 if ( getReconnectHandler() != null )
-                {
                     getReconnectHandler().save();
-                }
             }
         }, 0, TimeUnit.MINUTES.toMillis( 5 ) );
         metricsThread.scheduleAtFixedRate( new Metrics(), 0, TimeUnit.MINUTES.toMillis( Metrics.PING_INTERVAL ) );
@@ -314,68 +316,65 @@ public class BungeeCord extends ProxyServer
     public void startListeners()
     {
         for ( final ListenerInfo info : config.getListeners() )
-        {
-            if ( info.isProxyProtocol() )
-            {
-                getLogger().log( Level.WARNING, "Using PROXY protocol for listener {0}, please ensure this listener is adequately firewalled.", info.getHost() );
-            }
+            listenTo(info);
+    }
+    
+    private void listenTo(final ListenerInfo info) {
+    	if ( info.isProxyProtocol() )
+            getLogger().log( Level.WARNING, "Using PROXY protocol for listener {0}, please ensure this listener is adequately firewalled.", info.getHost() );
 
-            ChannelFutureListener listener = new ChannelFutureListener()
-            {
-                @Override
-                public void operationComplete(ChannelFuture future) throws Exception
-                {
-                    if ( future.isSuccess() )
-                    {
-                        listeners.add( future.channel() );
-                        getLogger().log( Level.INFO, "Listening on {0}", info.getHost() );
-                    } else
-                    {
-                        getLogger().log( Level.WARNING, "Could not bind to host " + info.getHost(), future.cause() );
-                    }
-                }
-            };
-            new ServerBootstrap()
-                    .channel( PipelineUtils.getServerChannel() )
-                    .option( ChannelOption.SO_REUSEADDR, true ) // TODO: Move this elsewhere!
-                    .childAttr( PipelineUtils.LISTENER, info )
-                    .childHandler( PipelineUtils.SERVER_CHILD )
-                    .group( eventLoops )
-                    .localAddress( info.getHost() )
-                    .bind().addListener( listener );
+        new ServerBootstrap()
+            .channel(USE_EPOLL ? EpollServerSocketChannel.class : NioServerSocketChannel.class )
+            .option( ChannelOption.SO_REUSEADDR, true ) // TODO: Move this elsewhere!
+            .childAttr( LISTENER, info )
+            .childHandler( new ChannelInitializer<Channel>() {
+				@Override
+				protected void initChannel(Channel ch) throws Exception {
+					ch.pipeline().addFirst(new GenerationIdentifier() {
+						@Override
+						public void onIdentified(ProtocolGen gen, ChannelHandlerContext ctx) {
+							ProtocolVersion pv = gen == ProtocolGen.MODERN ? getProtocolVersion() : ProtocolVersion.MC_1_6_4;
+							PipelineUtil.addHandlers(ch, pv, Direction.TO_SERVER, new InitialHandler(getInstance(), info));
+						}
+					});
+				}
+            } )
+        	.group( eventLoops )
+            .localAddress( info.getHost() )
+            .bind()
+            .addListener( (ChannelFuture future) -> {
+                if ( future.isSuccess() ) {
+                    listeners.add( future.channel() );
+                    getLogger().log( Level.INFO, "Listening on {0}", info.getHost() );
+                } 
+                else
+                    getLogger().log( Level.WARNING, "Could not bind to host " + info.getHost(), future.cause() );
+            });
 
-            if ( info.isQueryEnabled() )
-            {
-                ChannelFutureListener bindListener = new ChannelFutureListener()
-                {
-                    @Override
-                    public void operationComplete(ChannelFuture future) throws Exception
-                    {
-                        if ( future.isSuccess() )
-                        {
-                            listeners.add( future.channel() );
-                            getLogger().log( Level.INFO, "Started query on {0}", future.channel().localAddress() );
-                        } else
-                        {
-                            getLogger().log( Level.WARNING, "Could not bind to host " + info.getHost(), future.cause() );
-                        }
-                    }
-                };
-                new RemoteQuery( this, info ).start( PipelineUtils.getDatagramChannel(), new InetSocketAddress( info.getHost().getAddress(), info.getQueryPort() ), eventLoops, bindListener );
-            }
-        }
+        if ( !info.isQueryEnabled() )
+        	return;
+        
+        new RemoteQuery( this, info ).start(
+			USE_EPOLL ? EpollDatagramChannel.class : NioDatagramChannel.class,
+			new InetSocketAddress( info.getHost().getAddress(), info.getQueryPort() ),
+			eventLoops,
+			(ChannelFuture future) -> {
+				if ( future.isSuccess() ) {
+                    listeners.add( future.channel() );
+                    getLogger().log( Level.INFO, "Started query on {0}", future.channel().localAddress() );
+				} 
+                else getLogger().log( Level.WARNING, "Could not bind to host " + info.getHost(), future.cause() );
+			}
+		);
     }
 
     public void stopListeners()
     {
-        for ( Channel listener : listeners )
-        {
+        for ( Channel listener : listeners ) {
             getLogger().log( Level.INFO, "Closing listener {0}", listener );
-            try
-            {
+            try {
                 listener.close().syncUninterruptibly();
-            } catch ( ChannelException ex )
-            {
+            } catch ( ChannelException ex ) {
                 getLogger().severe( "Could not close listen thread" );
             }
         }
@@ -392,9 +391,7 @@ public class BungeeCord extends ProxyServer
     public synchronized void stop(final String reason)
     {
         if ( !isRunning )
-        {
             return;
-        }
         isRunning = false;
 
         new Thread( "Shutdown Thread" )

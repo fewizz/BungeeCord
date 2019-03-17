@@ -38,7 +38,7 @@ import net.md_5.bungee.jni.cipher.BungeeCipher;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.PacketHandler;
-import net.md_5.bungee.netty.PipelineUtils;
+import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.netty.cipher.CipherDecoder;
 import net.md_5.bungee.netty.cipher.CipherEncoder;
 import net.md_5.bungee.protocol.DefinedPacket;
@@ -74,7 +74,7 @@ public class ServerConnector extends PacketHandler
     private ChannelWrapper         ch;
     private final UserConnection   user;
     private final BungeeServerInfo target;
-    private State                  thisState = State.LOGIN_SUCCESS;
+    private State                  thisState = State.UNDEF;
     @Getter
     private ForgeServerHandler     handshakeHandler;
     private boolean                obsolete;
@@ -83,6 +83,8 @@ public class ServerConnector extends PacketHandler
     
     private enum State
     {  
+    	UNDEF,
+    	LOGIN_REQUEST,
         LOGIN_SUCCESS,
         ENCRYPT_RESPONSE,
         LOGIN,
@@ -151,6 +153,7 @@ public class ServerConnector extends PacketHandler
         if(originalHandshake.getProtocolVersion().newerThan(ProtocolVersion.MC_1_6_4)) {
         	channel.write( copiedHandshake );
         	channel.setProtocol( Protocol.LOGIN );
+        	thisState = State.LOGIN_SUCCESS;
         	channel.write( new LoginRequest( user.getName() ) );
         }
         else {
@@ -159,6 +162,7 @@ public class ServerConnector extends PacketHandler
         	lr.setPort(copiedHandshake.getPort());
         	lr.setProtocolVer(copiedHandshake.getProtocolVersion().version);
         	lr.setUserName(user.getName());
+        	thisState = State.LOGIN_REQUEST;
         	channel.write(lr);
         	channel.setProtocol( Protocol.LOGIN );
         }
@@ -447,8 +451,6 @@ public class ServerConnector extends PacketHandler
             return;
         }
         
-        // Add to new server
-        // TODO: Move this to the connected() method of DownstreamBridge
         target.addPlayer(user);
         user.getPendingConnects().remove(target);
         user.setServerJoinQueue(null);
@@ -467,31 +469,39 @@ public class ServerConnector extends PacketHandler
     @Override
     public void handle(EncryptionRequest encryptionRequest) throws Exception
     {
-    	if(user.getPendingConnection().getVersion().newerThan(ProtocolVersion.MC_1_6_4))
-    		throw new QuietException( "Server is online mode!" );
+    	Preconditions.checkState( thisState == State.LOGIN_REQUEST, "Not expecting LOGIN_REQUEST" );
+    	
         PublicKey pub = EncryptionUtil.getPubkey(encryptionRequest);
         KeyGenerator kg = KeyGenerator.getInstance("AES");
         kg.init(128);
         secret = kg.generateKey();
+        
+        thisState = State.LOGIN_SUCCESS;
+        
         EncryptionResponse er = new EncryptionResponse();
         er.setSharedSecret(EncryptionUtil.encrypt(pub, secret.getEncoded()));
         er.setVerifyToken(EncryptionUtil.encrypt(pub, encryptionRequest.getVerifyToken()));
         ch.write(er);
     	
-    	BungeeCipher encrypt = EncryptionUtil.getCipher( true, secret );
-    	ch.addBefore( PipelineUtils.PACKET_ENCODER, PipelineUtils.ENCRYPT_HANDLER, new CipherEncoder( encrypt ) );
-    	throw CancelSendSignal.INSTANCE;
+        BungeeCipher encrypt = EncryptionUtil.getCipher( true, secret );
+        ch.addBefore( PipelineUtil.PACKET, PipelineUtil.ENCRYPT, new CipherEncoder( encrypt ) );
+    	
+        throw CancelSendSignal.INSTANCE;
     }
     
     @Override
     public void handle(EncryptionResponse encryptionResponse) throws Exception {
+    	Preconditions.checkState( thisState == State.LOGIN_SUCCESS, "Not expecting LOGIN_SUCCESS" );
+    	
     	BungeeCipher encrypt = EncryptionUtil.getCipher( false, secret);
-    	ch.addBefore( PipelineUtils.PACKET_DECODER, PipelineUtils.DECRYPT_HANDLER, new CipherDecoder( encrypt ) );
+    	ch.addBefore( PipelineUtil.PACKET_DEC, PipelineUtil.DECRYPT, new CipherDecoder( encrypt ) );
     	
     	ch.setProtocol(Protocol.GAME);
+    	thisState = State.LOGIN;
+    	
     	ch.write(new ClientCommandOld(0));
-        thisState = State.LOGIN;
-        throw CancelSendSignal.INSTANCE;
+    	
+    	throw CancelSendSignal.INSTANCE;
     }
     
     @Override

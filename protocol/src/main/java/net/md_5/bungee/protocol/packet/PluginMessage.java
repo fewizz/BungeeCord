@@ -75,7 +75,7 @@ public class PluginMessage extends DefinedPacket
     {
     	if(protocolVersion.olderOrEqual(ProtocolVersion.MC_1_6_4)) {
     		tag = readLegacyString(buf, 20);
-    		readLegacyByteArray(buf);
+    		data = readLegacyByteArray(buf);
     	}
     	else if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8_0) )
         {

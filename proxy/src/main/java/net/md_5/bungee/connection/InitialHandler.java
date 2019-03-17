@@ -355,9 +355,9 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     @Override
     public void handle(final EncryptionResponse encryptResponse) throws Exception
     {
-    	this.encryptResponse = encryptResponse;
         Preconditions.checkState( thisState == State.ENCRYPT, "Not expecting ENCRYPT" );
-
+        this.encryptResponse = encryptResponse;
+        
         SecretKey sharedKey = EncryptionUtil.getSecret( encryptResponse, request );
         
         if(getVersion().newerThan(ProtocolVersion.MC_1_6_4)) {
@@ -367,7 +367,6 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         	ch.addBefore( PipelineUtils.FRAME_PREPENDER, PipelineUtils.ENCRYPT_HANDLER, new CipherEncoder( encrypt ) );
         	
         	checkAuth(sharedKey);
-        	ch.write(new EncryptionResponse());
         }
         else {
         	ch.write(new EncryptionResponse());
@@ -630,8 +629,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     	old.setProtocolVersion(request.getProtocolVer());
     	old.setMax(listener.getMaxPlayers());
     	
-    	unsafe.sendPacket(old);
-    	//ch.close(old);
+    	ch.close(old);
     }
     
     @Override
@@ -660,7 +658,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     @Override
     public void handle(ClientCommandOld clientCommandOld) {
     	if(clientCommandOld.command != 0)
-    		 return;
+    		 throw new RuntimeException();
     	
     	try {
     		if(onlineMode)

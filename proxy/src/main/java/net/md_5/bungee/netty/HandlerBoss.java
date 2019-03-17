@@ -29,10 +29,11 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
     private ChannelWrapper channel;
     private PacketHandler handler;
 
-    public void setHandler(PacketHandler handler)
+    public HandlerBoss setHandler(PacketHandler handler)
     {
         Preconditions.checkArgument( handler != null, "handler" );
         this.handler = handler;
+        return this;
     }
 
     @Override

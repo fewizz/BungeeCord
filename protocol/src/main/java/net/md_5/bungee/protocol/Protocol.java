@@ -23,7 +23,6 @@ import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.protocol.packet.EncryptionResponse;
 import net.md_5.bungee.protocol.packet.EntityStatus;
 import net.md_5.bungee.protocol.packet.Handshake;
-import net.md_5.bungee.protocol.packet.Ignore;
 import net.md_5.bungee.protocol.packet.KeepAlive;
 import net.md_5.bungee.protocol.packet.Kick;
 import net.md_5.bungee.protocol.packet.Login;
@@ -179,6 +178,7 @@ public enum Protocol
             );
             TO_CLIENT.registerPacket(
                     Kick.class,
+                    map( ProtocolVersion.MC_1_6_4, 0xFF ),
                     map( ProtocolVersion.MC_1_8_0, 0x40 ),
                     map( ProtocolVersion.MC_1_9_0, 0x1A ),
                     map( ProtocolVersion.MC_1_12_0, 0x1A ),
@@ -303,15 +303,8 @@ public enum Protocol
             );
             TO_CLIENT.registerPacket(
                     EncryptionRequest.class,
+                    map( ProtocolVersion.MC_1_6_4, 0xFD ),
                     map( ProtocolVersion.MC_1_8_0, 0x01 )
-            );
-            TO_CLIENT.registerPacket(
-                    EncryptionRequest.class,
-                    map( ProtocolVersion.MC_1_6_4, 0xFD )
-            );
-            TO_SERVER.registerPacket(
-            		Ignore.class,
-            		map( ProtocolVersion.MC_1_6_4, 0x02 )
             );
             TO_CLIENT.registerPacket(
                     LoginSuccess.class,
@@ -332,11 +325,8 @@ public enum Protocol
             );
             TO_SERVER.registerPacket(
                     EncryptionResponse.class,
+                    map( ProtocolVersion.MC_1_6_4, 0xFC ),
                     map( ProtocolVersion.MC_1_8_0, 0x01 )
-            );
-            TO_SERVER.registerPacket(
-                    EncryptionResponse.class,
-                    map( ProtocolVersion.MC_1_6_4, 0xFC )
             );
             TO_CLIENT.registerPacket(
                     EncryptionResponse.class,
@@ -357,40 +347,10 @@ public enum Protocol
     /*========================================================================*/
     public final DirectionData TO_SERVER = new DirectionData( this, Direction.TO_SERVER );
     public final DirectionData TO_CLIENT = new DirectionData( this, Direction.TO_CLIENT );
-
-    /*public static void main(String[] args)
-    {
-        for ( int version : ProtocolConstants.SUPPORTED_VERSION_IDS )
-        {
-            dump( version );
-        }
+    
+    public DirectionData getDirectionData(Direction dir) {
+    	return dir == Direction.TO_CLIENT ? TO_CLIENT : TO_SERVER;
     }
-
-    private static void dump(int version)
-    {
-        for ( Protocol protocol : Protocol.values() )
-        {
-            dump( version, protocol );
-        }
-    }
-
-    private static void dump(int version, Protocol protocol)
-    {
-        dump( version, protocol.TO_CLIENT );
-        dump( version, protocol.TO_SERVER );
-    }
-
-    private static void dump(int version, DirectionData data)
-    {
-        for ( int id = 0; id < MAX_PACKET_ID; id++ )
-        {
-            DefinedPacket packet = data.createPacket( id, version );
-            if ( packet != null )
-            {
-                System.out.println( version + " " + data.protocolPhase + " " + data.direction + " " + id + " " + packet.getClass().getSimpleName() );
-            }
-        }
-    }*/
 
     @RequiredArgsConstructor
     private static class ProtocolData

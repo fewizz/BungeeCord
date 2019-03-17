@@ -11,8 +11,9 @@ import lombok.Getter;
 import lombok.Setter;
 import net.md_5.bungee.compress.PacketCompressor;
 import net.md_5.bungee.compress.PacketDecompressor;
-import net.md_5.bungee.protocol.MinecraftDecoder;
-import net.md_5.bungee.protocol.MinecraftEncoder;
+import net.md_5.bungee.protocol.ModernMinecraftPacketDecoder;
+import net.md_5.bungee.protocol.PacketDecoder;
+import net.md_5.bungee.protocol.PacketEncoder;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolVersion;
@@ -38,16 +39,24 @@ public class ChannelWrapper
 
     public void setProtocol(Protocol protocol)
     {
-        ch.pipeline().get( MinecraftDecoder.class ).setProtocol( protocol );
-        ch.pipeline().get( MinecraftEncoder.class ).setProtocol( protocol );
+        ((PacketDecoder)ch.pipeline().get( PipelineUtil.PACKET_DEC)).setProtocol( protocol );
+        ((PacketEncoder)ch.pipeline().get( PipelineUtil.PACKET )).setProtocol( protocol );
     }
     
-    public Protocol getProtocol() { return ch.pipeline().get( MinecraftDecoder.class ).getProtocol(); }
+    public Protocol getProtocol() { return ch.pipeline().get(PacketEncoder.class).getProtocol(); }
 
     public void setVersion(ProtocolVersion protocol)
     {
-        ch.pipeline().get( MinecraftDecoder.class ).setProtocolVersion( protocol );
-        ch.pipeline().get( MinecraftEncoder.class ).setProtocolVersion( protocol );
+    	PacketDecoder dec = (PacketDecoder) ch.pipeline().get(PipelineUtil.PACKET_DEC);
+    	if(dec.getProtocolVersion().generation != protocol.generation)
+    		throw new RuntimeException( "Incompatible decoder generation" );
+    	
+    	PacketEncoder enc = (PacketEncoder) ch.pipeline().get(PipelineUtil.PACKET);
+    	if(enc.getProtocolVersion().generation != protocol.generation)
+    		throw new RuntimeException( "Incompatible encoder generation" );
+    	
+        dec.setProtocolVersion(protocol);
+        enc.setProtocolVersion(protocol);
     }
 
     public void write(Object packet)
@@ -137,7 +146,7 @@ public class ChannelWrapper
     {
         if ( ch.pipeline().get( PacketCompressor.class ) == null && compressionThreshold != -1 )
         {
-            addBefore( PipelineUtils.PACKET_ENCODER, "compress", new PacketCompressor() );
+            addBefore( PipelineUtil.PACKET, "compress", new PacketCompressor() );
         }
         if ( compressionThreshold != -1 )
         {
@@ -149,7 +158,7 @@ public class ChannelWrapper
 
         if ( ch.pipeline().get( PacketDecompressor.class ) == null && compressionThreshold != -1 )
         {
-            addBefore( PipelineUtils.PACKET_DECODER, "decompress", new PacketDecompressor() );
+            addBefore( PipelineUtil.PACKET_DEC, "decompress", new PacketDecompressor() );
         }
         if ( compressionThreshold == -1 )
         {
