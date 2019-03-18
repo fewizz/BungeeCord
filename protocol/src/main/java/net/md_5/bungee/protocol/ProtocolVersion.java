@@ -39,6 +39,8 @@ public enum ProtocolVersion {
 	public boolean olderThan(ProtocolVersion ver) {return ordinal() < ver.ordinal();}
 	public boolean olderOrEqual(ProtocolVersion ver) {return ordinal() <= ver.ordinal();}
 	
+	public boolean isLegacy() { return generation == ProtocolGen.PRE_NETTY; }
+	
 	public static ProtocolVersion getByNumber(int num, ProtocolGen gen) {
 		for(ProtocolVersion v : values())
 			if(v.version == num && gen == v.generation)

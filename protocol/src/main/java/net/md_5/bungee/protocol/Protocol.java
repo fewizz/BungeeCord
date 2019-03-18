@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Iterables;
 
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.TObjectIntMap;
@@ -45,15 +44,172 @@ import net.md_5.bungee.protocol.packet.TabCompleteRequest;
 import net.md_5.bungee.protocol.packet.TabCompleteResponse;
 import net.md_5.bungee.protocol.packet.Team;
 import net.md_5.bungee.protocol.packet.Title;
+import net.md_5.bungee.protocol.packet.old.AnimationOld;
+import net.md_5.bungee.protocol.packet.old.BlockDestroyOld;
+import net.md_5.bungee.protocol.packet.old.BlockItemSwitchOld;
 import net.md_5.bungee.protocol.packet.old.ClientCommandOld;
+import net.md_5.bungee.protocol.packet.old.ClientInfoOld;
+import net.md_5.bungee.protocol.packet.old.EntityLookOld;
+import net.md_5.bungee.protocol.packet.old.EntityMetadataOld;
+import net.md_5.bungee.protocol.packet.old.ExperienceOld;
+import net.md_5.bungee.protocol.packet.old.FlyingOld;
+import net.md_5.bungee.protocol.packet.old.GameEventOld;
 import net.md_5.bungee.protocol.packet.old.LoginOld;
 import net.md_5.bungee.protocol.packet.old.LoginRequestOld;
+import net.md_5.bungee.protocol.packet.old.MapChunksOld;
+import net.md_5.bungee.protocol.packet.old.MobSpawnOld;
+import net.md_5.bungee.protocol.packet.old.PlayerAbilitiesOld;
+import net.md_5.bungee.protocol.packet.old.PlayerInfoOld;
+import net.md_5.bungee.protocol.packet.old.PlayerInventoryOld;
+import net.md_5.bungee.protocol.packet.old.PlayerLookMoveOld;
+import net.md_5.bungee.protocol.packet.old.PlayerPositionOld;
+import net.md_5.bungee.protocol.packet.old.SetSlotOld;
+import net.md_5.bungee.protocol.packet.old.SpawnPositionOld;
 import net.md_5.bungee.protocol.packet.old.StatusRequestOld;
-import net.md_5.bungee.protocol.packet.old.StatusResponseOld;
+import net.md_5.bungee.protocol.packet.old.UpdateAttribsOld;
+import net.md_5.bungee.protocol.packet.old.UpdateHealthOld;
+import net.md_5.bungee.protocol.packet.old.UpdateTimeOld;
+import net.md_5.bungee.protocol.packet.old.VehicleSpawnOld;
+import net.md_5.bungee.protocol.packet.old.WindowItemsOld;
 
 public enum Protocol
 {
-
+	LEGACY {
+		{
+			registerPacket(
+					KeepAlive.class,
+					map( ProtocolVersion.MC_1_6_4, 0)
+			);
+			TO_CLIENT.registerPacket(
+            		LoginOld.class,
+            		map( ProtocolVersion.MC_1_6_4, 1 )
+    		);
+			TO_SERVER.registerPacket(
+            		LoginRequestOld.class,
+            		map( ProtocolVersion.MC_1_6_4, 2)
+            );
+			registerPacket(
+					Chat.class,
+					map(ProtocolVersion.MC_1_6_4, 3)
+			);
+			TO_CLIENT.registerPacket(
+					UpdateTimeOld.class,
+					map(ProtocolVersion.MC_1_6_4, 4)
+			);
+			TO_CLIENT.registerPacket(
+					PlayerInventoryOld.class,
+					map(ProtocolVersion.MC_1_6_4, 5)
+			);
+			TO_CLIENT.registerPacket(
+            		SpawnPositionOld.class,
+            		map( ProtocolVersion.MC_1_6_4, 6 )
+            );
+			TO_CLIENT.registerPacket(
+            		UpdateHealthOld.class,
+            		map( ProtocolVersion.MC_1_6_4, 8 )
+            );
+			registerPacket(
+					FlyingOld.class,
+					map(ProtocolVersion.MC_1_6_4, 10)
+			);
+			registerPacket(
+					PlayerPositionOld.class,
+					map(ProtocolVersion.MC_1_6_4, 11)
+			);
+			registerPacket(
+					PlayerLookMoveOld.class,
+					map(ProtocolVersion.MC_1_6_4, 13)
+			);
+			registerPacket(
+					BlockItemSwitchOld.class,
+					map(ProtocolVersion.MC_1_6_4, 16)
+			);
+			registerPacket(
+					AnimationOld.class,
+					map(ProtocolVersion.MC_1_6_4, 18)
+			);
+			TO_CLIENT.registerPacket(
+					VehicleSpawnOld.class,
+					map(ProtocolVersion.MC_1_6_4, 23)
+			);
+			TO_CLIENT.registerPacket(
+					MobSpawnOld.class,
+					map(ProtocolVersion.MC_1_6_4, 24)
+			);
+			TO_CLIENT.registerPacket(
+					EntityLookOld.class,
+					map(ProtocolVersion.MC_1_6_4, 32)
+			);
+			TO_CLIENT.registerPacket(
+					EntityMetadataOld.class,
+					map(ProtocolVersion.MC_1_6_4, 40)
+			);
+			TO_CLIENT.registerPacket(
+					ExperienceOld.class,
+					map(ProtocolVersion.MC_1_6_4, 43)
+			);
+			TO_CLIENT.registerPacket(
+					UpdateAttribsOld.class,
+					map(ProtocolVersion.MC_1_6_4, 44)
+			);
+			TO_CLIENT.registerPacket(
+					BlockDestroyOld.class,
+					map(ProtocolVersion.MC_1_6_4, 55)
+			);
+			TO_CLIENT.registerPacket(
+					MapChunksOld.class,
+					map(ProtocolVersion.MC_1_6_4, 56)
+			);
+			TO_CLIENT.registerPacket(
+					GameEventOld.class,
+					map(ProtocolVersion.MC_1_6_4, 70)
+			);
+			TO_CLIENT.registerPacket(
+					SetSlotOld.class,
+					map(ProtocolVersion.MC_1_6_4, 103)
+			);
+			TO_CLIENT.registerPacket(
+					WindowItemsOld.class,
+					map(ProtocolVersion.MC_1_6_4, 104)
+			);
+			TO_CLIENT.registerPacket(
+					PlayerInfoOld.class,
+					map(ProtocolVersion.MC_1_6_4, 201)
+			);
+			registerPacket(
+					PlayerAbilitiesOld.class,
+					map(ProtocolVersion.MC_1_6_4, 202)
+			);
+			TO_SERVER.registerPacket(
+            		ClientInfoOld.class,
+            		map( ProtocolVersion.MC_1_6_4, 204 )
+            );
+			TO_SERVER.registerPacket(
+            		ClientCommandOld.class,
+            		map( ProtocolVersion.MC_1_6_4, 205 )
+            );
+			registerPacket(
+                    PluginMessage.class,
+                    map( ProtocolVersion.MC_1_6_4, 250)
+            );
+			registerPacket(
+                    EncryptionResponse.class,
+                    map( ProtocolVersion.MC_1_6_4, 252 )
+            );
+			TO_CLIENT.registerPacket(
+                    EncryptionRequest.class,
+                    map( ProtocolVersion.MC_1_6_4, 253 )
+            );
+			TO_SERVER.registerPacket(
+            		StatusRequestOld.class,
+            		map( ProtocolVersion.MC_1_6_4, 254)
+            );
+			registerPacket(
+                    Kick.class,
+                    map( ProtocolVersion.MC_1_6_4, 255 )
+            );
+		}
+	},
     // Undef
     HANDSHAKE
     {
@@ -62,18 +218,6 @@ public enum Protocol
             TO_SERVER.registerPacket(
                     Handshake.class,
                     map( ProtocolVersion.MC_1_8_0, 0x00 )
-            );
-            TO_SERVER.registerPacket(
-            		StatusRequestOld.class,
-            		map( ProtocolVersion.MC_1_6_4, 0xFE)
-            );
-            TO_CLIENT.registerPacket(
-            		StatusResponseOld.class,
-            		map( ProtocolVersion.MC_1_6_4, 0xFF)
-            );
-            TO_SERVER.registerPacket(
-            		LoginRequestOld.class,
-            		map( ProtocolVersion.MC_1_6_4, 0x02)
             );
         }
     },
@@ -96,10 +240,6 @@ public enum Protocol
                     map( ProtocolVersion.MC_1_12_0, 0x23 ),
                     map( ProtocolVersion.MC_1_13_0, 0x25 )
             );
-            TO_CLIENT.registerPacket(
-            		LoginOld.class,
-            		map( ProtocolVersion.MC_1_6_4, 0x1 )
-    		);
             TO_CLIENT.registerPacket(
                     Chat.class,
                     map( ProtocolVersion.MC_1_8_0, 0x02 ),
@@ -170,7 +310,6 @@ public enum Protocol
             );
             TO_CLIENT.registerPacket(
                     PluginMessage.class,
-                    map( ProtocolVersion.MC_1_6_4, 0xFA),
                     map( ProtocolVersion.MC_1_8_0, 0x3F ),
                     map( ProtocolVersion.MC_1_9_0, 0x18 ),
                     map( ProtocolVersion.MC_1_12_0, 0x18 ),
@@ -178,7 +317,6 @@ public enum Protocol
             );
             TO_CLIENT.registerPacket(
                     Kick.class,
-                    map( ProtocolVersion.MC_1_6_4, 0xFF ),
                     map( ProtocolVersion.MC_1_8_0, 0x40 ),
                     map( ProtocolVersion.MC_1_9_0, 0x1A ),
                     map( ProtocolVersion.MC_1_12_0, 0x1A ),
@@ -255,16 +393,11 @@ public enum Protocol
             );
             TO_SERVER.registerPacket(
                     PluginMessage.class,
-                    map( ProtocolVersion.MC_1_6_4, 0xFA ),
                     map( ProtocolVersion.MC_1_8_0, 0x17 ),
                     map( ProtocolVersion.MC_1_9_0, 0x09 ),
                     map( ProtocolVersion.MC_1_12_0, 0x0A ),
                     map( ProtocolVersion.MC_1_12_1, 0x09 ),
                     map( ProtocolVersion.MC_1_13_0, 0x0A )
-            );
-            TO_SERVER.registerPacket(
-            		ClientCommandOld.class,
-            		map( ProtocolVersion.MC_1_6_4, 0xCD )
             );
         }
     },
@@ -298,12 +431,10 @@ public enum Protocol
         {
             TO_CLIENT.registerPacket(
                     Kick.class,
-                    map( ProtocolVersion.MC_1_6_4, 0xFF ),
                     map( ProtocolVersion.MC_1_8_0, 0x00 )
             );
             TO_CLIENT.registerPacket(
                     EncryptionRequest.class,
-                    map( ProtocolVersion.MC_1_6_4, 0xFD ),
                     map( ProtocolVersion.MC_1_8_0, 0x01 )
             );
             TO_CLIENT.registerPacket(
@@ -328,17 +459,9 @@ public enum Protocol
                     map( ProtocolVersion.MC_1_6_4, 0xFC ),
                     map( ProtocolVersion.MC_1_8_0, 0x01 )
             );
-            TO_CLIENT.registerPacket(
-                    EncryptionResponse.class,
-                    map( ProtocolVersion.MC_1_6_4, 0xFC )
-            );
             TO_SERVER.registerPacket(
                     LoginPayloadResponse.class,
                     map( ProtocolVersion.MC_1_13_0, 0x02 )
-            );
-            TO_SERVER.registerPacket(
-            		ClientCommandOld.class,
-            		map( ProtocolVersion.MC_1_6_4, 0xCD )
             );
         }
     };
@@ -350,6 +473,11 @@ public enum Protocol
     
     public DirectionData getDirectionData(Direction dir) {
     	return dir == Direction.TO_CLIENT ? TO_CLIENT : TO_SERVER;
+    }
+    
+    void registerPacket(Class<? extends DefinedPacket> c, ProtocolMapping m) {
+    	TO_CLIENT.registerPacket(c, m);
+    	TO_SERVER.registerPacket(c, m);
     }
 
     @RequiredArgsConstructor
@@ -431,10 +559,10 @@ public enum Protocol
         private ProtocolData getProtocolData(ProtocolVersion version )
         {
             ProtocolData protocol = protocols.get( version );
-            if ( protocol == null && ( protocolPhase != Protocol.GAME ) )
-            {
-                protocol = Iterables.getFirst( protocols.values(), null );
-            }
+            //if ( protocol == null && ( protocolPhase != Protocol.GAME ) )
+            //{
+            //    protocol = Iterables.getFirst( protocols.values(), null );
+            //}
             return protocol;
         }
 
@@ -499,7 +627,6 @@ public enum Protocol
 
         final int getId(Class<? extends DefinedPacket> packet, ProtocolVersion version)
         {
-
             ProtocolData protocolData = getProtocolData( version );
             if ( protocolData == null )
             {

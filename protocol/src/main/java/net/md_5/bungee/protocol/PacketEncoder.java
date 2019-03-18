@@ -11,10 +11,10 @@ import lombok.Setter;
 @RequiredArgsConstructor
 public class PacketEncoder extends MessageToByteEncoder<DefinedPacket>
 {
-
     @Setter
     @Getter
-    private Protocol protocol = Protocol.HANDSHAKE;
+    @NonNull
+    private Protocol protocol;
     private final Direction direction;
     @Setter
     @Getter
@@ -22,13 +22,17 @@ public class PacketEncoder extends MessageToByteEncoder<DefinedPacket>
     private ProtocolVersion protocolVersion;
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, DefinedPacket msg, ByteBuf out) throws Exception
-    {
+    protected void encode(ChannelHandlerContext ctx, DefinedPacket msg, ByteBuf out) throws Exception {
         Protocol.DirectionData prot = protocol.getDirectionData(direction);
-        if(protocolVersion.newerThan(ProtocolVersion.MC_1_6_4))
-        	DefinedPacket.writeVarInt( prot.getId( msg.getClass(), protocolVersion ), out );
+        
+        int packetID = prot.getId( msg.getClass(), protocolVersion );
+        System.out.println("ENC, id: " + packetID + ", dir: " + direction.name());
+        
+        if(!protocolVersion.isLegacy())
+        	DefinedPacket.writeVarInt( packetID, out );
         else
-        	out.writeByte(prot.getId(msg.getClass(), protocolVersion));;
+        	out.writeByte(packetID);
+        
         msg.write( out, prot.getDirection(), protocolVersion );
     }
 }

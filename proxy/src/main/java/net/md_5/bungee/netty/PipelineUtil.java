@@ -16,6 +16,7 @@ import net.md_5.bungee.api.config.ListenerInfo;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.LegacyPacketDecoder;
 import net.md_5.bungee.protocol.PacketEncoder;
+import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ModernPacketDecoder;
 import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.ProtocolVersion;
@@ -58,6 +59,7 @@ public class PipelineUtil {
 			FRAME_ENC,
 			PACKET_ENC,
 			new PacketEncoder(
+				Protocol.HANDSHAKE,
 				dir,
 				ProtocolVersion.getByNumber(protocolVersion, ProtocolGen.MODERN)
 			)
@@ -76,6 +78,7 @@ public class PipelineUtil {
 		ch.pipeline().addFirst(
 			PACKET_ENC,
 			new PacketEncoder(
+				Protocol.LEGACY,
 				dir,
 				ProtocolVersion.getByNumber(protocolVersion, ProtocolGen.PRE_NETTY)
 			)
@@ -90,10 +93,10 @@ public class PipelineUtil {
         ch.config().setAllocator( PooledByteBufAllocator.DEFAULT );
         ch.config().setWriteBufferWaterMark( MARK );
 
-        //ch.pipeline().addLast(
-    	//	TIMEOUT,
-    	//	new ReadTimeoutHandler( BungeeCord.getInstance().config.getTimeout(), TimeUnit.MILLISECONDS )
-    	//);
+        ch.pipeline().addLast(
+    		TIMEOUT,
+    		new ReadTimeoutHandler( BungeeCord.getInstance().config.getTimeout(), TimeUnit.MILLISECONDS )
+    	);
         
     	ch.pipeline().addLast(PipelineUtil.BOSS, new HandlerBoss().setHandler(ph));
     }

@@ -150,7 +150,7 @@ public class ServerConnector extends PacketHandler
             copiedHandshake.setHost( copiedHandshake.getHost() + user.getExtraDataInHandshake() );
         }
         
-        if(originalHandshake.getProtocolVersion().newerThan(ProtocolVersion.MC_1_6_4)) {
+        if(!originalHandshake.getProtocolVersion().isLegacy()) {
         	channel.write( copiedHandshake );
         	channel.setProtocol( Protocol.LOGIN );
         	thisState = State.LOGIN_SUCCESS;
@@ -164,7 +164,6 @@ public class ServerConnector extends PacketHandler
         	lr.setUserName(user.getName());
         	thisState = State.LOGIN_REQUEST;
         	channel.write(lr);
-        	channel.setProtocol( Protocol.LOGIN );
         }
     }
     
@@ -496,7 +495,6 @@ public class ServerConnector extends PacketHandler
     	BungeeCipher encrypt = EncryptionUtil.getCipher( false, secret);
     	ch.addBefore( PipelineUtil.PACKET_DEC, PipelineUtil.DECRYPT, new CipherDecoder( encrypt ) );
     	
-    	ch.setProtocol(Protocol.GAME);
     	thisState = State.LOGIN;
     	
     	ch.write(new ClientCommandOld(0));

@@ -73,9 +73,13 @@ public class PluginMessage extends DefinedPacket
     @Override
     public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-    	if(protocolVersion.olderOrEqual(ProtocolVersion.MC_1_6_4)) {
+    	if(protocolVersion.isLegacy()) {
     		tag = readLegacyString(buf, 20);
-    		data = readLegacyByteArray(buf);
+    		int len = buf.readShort();
+    		if(len > 0 && len < Short.MAX_VALUE) {
+    			data = new byte[len];
+    			buf.readBytes(data);
+    		}
     	}
     	else if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8_0) )
         {
@@ -94,9 +98,12 @@ public class PluginMessage extends DefinedPacket
     @Override
     public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-    	if(protocolVersion.olderOrEqual(ProtocolVersion.MC_1_6_4)) {
+    	if(protocolVersion.isLegacy()) {
     		writeLegacyString(tag, buf);
-    		writeLegacyByteArray(buf, data);
+    		if(data != null)
+    			writeLegacyByteArray(buf, data);
+    		else
+    			buf.writeShort(0);
     	}
     	else if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8_0 ))
         {

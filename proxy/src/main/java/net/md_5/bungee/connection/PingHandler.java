@@ -14,10 +14,10 @@ import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.packet.Kick;
 import net.md_5.bungee.protocol.packet.StatusRequest;
 import net.md_5.bungee.protocol.packet.StatusResponse;
 import net.md_5.bungee.protocol.packet.old.StatusRequestOld;
-import net.md_5.bungee.protocol.packet.old.StatusResponseOld;
 import net.md_5.bungee.util.BufUtil;
 import net.md_5.bungee.util.QuietException;
 
@@ -42,7 +42,7 @@ public class PingHandler extends PacketHandler
         //channel.write( new Handshake( protocol, target.getAddress().getHostString(), target.getAddress().getPort(), 1 ) );
 
         //encoder.setProtocol( Protocol.STATUS );
-        if(protocol.newerThan(ProtocolVersion.MC_1_6_4)) {
+        if(!protocol.isLegacy()) {
         	channel.setProtocol(Protocol.STATUS);
         	channel.write( new StatusRequest() );
         }
@@ -75,12 +75,15 @@ public class PingHandler extends PacketHandler
     }
     
     @Override
-    public void handle(StatusResponseOld resp) {
+    public void handle(Kick kick) throws Exception {
+    	Kick.StatusResponce r = new Kick.StatusResponce();
+    	r.parse(kick.getMessage());
+    	
     	callback.done(
 			new ServerPing(
-				new ServerPing.Protocol("", resp.protocolVersion),
-				new ServerPing.Players(resp.max, resp.players, new ServerPing.PlayerInfo[0]),
-				resp.motd,
+				new ServerPing.Protocol("", r.protocolVersion),
+				new ServerPing.Players(r.max, r.players, new ServerPing.PlayerInfo[0]),
+				r.motd,
 				(Favicon)null
 			),
 			null

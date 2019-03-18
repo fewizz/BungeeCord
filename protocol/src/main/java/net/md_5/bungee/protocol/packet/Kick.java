@@ -22,9 +22,8 @@ public class Kick extends DefinedPacket
     @Override
     public void read(ByteBuf buf, Direction d, ProtocolVersion pv)
     {
-    	if(pv.olderOrEqual(ProtocolVersion.MC_1_6_4))
-    		if(canReadLegacyString(buf, 256))
-    			message = readLegacyString(buf, 256);
+    	if(pv.isLegacy())
+			message = readLegacyString(buf, 256);
     	else
     		message = readString( buf );
     }
@@ -32,7 +31,7 @@ public class Kick extends DefinedPacket
     @Override
     public void write(ByteBuf buf, Direction d, ProtocolVersion pv)
     {
-    	if(pv.olderOrEqual(ProtocolVersion.MC_1_6_4))
+    	if(pv.isLegacy())
     		writeLegacyString(message, buf);
     	else
     		writeString( message, buf );
@@ -42,5 +41,47 @@ public class Kick extends DefinedPacket
     public void handle(AbstractPacketHandler handler) throws Exception
     {
         handler.handle( this );
+    }
+    
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Data
+    public static class StatusResponce {
+    	public int protocolVersion;
+    	public String mcVersion;
+    	public String motd;
+    	public int players;
+    	public int max;
+    	
+    	public String build() {
+    		StringBuilder r = new StringBuilder();
+    		
+    		r.append('\u00a7');
+    		r.append('1');
+    		r.append('\u0000');
+    		r.append(String.valueOf(protocolVersion));
+    		r.append('\u0000');
+    		r.append(mcVersion);
+    		r.append('\u0000');
+    		r.append(motd);
+    		r.append('\u0000');
+    		r.append(String.valueOf(players));
+    		r.append('\u0000');
+    		r.append(String.valueOf(max));
+    		
+    		return r.toString();
+    	}
+    	
+    	public void parse(String str) {
+    		if(str.charAt(0) != '\u00a7' && str.charAt(1) != '\u0000')
+    			throw new RuntimeException();
+    		
+    		String[] a = str.substring(3).split("\u0000");
+    		protocolVersion = Integer.valueOf(a[0]);
+    		mcVersion = a[1];
+    		motd = a[2];
+    		players = Integer.valueOf(a[3]);
+    		max = Integer.valueOf(a[4]);
+    	}
     }
 }

@@ -26,8 +26,6 @@ public class LoginOld extends DefinedPacket {
     
     @Override
     public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion) {
-    	if(protocolVersion.newerThan(ProtocolVersion.MC_1_6_4))
-    		throw new RuntimeException();
     	entityId = buf.readInt();
 		levelType = readLegacyString(buf, 16);
 		int mode = buf.readUnsignedByte();
@@ -41,8 +39,6 @@ public class LoginOld extends DefinedPacket {
     
     @Override
     public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion) {
-    	if(protocolVersion.newerThan(ProtocolVersion.MC_1_6_4))
-    		throw new RuntimeException();
     	buf.writeInt(entityId);
     	writeLegacyString(levelType, buf);
     	buf.writeByte(gameMode | (hardcore ? 0b1000 : 0));

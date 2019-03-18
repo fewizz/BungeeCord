@@ -35,7 +35,6 @@ import net.md_5.bungee.protocol.packet.old.ClientCommandOld;
 import net.md_5.bungee.protocol.packet.old.LoginOld;
 import net.md_5.bungee.protocol.packet.old.LoginRequestOld;
 import net.md_5.bungee.protocol.packet.old.StatusRequestOld;
-import net.md_5.bungee.protocol.packet.old.StatusResponseOld;
 
 public abstract class AbstractPacketHandler
 {
@@ -174,8 +173,5 @@ public abstract class AbstractPacketHandler
 	}
 
 	public void handle(LoginOld loginOld) {
-	}
-
-	public void handle(StatusResponseOld statusResponseOld) {
 	}
 }

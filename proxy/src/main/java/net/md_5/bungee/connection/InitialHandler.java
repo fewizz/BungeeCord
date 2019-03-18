@@ -65,7 +65,6 @@ import net.md_5.bungee.protocol.packet.StatusResponse;
 import net.md_5.bungee.protocol.packet.old.ClientCommandOld;
 import net.md_5.bungee.protocol.packet.old.LoginRequestOld;
 import net.md_5.bungee.protocol.packet.old.StatusRequestOld;
-import net.md_5.bungee.protocol.packet.old.StatusResponseOld;
 import net.md_5.bungee.util.BoundedArrayList;
 import net.md_5.bungee.util.BufUtil;
 import net.md_5.bungee.util.QuietException;
@@ -495,7 +494,8 @@ public class InitialHandler extends PacketHandler implements PendingConnection
                             {
                                 unsafe.sendPacket( new LoginSuccess( getUUID(), getName() ) ); // Without dashes, for older clients.
                             }
-                            ch.setProtocol( Protocol.GAME );
+                            if(!getVersion().isLegacy())
+                            	ch.setProtocol( Protocol.GAME );
 
                             ch.getHandle().pipeline().get( HandlerBoss.class ).setHandler( new UpstreamBridge( bungee, userCon ) );
                             bungee.getPluginManager().callEvent( new PostLoginEvent( userCon ) );
@@ -622,14 +622,14 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     	ServerInfo forced = AbstractReconnectHandler.getForcedHost( this );
         final String motd = ( forced != null ) ? forced.getMotd() : listener.getMotd();
 
-    	StatusResponseOld old = new StatusResponseOld();
-    	old.setMcVersion(ProtocolVersion.getByNumber(request.getProtocolVer(), ProtocolGen.PRE_NETTY).mcVersion);
-    	old.setMotd(motd);
-    	old.setPlayers(bungee.getOnlineCount());//forced.getPlayers().size());
-    	old.setProtocolVersion(request.getProtocolVer());
-    	old.setMax(listener.getMaxPlayers());
+    	Kick.StatusResponce r = new Kick.StatusResponce();
+    	r.setMcVersion(ProtocolVersion.getByNumber(request.getProtocolVer(), ProtocolGen.PRE_NETTY).mcVersion);
+    	r.setMotd(motd);
+    	r.setPlayers(bungee.getOnlineCount());//forced.getPlayers().size());
+    	r.setProtocolVersion(request.getProtocolVer());
+    	r.setMax(listener.getMaxPlayers());
     	
-    	ch.close(old);
+    	ch.close(new Kick(r.build()));
     }
     
     @Override
@@ -644,7 +644,6 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     	loginRequest.setData(handshakeOld.getUserName());
     	
     	thisState = InitialHandler.State.ENCRYPT;
-    	ch.setProtocol(Protocol.LOGIN);
     	
     	EncryptionRequest request = EncryptionUtil.encryptRequest();
     	this.request = request;

@@ -274,7 +274,7 @@ public abstract class DefinedPacket
     	buf.writeBytes(arr);
     }
     
-    public static byte [] readLegacyByteArray(ByteBuf buf) {
+    public static byte[] readLegacyByteArray(ByteBuf buf) {
     	int size = buf.readShort();
     	byte[] arr = new byte[size];
     	buf.readBytes(arr);
@@ -283,10 +283,7 @@ public abstract class DefinedPacket
     
     public static String readLegacyString(ByteBuf buf, int maxSize) {
     	int len = buf.readShort();
-    	if(len > maxSize)
-    		throw new OverflowPacketException("Legacy string is too wide to read");
-    	if(len < 0)
-    		throw new RuntimeException("Legacy string size is less than zero");
+    	checkLegacyStringLen(len, maxSize);
     	return new String(readCharArray(buf, len));
     }
     
@@ -301,14 +298,37 @@ public abstract class DefinedPacket
     	if(!buf.isReadable(Short.BYTES))
     		return false;
     	int len = buf.getShort(buf.readerIndex());
-    	if(len > maxSize)
-    		throw new OverflowPacketException("Legacy string is too wide to read");
-    	if(len < 0)
-    		throw new RuntimeException("Legacy string size is less than zero");
+    	checkLegacyStringLen(len, maxSize);
     	return buf.isReadable(Character.BYTES*len + Short.BYTES);
     }
     
-    public static void skipLegacyString(ByteBuf buf) {
-    	buf.skipBytes(buf.readShort());
+    public static void skipLegacyString(ByteBuf buf, int maxSize) {
+    	int len = buf.readShort();
+    	checkLegacyStringLen(len, maxSize);
+    	buf.skipBytes(len*Character.BYTES);
+    }
+    
+    private static void checkLegacyStringLen(int len, int max) {
+    	if(len > Short.MAX_VALUE || len > max)
+    		throw new OverflowPacketException("Legacy string is too wide to read");
+    	if(len < 0)
+    		throw new RuntimeException("Legacy string size is less than zero");
+    }
+    
+    public static void skipLegacyTag(ByteBuf buf) {
+    	int len = buf.readShort();
+    	if(len > 0) buf.skipBytes(len);
+    }
+    
+    public static void skipLegacyItemStack(ByteBuf buf) {
+    	int l = buf.readShort();
+    	if(l >= 0) {
+    		buf.skipBytes(1 + Short.BYTES);
+    		skipLegacyTag(buf);
+    	}
+    }
+    
+    public static void skipLegacyWatchableObjects(ByteBuf buf) {
+    	buf.readerIndex(buf.indexOf(buf.readerIndex(), buf.writerIndex(), (byte) 127) + 1);
     }
 }
