@@ -29,25 +29,28 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
     	while(in.isReadable()) {
 			int begin = in.readerIndex();
-    		int packetId = in.readUnsignedByte();
+			
+			try {
+				int packetId = in.readUnsignedByte();
 
-    		DefinedPacket packet = protocol.getDirectionData(direction).createPacket( packetId, protocolVersion );
+				DefinedPacket packet = protocol.getDirectionData(direction).createPacket( packetId, protocolVersion );
     		
-    		if(packet == null)
-    			throw new RuntimeException(
-    				"Don't know that packet" +
-					", id: " + packetId +
-					", direction: " + direction.name()
-    			);
-    		System.out.println("DEC, id: " + packetId + ", dir: " + direction.name());
+				if(packet == null)
+					throw new RuntimeException(
+							"Don't know that packet" +
+							", id: " + packetId +
+							", direction: " + direction.name()
+    					);
+    			System.out.println("DEC, id: " + packetId + ", dir: " + direction.name());
     		
-    		try {
     			packet.read( in, direction, protocolVersion );
-    		} catch(IndexOutOfBoundsException e) {// Temp. solution. //TODO
+    			out.add( new PacketWrapper( packet, in.copy(begin, in.readerIndex() - begin), packetId ) );
+    		} catch(Exception e) {// Temp. solution. //TODO
     			in.readerIndex(begin);
+    			if(!(e instanceof IndexOutOfBoundsException))
+    				throw e;
     			break;
-    		}
-    		out.add( new PacketWrapper( packet, in.copy(begin, in.readerIndex() - begin), packetId ) );	
+    		}	
     	} 
     }
 }

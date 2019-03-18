@@ -45,32 +45,81 @@ import net.md_5.bungee.protocol.packet.TabCompleteResponse;
 import net.md_5.bungee.protocol.packet.Team;
 import net.md_5.bungee.protocol.packet.Title;
 import net.md_5.bungee.protocol.packet.old.AnimationOld;
+import net.md_5.bungee.protocol.packet.old.AttachEntityOld;
+import net.md_5.bungee.protocol.packet.old.AutoCompleteOld;
+import net.md_5.bungee.protocol.packet.old.BlockChangeOld;
 import net.md_5.bungee.protocol.packet.old.BlockDestroyOld;
+import net.md_5.bungee.protocol.packet.old.BlockDigOld;
 import net.md_5.bungee.protocol.packet.old.BlockItemSwitchOld;
 import net.md_5.bungee.protocol.packet.old.ClientCommandOld;
 import net.md_5.bungee.protocol.packet.old.ClientInfoOld;
+import net.md_5.bungee.protocol.packet.old.CloseWindowOld;
+import net.md_5.bungee.protocol.packet.old.CollectOld;
+import net.md_5.bungee.protocol.packet.old.CreativeSetSlotOld;
+import net.md_5.bungee.protocol.packet.old.DestroyEntityOld;
+import net.md_5.bungee.protocol.packet.old.DoorChangeOld;
+import net.md_5.bungee.protocol.packet.old.EnchantItemOld;
+import net.md_5.bungee.protocol.packet.old.EntityActionOld;
+import net.md_5.bungee.protocol.packet.old.EntityEffectOld;
+import net.md_5.bungee.protocol.packet.old.EntityExpOrbOld;
+import net.md_5.bungee.protocol.packet.old.EntityHeadRotationOld;
 import net.md_5.bungee.protocol.packet.old.EntityLookOld;
 import net.md_5.bungee.protocol.packet.old.EntityMetadataOld;
+import net.md_5.bungee.protocol.packet.old.EntityOld;
+import net.md_5.bungee.protocol.packet.old.EntityPaintingOld;
+import net.md_5.bungee.protocol.packet.old.EntityStatusOld;
+import net.md_5.bungee.protocol.packet.old.EntityTeleportOld;
+import net.md_5.bungee.protocol.packet.old.EntityVelocityOld;
 import net.md_5.bungee.protocol.packet.old.ExperienceOld;
+import net.md_5.bungee.protocol.packet.old.ExplosionOld;
 import net.md_5.bungee.protocol.packet.old.FlyingOld;
 import net.md_5.bungee.protocol.packet.old.GameEventOld;
+import net.md_5.bungee.protocol.packet.old.LevelSoundOld;
 import net.md_5.bungee.protocol.packet.old.LoginOld;
 import net.md_5.bungee.protocol.packet.old.LoginRequestOld;
+import net.md_5.bungee.protocol.packet.old.MapChunkOld;
 import net.md_5.bungee.protocol.packet.old.MapChunksOld;
+import net.md_5.bungee.protocol.packet.old.MapDataOld;
 import net.md_5.bungee.protocol.packet.old.MobSpawnOld;
+import net.md_5.bungee.protocol.packet.old.MultiBlockChangeOld;
+import net.md_5.bungee.protocol.packet.old.NamedEntitySpawnOld;
+import net.md_5.bungee.protocol.packet.old.OpenWindowOld;
+import net.md_5.bungee.protocol.packet.old.PlaceOld;
+import net.md_5.bungee.protocol.packet.old.PlayNoteBlockOld;
 import net.md_5.bungee.protocol.packet.old.PlayerAbilitiesOld;
 import net.md_5.bungee.protocol.packet.old.PlayerInfoOld;
+import net.md_5.bungee.protocol.packet.old.PlayerInputOld;
 import net.md_5.bungee.protocol.packet.old.PlayerInventoryOld;
 import net.md_5.bungee.protocol.packet.old.PlayerLookMoveOld;
+import net.md_5.bungee.protocol.packet.old.PlayerLookOld;
 import net.md_5.bungee.protocol.packet.old.PlayerPositionOld;
+import net.md_5.bungee.protocol.packet.old.RelEntityMoveLookOld;
+import net.md_5.bungee.protocol.packet.old.RelEntityMoveOld;
+import net.md_5.bungee.protocol.packet.old.RemoveEntityEffectOld;
+import net.md_5.bungee.protocol.packet.old.RespawnOld;
+import net.md_5.bungee.protocol.packet.old.SetDisplayObjectiveOld;
+import net.md_5.bungee.protocol.packet.old.SetObjectiveOld;
+import net.md_5.bungee.protocol.packet.old.SetPlayerTeam;
+import net.md_5.bungee.protocol.packet.old.SetScoreOld;
 import net.md_5.bungee.protocol.packet.old.SetSlotOld;
+import net.md_5.bungee.protocol.packet.old.SleepOld;
 import net.md_5.bungee.protocol.packet.old.SpawnPositionOld;
+import net.md_5.bungee.protocol.packet.old.StatisticOld;
 import net.md_5.bungee.protocol.packet.old.StatusRequestOld;
+import net.md_5.bungee.protocol.packet.old.TileEditorOpen;
+import net.md_5.bungee.protocol.packet.old.TileEntityDataOld;
+import net.md_5.bungee.protocol.packet.old.TransactionOld;
 import net.md_5.bungee.protocol.packet.old.UpdateAttribsOld;
 import net.md_5.bungee.protocol.packet.old.UpdateHealthOld;
+import net.md_5.bungee.protocol.packet.old.UpdateProgressbarOld;
+import net.md_5.bungee.protocol.packet.old.UpdateSignOld;
 import net.md_5.bungee.protocol.packet.old.UpdateTimeOld;
+import net.md_5.bungee.protocol.packet.old.UseEntityOld;
 import net.md_5.bungee.protocol.packet.old.VehicleSpawnOld;
+import net.md_5.bungee.protocol.packet.old.WeatherOld;
+import net.md_5.bungee.protocol.packet.old.WindowClickOld;
 import net.md_5.bungee.protocol.packet.old.WindowItemsOld;
+import net.md_5.bungee.protocol.packet.old.WorldParticlesOld;
 
 public enum Protocol
 {
@@ -105,9 +154,17 @@ public enum Protocol
             		map( ProtocolVersion.MC_1_6_4, 6 )
             );
 			TO_CLIENT.registerPacket(
+            		UseEntityOld.class,
+            		map( ProtocolVersion.MC_1_6_4, 7 )
+            );
+			TO_CLIENT.registerPacket(
             		UpdateHealthOld.class,
             		map( ProtocolVersion.MC_1_6_4, 8 )
             );
+			registerPacket(
+					RespawnOld.class,
+					map(ProtocolVersion.MC_1_6_4, 9)
+			);
 			registerPacket(
 					FlyingOld.class,
 					map(ProtocolVersion.MC_1_6_4, 10)
@@ -117,16 +174,44 @@ public enum Protocol
 					map(ProtocolVersion.MC_1_6_4, 11)
 			);
 			registerPacket(
+					PlayerLookOld.class,
+					map(ProtocolVersion.MC_1_6_4, 12)
+			);
+			registerPacket(
 					PlayerLookMoveOld.class,
 					map(ProtocolVersion.MC_1_6_4, 13)
+			);
+			TO_SERVER.registerPacket(
+					BlockDigOld.class,
+					map(ProtocolVersion.MC_1_6_4, 14)
+			);
+			TO_SERVER.registerPacket(
+					PlaceOld.class,
+					map(ProtocolVersion.MC_1_6_4, 15)
 			);
 			registerPacket(
 					BlockItemSwitchOld.class,
 					map(ProtocolVersion.MC_1_6_4, 16)
 			);
+			TO_CLIENT.registerPacket(
+					SleepOld.class,
+					map(ProtocolVersion.MC_1_6_4, 17)
+			);
 			registerPacket(
 					AnimationOld.class,
 					map(ProtocolVersion.MC_1_6_4, 18)
+			);
+			TO_SERVER.registerPacket(
+					EntityActionOld.class,
+					map(ProtocolVersion.MC_1_6_4, 19)
+			);
+			TO_CLIENT.registerPacket(
+					NamedEntitySpawnOld.class,
+					map(ProtocolVersion.MC_1_6_4, 20)
+			);
+			TO_CLIENT.registerPacket(
+					CollectOld.class,
+					map(ProtocolVersion.MC_1_6_4, 22)
 			);
 			TO_CLIENT.registerPacket(
 					VehicleSpawnOld.class,
@@ -137,12 +222,68 @@ public enum Protocol
 					map(ProtocolVersion.MC_1_6_4, 24)
 			);
 			TO_CLIENT.registerPacket(
+					EntityPaintingOld.class,
+					map(ProtocolVersion.MC_1_6_4, 25)
+			);
+			TO_CLIENT.registerPacket(
+					EntityExpOrbOld.class,
+					map(ProtocolVersion.MC_1_6_4, 26)
+			);
+			TO_SERVER.registerPacket(
+					PlayerInputOld.class,
+					map(ProtocolVersion.MC_1_6_4, 27)
+			);
+			TO_CLIENT.registerPacket(
+					EntityVelocityOld.class,
+					map(ProtocolVersion.MC_1_6_4, 28)
+			);
+			TO_CLIENT.registerPacket(
+					DestroyEntityOld.class,
+					map(ProtocolVersion.MC_1_6_4, 29)
+			);
+			TO_CLIENT.registerPacket(
+					EntityOld.class,
+					map(ProtocolVersion.MC_1_6_4, 30)
+			);
+			TO_CLIENT.registerPacket(
+					RelEntityMoveOld.class,
+					map(ProtocolVersion.MC_1_6_4, 31)
+			);
+			TO_CLIENT.registerPacket(
 					EntityLookOld.class,
 					map(ProtocolVersion.MC_1_6_4, 32)
 			);
 			TO_CLIENT.registerPacket(
+					RelEntityMoveLookOld.class,
+					map(ProtocolVersion.MC_1_6_4, 33)
+			);
+			TO_CLIENT.registerPacket(
+					EntityTeleportOld.class,
+					map(ProtocolVersion.MC_1_6_4, 34)
+			);
+			TO_CLIENT.registerPacket(
+					EntityHeadRotationOld.class,
+					map(ProtocolVersion.MC_1_6_4, 35)
+			);
+			TO_CLIENT.registerPacket(
+					EntityStatusOld.class,
+					map(ProtocolVersion.MC_1_6_4, 38)
+			);
+			TO_CLIENT.registerPacket(
+					AttachEntityOld.class,
+					map(ProtocolVersion.MC_1_6_4, 39)
+			);
+			TO_CLIENT.registerPacket(
 					EntityMetadataOld.class,
 					map(ProtocolVersion.MC_1_6_4, 40)
+			);
+			TO_CLIENT.registerPacket(
+					EntityEffectOld.class,
+					map(ProtocolVersion.MC_1_6_4, 41)
+			);
+			TO_CLIENT.registerPacket(
+					RemoveEntityEffectOld.class,
+					map(ProtocolVersion.MC_1_6_4, 42)
 			);
 			TO_CLIENT.registerPacket(
 					ExperienceOld.class,
@@ -153,6 +294,22 @@ public enum Protocol
 					map(ProtocolVersion.MC_1_6_4, 44)
 			);
 			TO_CLIENT.registerPacket(
+					MapChunkOld.class,
+					map(ProtocolVersion.MC_1_6_4, 51)
+			);
+			TO_CLIENT.registerPacket(
+					MultiBlockChangeOld.class,
+					map(ProtocolVersion.MC_1_6_4, 52)
+			);
+			TO_CLIENT.registerPacket(
+					BlockChangeOld.class,
+					map(ProtocolVersion.MC_1_6_4, 53)
+			);
+			TO_CLIENT.registerPacket(
+					PlayNoteBlockOld.class,
+					map(ProtocolVersion.MC_1_6_4, 54)
+			);
+			TO_CLIENT.registerPacket(
 					BlockDestroyOld.class,
 					map(ProtocolVersion.MC_1_6_4, 55)
 			);
@@ -161,8 +318,40 @@ public enum Protocol
 					map(ProtocolVersion.MC_1_6_4, 56)
 			);
 			TO_CLIENT.registerPacket(
+					ExplosionOld.class,
+					map(ProtocolVersion.MC_1_6_4, 60)
+			);
+			TO_CLIENT.registerPacket(
+					DoorChangeOld.class,
+					map(ProtocolVersion.MC_1_6_4, 61)
+			);
+			TO_CLIENT.registerPacket(
+					LevelSoundOld.class,
+					map(ProtocolVersion.MC_1_6_4, 62)
+			);
+			TO_CLIENT.registerPacket(
+					WorldParticlesOld.class,
+					map(ProtocolVersion.MC_1_6_4, 63)
+			);
+			TO_CLIENT.registerPacket(
 					GameEventOld.class,
 					map(ProtocolVersion.MC_1_6_4, 70)
+			);
+			TO_CLIENT.registerPacket(
+					WeatherOld.class,
+					map(ProtocolVersion.MC_1_6_4, 71)
+			);
+			TO_CLIENT.registerPacket(
+					OpenWindowOld.class,
+					map(ProtocolVersion.MC_1_6_4, 100)
+			);
+			registerPacket(
+					CloseWindowOld.class,
+					map(ProtocolVersion.MC_1_6_4, 101)
+			);
+			TO_SERVER.registerPacket(
+					WindowClickOld.class,
+					map(ProtocolVersion.MC_1_6_4, 102)
 			);
 			TO_CLIENT.registerPacket(
 					SetSlotOld.class,
@@ -173,12 +362,52 @@ public enum Protocol
 					map(ProtocolVersion.MC_1_6_4, 104)
 			);
 			TO_CLIENT.registerPacket(
+					UpdateProgressbarOld.class,
+					map(ProtocolVersion.MC_1_6_4, 105)
+			);
+			registerPacket(
+					TransactionOld.class,
+					map(ProtocolVersion.MC_1_6_4, 106)
+			);
+			registerPacket(
+					CreativeSetSlotOld.class,
+					map(ProtocolVersion.MC_1_6_4, 107)
+			);
+			TO_SERVER.registerPacket(
+					EnchantItemOld.class,
+					map(ProtocolVersion.MC_1_6_4, 108)
+			);
+			registerPacket(
+					UpdateSignOld.class,
+					map(ProtocolVersion.MC_1_6_4, 130)
+			);
+			TO_CLIENT.registerPacket(
+					MapDataOld.class,
+					map(ProtocolVersion.MC_1_6_4, 131)
+			);
+			TO_CLIENT.registerPacket(
+					TileEntityDataOld.class,
+					map(ProtocolVersion.MC_1_6_4, 132)
+			);
+			TO_CLIENT.registerPacket(
+					TileEditorOpen.class,
+					map(ProtocolVersion.MC_1_6_4, 133)
+			);
+			TO_CLIENT.registerPacket(
+					StatisticOld.class,
+					map(ProtocolVersion.MC_1_6_4, 200)
+			);
+			TO_CLIENT.registerPacket(
 					PlayerInfoOld.class,
 					map(ProtocolVersion.MC_1_6_4, 201)
 			);
 			registerPacket(
 					PlayerAbilitiesOld.class,
 					map(ProtocolVersion.MC_1_6_4, 202)
+			);
+			registerPacket(
+					AutoCompleteOld.class,
+					map(ProtocolVersion.MC_1_6_4, 203)
 			);
 			TO_SERVER.registerPacket(
             		ClientInfoOld.class,
@@ -187,6 +416,22 @@ public enum Protocol
 			TO_SERVER.registerPacket(
             		ClientCommandOld.class,
             		map( ProtocolVersion.MC_1_6_4, 205 )
+            );
+			TO_SERVER.registerPacket(
+            		SetObjectiveOld.class,
+            		map( ProtocolVersion.MC_1_6_4, 206 )
+            );
+			TO_SERVER.registerPacket(
+            		SetScoreOld.class,
+            		map( ProtocolVersion.MC_1_6_4, 207 )
+            );
+			TO_SERVER.registerPacket(
+            		SetDisplayObjectiveOld.class,
+            		map( ProtocolVersion.MC_1_6_4, 208 )
+            );
+			TO_SERVER.registerPacket(
+            		SetPlayerTeam.class,
+            		map( ProtocolVersion.MC_1_6_4, 209 )
             );
 			registerPacket(
                     PluginMessage.class,
