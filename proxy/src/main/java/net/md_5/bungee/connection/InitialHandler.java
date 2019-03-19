@@ -55,6 +55,7 @@ import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.protocol.packet.EncryptionResponse;
 import net.md_5.bungee.protocol.packet.Handshake;
 import net.md_5.bungee.protocol.packet.Kick;
+import net.md_5.bungee.protocol.packet.Kick.StatusResponce;
 import net.md_5.bungee.protocol.packet.LoginPayloadResponse;
 import net.md_5.bungee.protocol.packet.LoginRequest;
 import net.md_5.bungee.protocol.packet.LoginSuccess;
@@ -183,8 +184,20 @@ public class InitialHandler extends PacketHandler implements PendingConnection
                     @Override
                     public void done(ProxyPingEvent pingResult, Throwable error)
                     {
-                        Gson gson = handshake.getProtocolVersion() == ProtocolVersion.MC_1_7_2 ? BungeeCord.getInstance().gsonLegacy : BungeeCord.getInstance().gson;
-                        unsafe.sendPacket( new StatusResponse( gson.toJson( pingResult.getResponse() ) ) );
+                    	if(getVersion().isLegacy()) {
+                    		Kick.StatusResponce r = new Kick.StatusResponce();
+                    		r.setMax(pingResult.getResponse().getPlayers().getMax());
+                    		r.setPlayers(pingResult.getResponse().getPlayers().getOnline());
+                    		r.setMotd(pingResult.getResponse().getDescription());
+                    		r.setMcVersion("");
+                    		r.setProtocolVersion(pingResult.getConnection().getVersion().version);
+                    		unsafe.sendPacket(new Kick(r.build())); //TODO
+                    		ch.close();
+                    	}
+                    	else {
+                    		Gson gson = handshake.getProtocolVersion() == ProtocolVersion.MC_1_7_2 ? BungeeCord.getInstance().gsonLegacy : BungeeCord.getInstance().gson;
+                        	unsafe.sendPacket( new StatusResponse( gson.toJson( pingResult.getResponse() ) ) );
+                    	}
                         if ( bungee.getConnectionThrottle() != null )
                         {
                             bungee.getConnectionThrottle().unthrottle( getAddress().getAddress() );
@@ -617,19 +630,14 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     
     @Override
     public void handle(final StatusRequestOld request) throws Exception {
-    	Preconditions.checkState( thisState == State.HANDSHAKE, "Not expecting HANDSHAKE" );
-        //ServerInfo forced = AbstractReconnectHandler.getForcedHost( this );
-    	ServerInfo forced = AbstractReconnectHandler.getForcedHost( this );
-        final String motd = ( forced != null ) ? forced.getMotd() : listener.getMotd();
-
-    	Kick.StatusResponce r = new Kick.StatusResponce();
-    	r.setMcVersion(ProtocolVersion.getByNumber(request.getProtocolVer(), ProtocolGen.PRE_NETTY).mcVersion);
-    	r.setMotd(motd);
-    	r.setPlayers(bungee.getOnlineCount());//forced.getPlayers().size());
-    	r.setProtocolVersion(request.getProtocolVer());
-    	r.setMax(listener.getMaxPlayers());
+    	handshake = new Handshake();
+    	handshake.setHost(request.getIp());
+    	handshake.setPort(request.getPort());
+    	handshake.setProtocolVersion(ProtocolVersion.getByNumber(request.getProtocolVer(), ProtocolGen.PRE_NETTY));
+    	handshake.setRequestedProtocol(1);
     	
-    	ch.close(new Kick(r.build()));
+    	thisState = State.STATUS;
+    	handle(new StatusRequest());
     }
     
     @Override
@@ -639,6 +647,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     	handshake.setProtocolVersion(ProtocolVersion.getByNumber(handshakeOld.getProtocolVer(), ProtocolGen.PRE_NETTY));
     	handshake.setHost(handshakeOld.getHost());
     	handshake.setPort(handshakeOld.getPort());
+    	handshake.setRequestedProtocol(2);
     	
     	loginRequest = new LoginRequest();
     	loginRequest.setData(handshakeOld.getUserName());

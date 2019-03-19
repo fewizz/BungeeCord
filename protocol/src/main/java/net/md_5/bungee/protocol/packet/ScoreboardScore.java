@@ -28,7 +28,8 @@ public class ScoreboardScore extends DefinedPacket
     @Override
     public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-        itemName = readString( buf );
+    	
+        itemName = readString( buf, protocolVersion );
         action = buf.readByte();
         if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0 ))
         {
@@ -41,7 +42,7 @@ public class ScoreboardScore extends DefinedPacket
         {
             if ( action != 1 )
             {
-                scoreName = readString( buf );
+                scoreName = readString( buf, protocolVersion );
                 value = buf.readInt();
             }
         }
@@ -50,7 +51,7 @@ public class ScoreboardScore extends DefinedPacket
     @Override
     public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-        writeString( itemName, buf );
+        writeString( itemName, buf, protocolVersion );
         buf.writeByte( action );
         if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0 ))
         {
@@ -63,7 +64,7 @@ public class ScoreboardScore extends DefinedPacket
         {
             if ( action != 1 )
             {
-                writeString( scoreName, buf );
+                writeString( scoreName, buf, protocolVersion );
                 buf.writeInt( value );
             }
         }

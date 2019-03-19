@@ -97,10 +97,6 @@ import net.md_5.bungee.protocol.packet.old.RelEntityMoveLookOld;
 import net.md_5.bungee.protocol.packet.old.RelEntityMoveOld;
 import net.md_5.bungee.protocol.packet.old.RemoveEntityEffectOld;
 import net.md_5.bungee.protocol.packet.old.RespawnOld;
-import net.md_5.bungee.protocol.packet.old.SetDisplayObjectiveOld;
-import net.md_5.bungee.protocol.packet.old.SetObjectiveOld;
-import net.md_5.bungee.protocol.packet.old.SetPlayerTeam;
-import net.md_5.bungee.protocol.packet.old.SetScoreOld;
 import net.md_5.bungee.protocol.packet.old.SetSlotOld;
 import net.md_5.bungee.protocol.packet.old.SleepOld;
 import net.md_5.bungee.protocol.packet.old.SpawnPositionOld;
@@ -418,19 +414,19 @@ public enum Protocol
             		map( ProtocolVersion.MC_1_6_4, 205 )
             );
 			TO_SERVER.registerPacket(
-            		SetObjectiveOld.class,
+            		ScoreboardObjective.class,
             		map( ProtocolVersion.MC_1_6_4, 206 )
             );
 			TO_SERVER.registerPacket(
-            		SetScoreOld.class,
+            		ScoreboardScore.class,
             		map( ProtocolVersion.MC_1_6_4, 207 )
             );
 			TO_SERVER.registerPacket(
-            		SetDisplayObjectiveOld.class,
+            		ScoreboardDisplay.class,
             		map( ProtocolVersion.MC_1_6_4, 208 )
             );
 			TO_SERVER.registerPacket(
-            		SetPlayerTeam.class,
+            		Team.class,
             		map( ProtocolVersion.MC_1_6_4, 209 )
             );
 			registerPacket(

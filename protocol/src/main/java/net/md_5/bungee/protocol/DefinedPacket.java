@@ -363,4 +363,19 @@ public abstract class DefinedPacket
 			}
     	}
     }
+    
+    public static void writeString(String s, ByteBuf buf, ProtocolVersion pv) {
+        if(pv.isLegacy())
+        	writeLegacyString(s, buf);
+        else 
+        	writeString(s, buf);
+    }
+    
+    public static String readString(ByteBuf buf, ProtocolVersion pv, int maxSize) {
+    	return pv.isLegacy() ? readLegacyString(buf, maxSize) : readString(buf);
+    }
+    
+    public static String readString(ByteBuf buf, ProtocolVersion pv) {
+    	return readString(buf, pv, Short.MAX_VALUE); // We don't care. =P
+    }
 }

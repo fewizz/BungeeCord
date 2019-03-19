@@ -30,11 +30,12 @@ public class ScoreboardObjective extends DefinedPacket
     @Override
     public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-        name = readString( buf );
+    	
+        name = readString( buf, protocolVersion );
+        
         if ( protocolVersion.olderOrEqual(ProtocolVersion.MC_1_7_6 ))
-        {
-            value = readString( buf );
-        }
+            value = readString( buf, protocolVersion );
+        
         action = buf.readByte();
         if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0) && ( action == 0 || action == 2 ) )
         {
@@ -52,10 +53,17 @@ public class ScoreboardObjective extends DefinedPacket
     @Override
     public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-        writeString( name, buf );
+    	if(protocolVersion.isLegacy()) {
+    		writeLegacyString(name, buf);
+    		writeLegacyString(value, buf);
+    		buf.writeByte(action);
+    		return;
+    	}
+    	
+        writeString( name, buf, protocolVersion );
         if ( protocolVersion.olderOrEqual(ProtocolVersion.MC_1_7_6 ))
         {
-            writeString( value, buf );
+            writeString( value, buf, protocolVersion );
         }
         buf.writeByte( action );
         if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0 ) && ( action == 0 || action == 2 ) )
