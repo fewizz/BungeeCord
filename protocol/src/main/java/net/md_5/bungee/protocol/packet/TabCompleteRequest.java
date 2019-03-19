@@ -37,7 +37,7 @@ public class TabCompleteRequest extends DefinedPacket {
 			transactionId = readVarInt(buf);
 		
 
-		cursor = readString(buf);
+		cursor = readString(buf, protocolVersion);
 
 		if (protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0) && protocolVersion.olderThan(ProtocolVersion.MC_1_13_0)) {
 			if (protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9_0))
@@ -54,7 +54,7 @@ public class TabCompleteRequest extends DefinedPacket {
 			writeVarInt(transactionId, buf);
 		
 
-		writeString(cursor, buf);
+		writeString(cursor, buf, protocolVersion);
 
 		if (protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0) && protocolVersion.olderThan(ProtocolVersion.MC_1_13_0)) {
 			if (protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9_0))

@@ -46,7 +46,6 @@ import net.md_5.bungee.protocol.packet.Team;
 import net.md_5.bungee.protocol.packet.Title;
 import net.md_5.bungee.protocol.packet.old.AnimationOld;
 import net.md_5.bungee.protocol.packet.old.AttachEntityOld;
-import net.md_5.bungee.protocol.packet.old.AutoCompleteOld;
 import net.md_5.bungee.protocol.packet.old.BlockChangeOld;
 import net.md_5.bungee.protocol.packet.old.BlockDestroyOld;
 import net.md_5.bungee.protocol.packet.old.BlockDigOld;
@@ -87,7 +86,6 @@ import net.md_5.bungee.protocol.packet.old.OpenWindowOld;
 import net.md_5.bungee.protocol.packet.old.PlaceOld;
 import net.md_5.bungee.protocol.packet.old.PlayNoteBlockOld;
 import net.md_5.bungee.protocol.packet.old.PlayerAbilitiesOld;
-import net.md_5.bungee.protocol.packet.old.PlayerInfoOld;
 import net.md_5.bungee.protocol.packet.old.PlayerInputOld;
 import net.md_5.bungee.protocol.packet.old.PlayerInventoryOld;
 import net.md_5.bungee.protocol.packet.old.PlayerLookMoveOld;
@@ -394,15 +392,19 @@ public enum Protocol
 					map(ProtocolVersion.MC_1_6_4, 200)
 			);
 			TO_CLIENT.registerPacket(
-					PlayerInfoOld.class,
+					PlayerListItem.class,
 					map(ProtocolVersion.MC_1_6_4, 201)
 			);
 			registerPacket(
 					PlayerAbilitiesOld.class,
 					map(ProtocolVersion.MC_1_6_4, 202)
 			);
-			registerPacket(
-					AutoCompleteOld.class,
+			TO_SERVER.registerPacket(
+					TabCompleteRequest.class,
+					map(ProtocolVersion.MC_1_6_4, 203)
+			);
+			TO_CLIENT.registerPacket(
+					TabCompleteResponse.class,
 					map(ProtocolVersion.MC_1_6_4, 203)
 			);
 			TO_SERVER.registerPacket(

@@ -28,10 +28,25 @@ public class ClientSettings extends DefinedPacket
     @Override
     public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
     {
-        locale = readString( buf );
+        locale = readString( buf, protocolVersion );
         viewDistance = buf.readByte();
-        chatFlags = protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9_0) ? DefinedPacket.readVarInt( buf ) : buf.readUnsignedByte();
-        chatColours = buf.readBoolean();
+        
+        if(protocolVersion.isLegacy()) {
+        	int b = buf.readUnsignedByte();
+        	chatFlags = b & 0b111;
+    		chatColours = (b & 0b1000) == 0b1000;
+        }
+        else {
+        	if(protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9_0)) {
+            	chatFlags = DefinedPacket.readVarInt( buf );
+            	chatColours = buf.readBoolean();
+            }
+            else {
+        		chatFlags = buf.readUnsignedByte();
+        		chatColours = buf.readBoolean();
+            }
+        }
+        
         if ( protocolVersion.olderOrEqual(ProtocolVersion.MC_1_7_6 ))
         {
             difficulty = buf.readByte();
@@ -48,14 +63,16 @@ public class ClientSettings extends DefinedPacket
     {
         writeString( locale, buf );
         buf.writeByte( viewDistance );
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9_0 ))
-        {
-            DefinedPacket.writeVarInt( chatFlags, buf );
-        } else
-        {
-            buf.writeByte( chatFlags );
-        }
-        buf.writeBoolean( chatColours );
+        if(protocolVersion.isLegacy()) 
+        	buf.writeByte(chatFlags | ((chatColours ? 1 : 0) << 3));
+        else {
+        	if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9_0 ))
+        		DefinedPacket.writeVarInt( chatFlags, buf );
+    		else
+        		buf.writeByte( chatFlags );
+        	buf.writeBoolean( chatColours );
+    	}
+        
         if ( protocolVersion.olderOrEqual(ProtocolVersion.MC_1_7_6) )
         {
             buf.writeByte( difficulty );

@@ -1,5 +1,6 @@
 package net.md_5.bungee.protocol.packet;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -62,7 +63,11 @@ public class TabCompleteResponse extends DefinedPacket
             suggestions = new Suggestions( range, matches );
         }
 
-        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_13_0 ))
+        if(protocolVersion.isLegacy()) {
+        	commands = new ArrayList<>();
+        	commands.add(readLegacyString(buf, Short.MAX_VALUE));
+        }
+        else if ( protocolVersion.olderThan(ProtocolVersion.MC_1_13_0 ))
         {
             commands = readStringArray( buf );
         }
@@ -89,7 +94,10 @@ public class TabCompleteResponse extends DefinedPacket
             }
         }
 
-        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_13_0 ))
+        if(protocolVersion.isLegacy()) {
+        	writeLegacyString(commands.get(0), buf);
+        }
+        else if ( protocolVersion.olderThan(ProtocolVersion.MC_1_13_0 ))
         {
             writeStringArray( commands, buf );
         }

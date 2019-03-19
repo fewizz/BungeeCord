@@ -27,7 +27,7 @@ public class PlayerListItem extends DefinedPacket
         {
             items = new Item[ 1 ];
             Item item = items[ 0 ] = new Item();
-            item.displayName = item.username = readString( buf );
+            item.displayName = item.username = readString( buf, protocolVersion );
             action = !buf.readBoolean() ? Action.REMOVE_PLAYER : Action.ADD_PLAYER;
             item.ping = buf.readShort();
         } else
@@ -90,7 +90,7 @@ public class PlayerListItem extends DefinedPacket
         if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8_0) )
         {
             Item item = items[0]; // Only one at a time
-            writeString( item.displayName, buf ); // TODO: Server unique only!
+            writeString( item.displayName, buf, protocolVersion ); // TODO: Server unique only!
             buf.writeBoolean( action != Action.REMOVE_PLAYER );
             buf.writeShort( item.ping );
         } else
