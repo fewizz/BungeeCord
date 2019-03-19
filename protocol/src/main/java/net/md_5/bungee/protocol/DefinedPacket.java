@@ -329,6 +329,38 @@ public abstract class DefinedPacket
     }
     
     public static void skipLegacyWatchableObjects(ByteBuf buf) {
-    	buf.readerIndex(buf.indexOf(buf.readerIndex(), buf.writerIndex(), (byte) 127) + 1);
+    	while(true) {
+    		int b = buf.readUnsignedByte();
+    		if(b == 127)
+    			return;
+    		
+    		int type = (b & 0b11100000) >> 5;
+            
+            switch (type) {
+			case 0:
+				buf.skipBytes(1);
+				break;
+			case 1:
+				buf.skipBytes(Short.BYTES);
+				break;
+			case 2:
+				buf.skipBytes(Integer.BYTES);
+				break;
+			case 3:
+				buf.skipBytes(Float.BYTES);
+				break;
+			case 4:
+				skipLegacyString(buf, 64);
+				break;
+			case 5:
+				skipLegacyItemStack(buf);
+				break;
+			case 6:
+				buf.skipBytes(Integer.BYTES*3);
+				break;
+			default:
+				throw new RuntimeException();
+			}
+    	}
     }
 }

@@ -21,7 +21,7 @@ public class LoginOld extends DefinedPacket {
     public int gameMode;
     public int dimension;
     public byte difficulty;
-    public byte worldH;
+    public byte worldHeight;
     public byte maxPlayers;
     
     @Override
@@ -33,7 +33,7 @@ public class LoginOld extends DefinedPacket {
 		gameMode = (short) (mode & 0b111);
 		dimension = buf.readByte();
 		difficulty = buf.readByte();
-		worldH = buf.readByte();
+		worldHeight = buf.readByte();
 		maxPlayers = buf.readByte();
     }
     
@@ -44,7 +44,7 @@ public class LoginOld extends DefinedPacket {
     	buf.writeByte(gameMode | (hardcore ? 0b1000 : 0));
     	buf.writeByte(dimension);
     	buf.writeByte(difficulty);
-    	buf.writeByte(worldH);
+    	buf.writeByte(worldHeight);
     	buf.writeByte(maxPlayers);
     }
     

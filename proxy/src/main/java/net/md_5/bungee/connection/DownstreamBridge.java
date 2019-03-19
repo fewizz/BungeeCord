@@ -53,6 +53,7 @@ import net.md_5.bungee.protocol.packet.ScoreboardObjective;
 import net.md_5.bungee.protocol.packet.ScoreboardScore;
 import net.md_5.bungee.protocol.packet.SetCompression;
 import net.md_5.bungee.protocol.packet.TabCompleteResponse;
+import net.md_5.bungee.protocol.packet.old.RespawnOld;
 import net.md_5.bungee.tab.TabList;
 
 
@@ -541,6 +542,11 @@ public class DownstreamBridge extends PacketHandler
     {
         con.setDimension( respawn.getDimension() );
     }
+    
+    @Override
+    public void handle(RespawnOld respawnOld) {
+    	con.setDimension(respawnOld.getDimension());
+    }
 
     @Override
     public void handle(Commands commands) throws Exception
@@ -555,7 +561,7 @@ public class DownstreamBridge extends PacketHandler
                 {
                     LiteralCommandNode dummy = LiteralArgumentBuilder.literal( command.getKey() )
                             .then( RequiredArgumentBuilder.argument( "args", StringArgumentType.greedyString() )
-                                    .suggests( Commands.SuggestionRegistry.ASK_SERVER ) )
+                            .suggests( Commands.SuggestionRegistry.ASK_SERVER ) )
                             .build();
                     commands.getRoot().addChild( dummy );
 

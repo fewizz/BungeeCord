@@ -62,6 +62,7 @@ import net.md_5.bungee.protocol.packet.SetCompression;
 import net.md_5.bungee.protocol.packet.old.ClientCommandOld;
 import net.md_5.bungee.protocol.packet.old.LoginOld;
 import net.md_5.bungee.protocol.packet.old.LoginRequestOld;
+import net.md_5.bungee.protocol.packet.old.RespawnOld;
 import net.md_5.bungee.util.BufUtil;
 import net.md_5.bungee.util.QuietException;
 
@@ -402,43 +403,57 @@ public class ServerConnector extends PacketHandler
         }
         else
         {
-            /*user.getServer().setObsolete(true);
+            user.getServer().setObsolete(true);
             user.getTabListHandler().onServerChange();
             
-            Scoreboard serverScoreboard = user.getServerSentScoreboard();
-            for ( Objective objective : serverScoreboard.getObjectives() )
-            {
+           // Scoreboard serverScoreboard = user.getServerSentScoreboard();
+          //  for ( Objective objective : serverScoreboard.getObjectives() )
+          //  {
                 //user.unsafe().sendPacket( new ScoreboardObjective( objective.getName(), objective.getValue(), ScoreboardObjective.HealthDisplay.fromString( objective.getType() ), (byte) 1 ) );
-                user.unsafe().sendPacket( new ScoreboardObjective( objective.getName(), objective.getValue(), objective.getType() == null ? null : ScoreboardObjective.HealthDisplay.fromString(objective.getType()), (byte) 1 ) ); // Travertine - 1.7
-            }
-            for ( Score score : serverScoreboard.getScores() )
-            {
-                user.unsafe().sendPacket( new ScoreboardScore( score.getItemName(), (byte) 1, score.getScoreName(), score.getValue() ) );
-            }
-            for ( Team team : serverScoreboard.getTeams() )
-                user.unsafe().sendPacket(new net.md_5.bungee.protocol.packet.Team(team.getName()));
-            serverScoreboard.clear();
+          //      user.unsafe().sendPacket( new ScoreboardObjective( objective.getName(), objective.getValue(), objective.getType() == null ? null : ScoreboardObjective.HealthDisplay.fromString(objective.getType()), (byte) 1 ) ); // Travertine - 1.7
+          //  }
+           // for ( Score score : serverScoreboard.getScores() )
+           // {
+            //    user.unsafe().sendPacket( new ScoreboardScore( score.getItemName(), (byte) 1, score.getScoreName(), score.getValue() ) );
+           // }
+            //for ( Team team : serverScoreboard.getTeams() )
+           //     user.unsafe().sendPacket(new net.md_5.bungee.protocol.packet.Team(team.getName()));
+           // serverScoreboard.clear();
             
-            for (UUID bossbar : user.getSentBossBars())
+            //for (UUID bossbar : user.getSentBossBars())
                 // Send remove bossbar packet
-                user.unsafe().sendPacket(new net.md_5.bungee.protocol.packet.BossBar(bossbar, 1));
-            user.getSentBossBars().clear();
+            //	user.unsafe().sendPacket(new net.md_5.bungee.protocol.packet.BossBar(bossbar, 1));
+            
+           // user.getSentBossBars().clear();
 
             // Update debug info from login packet
-            user.unsafe().sendPacket( new EntityStatus( user.getClientEntityId(), login.isReducedDebugInfo() ? EntityStatus.DEBUG_INFO_REDUCED : EntityStatus.DEBUG_INFO_NORMAL ) );
+            //user.unsafe().sendPacket( new EntityStatus( user.getClientEntityId(), login.isReducedDebugInfo() ? EntityStatus.DEBUG_INFO_REDUCED : EntityStatus.DEBUG_INFO_NORMAL ) );
 
             user.setDimensionChange( true );
-            if ( login.getDimension() == user.getDimension() )
+            if ( loginOld.getDimension() == user.getDimension() )
             {
-                user.unsafe().sendPacket( new Respawn( ( login.getDimension() >= 0 ? -1 : 0 ), login.getDifficulty(), login.getGameMode(), login.getLevelType() ) );
+            	RespawnOld old = new RespawnOld();
+            	old.setDimension(loginOld.dimension >= 0 ? -1 : 0);
+            	old.setDifficulty(loginOld.difficulty);
+            	old.setWorldHeight(loginOld.worldHeight);
+            	old.setGameMode(loginOld.gameMode);
+            	old.setLevelType(loginOld.levelType);
+                user.unsafe().sendPacket( old );
             }
 
-            user.setServerEntityId( login.getEntityId() );
-            user.unsafe().sendPacket( new Respawn( login.getDimension(), login.getDifficulty(), login.getGameMode(), login.getLevelType() ) );
-            user.setDimension( login.getDimension() );
+            user.setServerEntityId( loginOld.getEntityId() );
+            RespawnOld old = new RespawnOld();
+        	old.setDimension(loginOld.dimension);
+        	old.setDifficulty(loginOld.difficulty);
+        	old.setWorldHeight(loginOld.worldHeight);
+        	old.setGameMode(loginOld.gameMode);
+        	old.setLevelType(loginOld.levelType);
+        	
+            user.unsafe().sendPacket( old );
+            user.setDimension( loginOld.getDimension() );
 
             // Remove from old servers
-            user.getServer().disconnect("Quitting");*///TODO
+            user.getServer().disconnect("Quitting");
         }
         
         // TODO: Fix this?
