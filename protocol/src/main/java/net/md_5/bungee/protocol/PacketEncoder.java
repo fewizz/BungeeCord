@@ -26,7 +26,7 @@ public class PacketEncoder extends MessageToByteEncoder<DefinedPacket>
         Protocol.DirectionData prot = protocol.getDirectionData(direction);
         
         int packetID = prot.getId( msg.getClass(), protocolVersion );
-        System.out.println("ENC, id: " + packetID + ", dir: " + direction.name());
+        //System.out.println("ENC, id: " + packetID + ", dir: " + direction.name());
         
         if(!protocolVersion.isLegacy())
         	DefinedPacket.writeVarInt( packetID, out );

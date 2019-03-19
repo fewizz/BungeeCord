@@ -39,6 +39,13 @@ public class ModuleManager
     public void load(ProxyServer proxy, File moduleDirectory) throws Exception
     {
         moduleDirectory.mkdir();
+        
+        ModuleVersion bungeeVersion = ModuleVersion.parse( proxy.getVersion() );
+        if ( bungeeVersion == null )
+        {
+            System.out.println( "Couldn't detect bungee version. Custom build?" );
+            return;
+        }
 
         List<ModuleSpec> modules = new ArrayList<>();
         File configFile = new File( "modules.yml" );
@@ -110,13 +117,6 @@ public class ModuleManager
             ModuleSpec spec = new ModuleSpec( name, new File( moduleDirectory, name + ".jar" ), source );
             modules.add( spec );
             System.out.println( "Discovered module: " + spec );
-        }
-        
-        ModuleVersion bungeeVersion = ModuleVersion.parse( proxy.getVersion() );
-        if ( bungeeVersion == null )
-        {
-            System.out.println( "Couldn't detect bungee version. Custom build?" );
-            return;
         }
 
         for ( ModuleSpec module : modules )

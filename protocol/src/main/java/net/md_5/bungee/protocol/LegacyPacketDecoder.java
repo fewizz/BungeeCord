@@ -41,7 +41,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 							", id: " + packetId +
 							", direction: " + direction.name()
     					);
-    			System.out.println("DEC, id: " + packetId + ", dir: " + direction.name());
+    			//System.out.println("DEC, id: " + packetId + ", dir: " + direction.name());
     		
     			packet.read( in, direction, protocolVersion );
     			out.add( new PacketWrapper( packet, in.copy(begin, in.readerIndex() - begin), packetId ) );
