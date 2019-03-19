@@ -153,7 +153,7 @@ public enum Protocol
             		SpawnPositionOld.class,
             		map( ProtocolVersion.MC_1_6_4, 6 )
             );
-			TO_CLIENT.registerPacket(
+			TO_SERVER.registerPacket(
             		UseEntityOld.class,
             		map( ProtocolVersion.MC_1_6_4, 7 )
             );
