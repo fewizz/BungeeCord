@@ -1,20 +1,18 @@
 package net.md_5.bungee.protocol.packet;
 
+import java.util.UUID;
+
+import io.netty.buffer.ByteBuf;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-
-import io.netty.buffer.ByteBuf;
-import java.util.UUID;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
-import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Packet;
 
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class BossBar extends DefinedPacket
+public class BossBar extends Packet
 {
 
     private UUID uuid;

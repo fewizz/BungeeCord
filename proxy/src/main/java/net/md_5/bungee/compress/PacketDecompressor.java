@@ -6,7 +6,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import java.util.List;
 import net.md_5.bungee.jni.zlib.BungeeZlib;
-import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Packet;
 
 public class PacketDecompressor extends MessageToMessageDecoder<ByteBuf>
 {
@@ -28,7 +28,7 @@ public class PacketDecompressor extends MessageToMessageDecoder<ByteBuf>
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception
     {
-        int size = DefinedPacket.readVarInt( in );
+        int size = Packet.readVarInt( in );
         if ( size == 0 )
         {
             out.add( in.slice().retain() );

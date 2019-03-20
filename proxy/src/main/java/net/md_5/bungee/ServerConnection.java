@@ -8,7 +8,7 @@ import lombok.Setter;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.connection.Server;
 import net.md_5.bungee.netty.ChannelWrapper;
-import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 
 @RequiredArgsConstructor
@@ -31,7 +31,7 @@ public class ServerConnection implements Server
     private final Unsafe unsafe = new Unsafe()
     {
         @Override
-        public void sendPacket(DefinedPacket packet)
+        public void sendPacket(Packet packet)
         {
             ch.write( packet );
         }

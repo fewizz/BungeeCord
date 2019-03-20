@@ -101,7 +101,7 @@ import net.md_5.bungee.log.BungeeLogger;
 import net.md_5.bungee.log.LoggingOutputStream;
 import net.md_5.bungee.module.ModuleManager;
 import net.md_5.bungee.netty.PipelineUtil;
-import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.GenerationIdentifier;
 import net.md_5.bungee.protocol.ProtocolGen;
@@ -476,7 +476,7 @@ public class BungeeCord extends ProxyServer
      *
      * @param packet the packet to send
      */
-    public void broadcast(DefinedPacket packet)
+    public void broadcast(Packet packet)
     {
         connectionLock.readLock().lock();
         try

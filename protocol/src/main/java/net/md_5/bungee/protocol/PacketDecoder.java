@@ -5,6 +5,6 @@ import io.netty.channel.ChannelHandler;
 public interface PacketDecoder extends ChannelHandler {
 	public ProtocolVersion getProtocolVersion();
 	public void setProtocolVersion(ProtocolVersion pv);
-	public Protocol getProtocol();
-	public void setProtocol(Protocol p);
+	public NetworkState getConnectionStatus();
+	public void setConnectionStatus(NetworkState p);
 }

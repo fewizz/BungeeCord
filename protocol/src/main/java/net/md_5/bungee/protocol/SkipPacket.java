@@ -6,9 +6,17 @@ import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode(callSuper=false)
 @Data
-public class SkipPacket extends DefinedPacket {
+public class SkipPacket extends Packet {
+	/*@FunctionalInterface
+	interface Skipper {
+		void skip(ByteBuf buf);
+	}
+	Skipper s;*/
 	
-	public void skip(ByteBuf buf) {
+	void skip(ByteBuf buf) {
+		//if(s != null)
+		//	s.skip(buf);
+		//else
 		throw new UnsupportedOperationException( "Packet must implement skip method" );
 	}
 	

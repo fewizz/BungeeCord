@@ -1,14 +1,14 @@
-package net.md_5.bungee.protocol.packet.old;
+package net.md_5.bungee.protocol.packet;
 
 import io.netty.buffer.ByteBuf;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
-import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Packet;
 
 @EqualsAndHashCode(callSuper=false)
 @Data
-public class RespawnOld extends DefinedPacket {
+public class LegacyRespawn extends Packet {
 	int dimension;
 	int difficulty;
 	int worldHeight;

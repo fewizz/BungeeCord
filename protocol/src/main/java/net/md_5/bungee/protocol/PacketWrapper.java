@@ -9,7 +9,7 @@ import lombok.Setter;
 public class PacketWrapper
 {
 
-    public final DefinedPacket packet;
+    public final Packet packet;
     public final ByteBuf buf;
     public final int id;
     @Setter

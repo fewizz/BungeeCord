@@ -11,6 +11,11 @@ import net.md_5.bungee.protocol.packet.EntityStatus;
 import net.md_5.bungee.protocol.packet.Handshake;
 import net.md_5.bungee.protocol.packet.KeepAlive;
 import net.md_5.bungee.protocol.packet.Kick;
+import net.md_5.bungee.protocol.packet.LegacyClientCommand;
+import net.md_5.bungee.protocol.packet.LegacyLogin;
+import net.md_5.bungee.protocol.packet.LegacyLoginRequest;
+import net.md_5.bungee.protocol.packet.LegacyRespawn;
+import net.md_5.bungee.protocol.packet.LegacyStatusRequest;
 import net.md_5.bungee.protocol.packet.Login;
 import net.md_5.bungee.protocol.packet.LoginPayloadRequest;
 import net.md_5.bungee.protocol.packet.LoginPayloadResponse;
@@ -31,11 +36,6 @@ import net.md_5.bungee.protocol.packet.TabCompleteRequest;
 import net.md_5.bungee.protocol.packet.TabCompleteResponse;
 import net.md_5.bungee.protocol.packet.Team;
 import net.md_5.bungee.protocol.packet.Title;
-import net.md_5.bungee.protocol.packet.old.ClientCommandOld;
-import net.md_5.bungee.protocol.packet.old.LoginOld;
-import net.md_5.bungee.protocol.packet.old.LoginRequestOld;
-import net.md_5.bungee.protocol.packet.old.RespawnOld;
-import net.md_5.bungee.protocol.packet.old.StatusRequestOld;
 
 public abstract class AbstractPacketHandler {
 
@@ -132,18 +132,18 @@ public abstract class AbstractPacketHandler {
 	public void handle(Commands commands) throws Exception {
 	}
 
-	public void handle(StatusRequestOld request) throws Exception {
+	public void handle(LegacyStatusRequest request) throws Exception {
 	}
 
-	public void handle(LoginRequestOld handshakeOld) throws Exception {
+	public void handle(LegacyLoginRequest handshakeOld) throws Exception {
 	}
 
-	public void handle(ClientCommandOld clientCommandOld) throws Exception {
+	public void handle(LegacyClientCommand clientCommandOld) throws Exception {
 	}
 
-	public void handle(LoginOld loginOld) {
+	public void handle(LegacyLogin loginOld) {
 	}
 
-	public void handle(RespawnOld respawnOld) {
+	public void handle(LegacyRespawn respawnOld) {
 	}
 }

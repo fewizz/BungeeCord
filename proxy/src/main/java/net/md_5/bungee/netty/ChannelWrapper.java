@@ -1,21 +1,22 @@
 package net.md_5.bungee.netty;
 
+import java.net.InetSocketAddress;
+import java.util.concurrent.TimeUnit;
+
 import com.google.common.base.Preconditions;
+
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import java.net.InetSocketAddress;
-import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.Setter;
 import net.md_5.bungee.compress.PacketCompressor;
 import net.md_5.bungee.compress.PacketDecompressor;
-import net.md_5.bungee.protocol.ModernPacketDecoder;
+import net.md_5.bungee.protocol.NetworkState;
 import net.md_5.bungee.protocol.PacketDecoder;
 import net.md_5.bungee.protocol.PacketEncoder;
 import net.md_5.bungee.protocol.PacketWrapper;
-import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolVersion;
 import net.md_5.bungee.protocol.packet.Kick;
 
@@ -37,13 +38,13 @@ public class ChannelWrapper
         this.remoteAddress = (InetSocketAddress) this.ch.remoteAddress();
     }
 
-    public void setProtocol(Protocol protocol)
+    public void setConnectionStatus(NetworkState status)
     {
-        ((PacketDecoder)ch.pipeline().get( PipelineUtil.PACKET_DEC)).setProtocol( protocol );
-        ((PacketEncoder)ch.pipeline().get( PipelineUtil.PACKET_ENC )).setProtocol( protocol );
+        ((PacketDecoder)ch.pipeline().get( PipelineUtil.PACKET_DEC)).setConnectionStatus(status);
+        ((PacketEncoder)ch.pipeline().get( PipelineUtil.PACKET_ENC )).setConnectionStatus(status);
     }
     
-    public Protocol getProtocol() { return ch.pipeline().get(PacketEncoder.class).getProtocol(); }
+    public NetworkState getConnectionStatus() { return ch.pipeline().get(PacketEncoder.class).getConnectionStatus(); }
 
     public void setVersion(ProtocolVersion protocol)
     {

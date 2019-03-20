@@ -1,7 +1,7 @@
 package net.md_5.bungee.entitymap;
 
 import io.netty.buffer.ByteBuf;
-import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.ProtocolVersion;
 
@@ -49,7 +49,7 @@ class EntityMap_1_7_2 extends EntityMap
 
         //Special cases
         int readerIndex = packet.readerIndex();
-        int packetId = DefinedPacket.readVarInt( packet );
+        int packetId = Packet.readVarInt( packet );
         int packetIdLength = packet.readerIndex() - readerIndex;
         if ( packetId == 0x0D /* Collect Item */ || packetId == 0x1B /* Attach Entity */ )
         {
@@ -63,7 +63,7 @@ class EntityMap_1_7_2 extends EntityMap
             }
         } else if ( packetId == 0x0E /* Spawn Object */ )
         {
-            DefinedPacket.readVarInt( packet );
+            Packet.readVarInt( packet );
             int type = packet.readUnsignedByte();
 
             if ( type == 60 || type == 90 )

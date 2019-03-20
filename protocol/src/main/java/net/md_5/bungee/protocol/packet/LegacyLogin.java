@@ -1,4 +1,4 @@
-package net.md_5.bungee.protocol.packet.old;
+package net.md_5.bungee.protocol.packet;
 
 import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
-import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.ProtocolVersion;
 
@@ -14,7 +14,7 @@ import net.md_5.bungee.protocol.ProtocolVersion;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class LoginOld extends DefinedPacket {
+public class LegacyLogin extends Packet {
     public int entityId;
     public String levelType;
     public boolean hardcore;

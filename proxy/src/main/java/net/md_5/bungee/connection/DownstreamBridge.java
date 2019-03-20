@@ -38,13 +38,14 @@ import net.md_5.bungee.api.score.Team;
 import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PacketHandler;
-import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.ProtocolVersion;
 import net.md_5.bungee.protocol.packet.BossBar;
 import net.md_5.bungee.protocol.packet.Commands;
 import net.md_5.bungee.protocol.packet.KeepAlive;
 import net.md_5.bungee.protocol.packet.Kick;
+import net.md_5.bungee.protocol.packet.LegacyRespawn;
 import net.md_5.bungee.protocol.packet.PlayerListItem;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 import net.md_5.bungee.protocol.packet.Respawn;
@@ -53,7 +54,6 @@ import net.md_5.bungee.protocol.packet.ScoreboardObjective;
 import net.md_5.bungee.protocol.packet.ScoreboardScore;
 import net.md_5.bungee.protocol.packet.SetCompression;
 import net.md_5.bungee.protocol.packet.TabCompleteResponse;
-import net.md_5.bungee.protocol.packet.old.RespawnOld;
 import net.md_5.bungee.tab.TabList;
 
 
@@ -245,14 +245,14 @@ public class DownstreamBridge extends PacketHandler
             if (con.getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_8_0))
             {
                 ByteBuf brand = Unpooled.wrappedBuffer(pluginMessage.getData());
-                String serverBrand = DefinedPacket.readString(brand);
+                String serverBrand = Packet.readString(brand);
                 brand.release();
 
                 Preconditions.checkState( !serverBrand.contains( bungee.getName() ), "Cannot connect proxy to itself!" );
 
                 brand = ByteBufAllocator.DEFAULT.heapBuffer();
-                DefinedPacket.writeString(bungee.getName() + " (" + bungee.getVersion() + ")" + " <- " + serverBrand, brand);
-                pluginMessage.setData(DefinedPacket.readArray( brand ));
+                Packet.writeString(bungee.getName() + " (" + bungee.getVersion() + ")" + " <- " + serverBrand, brand);
+                pluginMessage.setData(Packet.readArray( brand ));
                 brand.release();
             }
             else
@@ -544,7 +544,7 @@ public class DownstreamBridge extends PacketHandler
     }
     
     @Override
-    public void handle(RespawnOld respawnOld) {
+    public void handle(LegacyRespawn respawnOld) {
     	con.setDimension(respawnOld.getDimension());
     }
 

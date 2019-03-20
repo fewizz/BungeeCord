@@ -1,4 +1,4 @@
-package net.md_5.bungee.protocol.packet.old;
+package net.md_5.bungee.protocol.packet;
 
 import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
@@ -6,13 +6,13 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
-import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Packet;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class ClientCommandOld extends DefinedPacket {
+public class LegacyClientCommand extends Packet {
 	public int command;
 
 	@Override

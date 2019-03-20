@@ -1,16 +1,16 @@
-package net.md_5.bungee.protocol.packet.old;
+package net.md_5.bungee.protocol.packet;
 
 import io.netty.buffer.ByteBuf;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
-import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Packet;
 
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class LoginRequestOld extends DefinedPacket {
+public class LegacyLoginRequest extends Packet {
 	int protocolVer;
 	String userName;
 	String host;

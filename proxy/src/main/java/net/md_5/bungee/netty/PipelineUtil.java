@@ -13,11 +13,11 @@ import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.BungeeServerInfo;
 import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.api.config.ListenerInfo;
+import net.md_5.bungee.protocol.NetworkState;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.LegacyPacketDecoder;
-import net.md_5.bungee.protocol.PacketEncoder;
-import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ModernPacketDecoder;
+import net.md_5.bungee.protocol.PacketEncoder;
 import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.ProtocolVersion;
 import net.md_5.bungee.protocol.Varint21FrameDecoder;
@@ -59,9 +59,9 @@ public class PipelineUtil {
 			FRAME_ENC,
 			PACKET_ENC,
 			new PacketEncoder(
-				Protocol.HANDSHAKE,
+				NetworkState.HANDSHAKE,
 				dir,
-				ProtocolVersion.getByNumber(protocolVersion, ProtocolGen.MODERN)
+				ProtocolVersion.byNumber(protocolVersion, ProtocolGen.MODERN)
 			)
 		);
     }
@@ -78,9 +78,9 @@ public class PipelineUtil {
 		ch.pipeline().addFirst(
 			PACKET_ENC,
 			new PacketEncoder(
-				Protocol.LEGACY,
+				NetworkState.LEGACY,
 				dir,
-				ProtocolVersion.getByNumber(protocolVersion, ProtocolGen.PRE_NETTY)
+				ProtocolVersion.byNumber(protocolVersion, ProtocolGen.PRE_NETTY)
 			)
 		);
     }

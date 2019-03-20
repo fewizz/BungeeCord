@@ -14,7 +14,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 {
     @Setter
     @Getter
-    private Protocol protocol = Protocol.LEGACY;
+    private NetworkState connectionStatus = NetworkState.LEGACY;
     private final Direction direction;
     @Setter
     @Getter
@@ -22,7 +22,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
     
     public LegacyPacketDecoder(Direction dir, int pv) {
 		this.direction = dir;
-		protocolVersion = ProtocolVersion.getByNumber(pv, ProtocolGen.PRE_NETTY);
+		protocolVersion = ProtocolVersion.byNumber(pv, ProtocolGen.PRE_NETTY);
 	}
 
     @Override
@@ -33,7 +33,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 			try {
 				int packetId = in.readUnsignedByte();
 
-				DefinedPacket packet = protocol.getDirectionData(direction).createPacket( packetId, protocolVersion );
+				Packet packet = protocolVersion.createPacket(connectionStatus, packetId, direction);
     		
 				if(packet == null)
 					throw new RuntimeException(

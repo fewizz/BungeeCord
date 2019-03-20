@@ -9,12 +9,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 @RequiredArgsConstructor
-public class PacketEncoder extends MessageToByteEncoder<DefinedPacket>
+public class PacketEncoder extends MessageToByteEncoder<Packet>
 {
     @Setter
     @Getter
     @NonNull
-    private Protocol protocol;
+    private NetworkState connectionStatus;
     private final Direction direction;
     @Setter
     @Getter
@@ -22,17 +22,15 @@ public class PacketEncoder extends MessageToByteEncoder<DefinedPacket>
     private ProtocolVersion protocolVersion;
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, DefinedPacket msg, ByteBuf out) throws Exception {
-        Protocol.DirectionData prot = protocol.getDirectionData(direction);
-        
-        int packetID = prot.getId( msg.getClass(), protocolVersion );
+    protected void encode(ChannelHandlerContext ctx, Packet msg, ByteBuf out) throws Exception {
+        int packetID = protocolVersion.idOf(msg, direction);
         //System.out.println("ENC, id: " + packetID + ", dir: " + direction.name());
         
         if(!protocolVersion.isLegacy())
-        	DefinedPacket.writeVarInt( packetID, out );
+        	Packet.writeVarInt( packetID, out );
         else
         	out.writeByte(packetID);
         
-        msg.write( out, prot.getDirection(), protocolVersion );
+        msg.write( out, direction, protocolVersion );
     }
 }

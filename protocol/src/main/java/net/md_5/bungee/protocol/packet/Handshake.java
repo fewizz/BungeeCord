@@ -5,30 +5,33 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import net.md_5.bungee.protocol.DefinedPacket;
+import lombok.Setter;
+import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.ProtocolVersion;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
+import net.md_5.bungee.protocol.NetworkState;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class Handshake extends DefinedPacket
+public class Handshake extends Packet
 {
 
     private ProtocolVersion protocolVersion;
     private String host;
     private int port;
-    private int requestedProtocol;
+    @Setter
+    private NetworkState requestedConnectionStatus;
 
     @Override
     public void read(ByteBuf buf)
     {
-        protocolVersion = ProtocolVersion.getByNumber(readVarInt( buf ), ProtocolGen.MODERN );
+        protocolVersion = ProtocolVersion.byNumber(readVarInt( buf ), ProtocolGen.MODERN );
         host = readString( buf );
         port = buf.readUnsignedShort();
-        requestedProtocol = readVarInt( buf );
+        requestedConnectionStatus = NetworkState.byID(readVarInt( buf ));
     }
 
     @Override
@@ -37,7 +40,7 @@ public class Handshake extends DefinedPacket
         writeVarInt( protocolVersion.version, buf );
         writeString( host, buf );
         buf.writeShort( port );
-        writeVarInt( requestedProtocol, buf );
+        writeVarInt( requestedConnectionStatus.getId(), buf );
     }
 
     @Override

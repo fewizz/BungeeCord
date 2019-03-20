@@ -49,7 +49,7 @@ import net.md_5.bungee.forge.ForgeConstants;
 import net.md_5.bungee.forge.ForgeServerHandler;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PipelineUtil;
-import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.ProtocolVersion;
@@ -141,7 +141,7 @@ public final class UserConnection implements ProxiedPlayer {
 	/* ======================================================================== */
 	private final Unsafe unsafe = new Unsafe() {
 		@Override
-		public void sendPacket(DefinedPacket packet) {
+		public void sendPacket(Packet packet) {
 			ch.write(packet);
 		}
 	};

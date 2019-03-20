@@ -41,16 +41,20 @@ import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.netty.cipher.CipherDecoder;
 import net.md_5.bungee.netty.cipher.CipherEncoder;
-import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.NetworkState;
+import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.MinecraftOutput;
 import net.md_5.bungee.protocol.PacketWrapper;
-import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolVersion;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.protocol.packet.EncryptionResponse;
 import net.md_5.bungee.protocol.packet.EntityStatus;
 import net.md_5.bungee.protocol.packet.Handshake;
 import net.md_5.bungee.protocol.packet.Kick;
+import net.md_5.bungee.protocol.packet.LegacyClientCommand;
+import net.md_5.bungee.protocol.packet.LegacyLogin;
+import net.md_5.bungee.protocol.packet.LegacyLoginRequest;
+import net.md_5.bungee.protocol.packet.LegacyRespawn;
 import net.md_5.bungee.protocol.packet.Login;
 import net.md_5.bungee.protocol.packet.LoginRequest;
 import net.md_5.bungee.protocol.packet.LoginSuccess;
@@ -59,10 +63,6 @@ import net.md_5.bungee.protocol.packet.Respawn;
 import net.md_5.bungee.protocol.packet.ScoreboardObjective;
 import net.md_5.bungee.protocol.packet.ScoreboardScore;
 import net.md_5.bungee.protocol.packet.SetCompression;
-import net.md_5.bungee.protocol.packet.old.ClientCommandOld;
-import net.md_5.bungee.protocol.packet.old.LoginOld;
-import net.md_5.bungee.protocol.packet.old.LoginRequestOld;
-import net.md_5.bungee.protocol.packet.old.RespawnOld;
 import net.md_5.bungee.util.BufUtil;
 import net.md_5.bungee.util.QuietException;
 
@@ -112,7 +112,7 @@ public class ServerConnector extends PacketHandler
 
         this.handshakeHandler = new ForgeServerHandler( user, ch, target );
         Handshake originalHandshake = user.getPendingConnection().getHandshake();
-        Handshake copiedHandshake = new Handshake( originalHandshake.getProtocolVersion(), originalHandshake.getHost(), originalHandshake.getPort(), 2 );
+        Handshake copiedHandshake = new Handshake( originalHandshake.getProtocolVersion(), originalHandshake.getHost(), originalHandshake.getPort(), NetworkState.LOGIN );
 
         if ( BungeeCord.getInstance().config.isIpForward() )
         {
@@ -153,12 +153,12 @@ public class ServerConnector extends PacketHandler
         
         if(!originalHandshake.getProtocolVersion().isLegacy()) {
         	channel.write( copiedHandshake );
-        	channel.setProtocol( Protocol.LOGIN );
+        	channel.setConnectionStatus(NetworkState.LOGIN);
         	thisState = State.LOGIN_SUCCESS;
         	channel.write( new LoginRequest( user.getName() ) );
         }
         else {
-        	LoginRequestOld lr = new LoginRequestOld();
+        	LegacyLoginRequest lr = new LegacyLoginRequest();
         	lr.setHost(copiedHandshake.getHost());
         	lr.setPort(copiedHandshake.getPort());
         	lr.setProtocolVer(copiedHandshake.getProtocolVersion().version);
@@ -183,7 +183,7 @@ public class ServerConnector extends PacketHandler
             		+ "id: " + packet.id
             		+ ", dump(16): " + BufUtil.dump( packet.buf, 16 ) 
             		+ ", state: " + thisState.name()
-            		+ ", protocol: " + ch.getProtocol().name()
+            		+ ", cs: " + ch.getConnectionStatus().name()
             );
         }
     }
@@ -192,7 +192,7 @@ public class ServerConnector extends PacketHandler
     public void handle(LoginSuccess loginSuccess) throws Exception
     {
         Preconditions.checkState(thisState == State.LOGIN_SUCCESS, "Not expecting LOGIN_SUCCESS");
-        ch.setProtocol(Protocol.GAME);
+        ch.setConnectionStatus(NetworkState.GAME);
         thisState = State.LOGIN;
         
         // Only reset the Forge client when:
@@ -231,7 +231,7 @@ public class ServerConnector extends PacketHandler
 
         ch.write( BungeeCord.getInstance().registerChannels( user.getPendingConnection().getVersion() ) );
 
-        Queue<DefinedPacket> packetQueue = target.getPacketQueue();
+        Queue<Packet> packetQueue = target.getPacketQueue();
         synchronized (packetQueue)
         {
             while (!packetQueue.isEmpty())
@@ -285,8 +285,8 @@ public class ServerConnector extends PacketHandler
             else
             {
                 ByteBuf brand = ByteBufAllocator.DEFAULT.heapBuffer();
-                DefinedPacket.writeString( bungee.getName() + " (" + bungee.getVersion() + ")", brand );
-                user.unsafe().sendPacket( new PluginMessage( user.getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_13_0) ? "minecraft:brand" : "MC|Brand", DefinedPacket.toArray( brand ), handshakeHandler.isServerForge() ) );
+                Packet.writeString( bungee.getName() + " (" + bungee.getVersion() + ")", brand );
+                user.unsafe().sendPacket( new PluginMessage( user.getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_13_0) ? "minecraft:brand" : "MC|Brand", Packet.toArray( brand ), handshakeHandler.isServerForge() ) );
                 brand.release();
             }
             
@@ -360,7 +360,7 @@ public class ServerConnector extends PacketHandler
     }
     
     @Override
-    public void handle(LoginOld loginOld) {
+    public void handle(LegacyLogin loginOld) {
     	Preconditions.checkState( thisState == State.LOGIN, "Not expecting LOGIN" );
 
         ServerConnection server = new ServerConnection( ch, target );
@@ -369,7 +369,7 @@ public class ServerConnector extends PacketHandler
 
         ch.write( BungeeCord.getInstance().registerChannels( user.getPendingConnection().getVersion() ) );
 
-        Queue<DefinedPacket> packetQueue = target.getPacketQueue();
+        Queue<Packet> packetQueue = target.getPacketQueue();
         synchronized (packetQueue)
         {
             while (!packetQueue.isEmpty())
@@ -432,7 +432,7 @@ public class ServerConnector extends PacketHandler
             user.setDimensionChange( true );
             if ( loginOld.getDimension() == user.getDimension() )
             {
-            	RespawnOld old = new RespawnOld();
+            	LegacyRespawn old = new LegacyRespawn();
             	old.setDimension(loginOld.dimension >= 0 ? -1 : 0);
             	old.setDifficulty(loginOld.difficulty);
             	old.setWorldHeight(loginOld.worldHeight);
@@ -442,7 +442,7 @@ public class ServerConnector extends PacketHandler
             }
 
             user.setServerEntityId( loginOld.getEntityId() );
-            RespawnOld old = new RespawnOld();
+            LegacyRespawn old = new LegacyRespawn();
         	old.setDimension(loginOld.dimension);
         	old.setDifficulty(loginOld.difficulty);
         	old.setWorldHeight(loginOld.worldHeight);
@@ -512,7 +512,7 @@ public class ServerConnector extends PacketHandler
     	
     	thisState = State.LOGIN;
     	
-    	ch.write(new ClientCommandOld(0));
+    	ch.write(new LegacyClientCommand(0));
     	
     	throw CancelSendSignal.INSTANCE;
     }

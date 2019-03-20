@@ -46,16 +46,18 @@ import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.netty.cipher.CipherDecoder;
 import net.md_5.bungee.netty.cipher.CipherEncoder;
-import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.NetworkState;
+import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.PacketWrapper;
-import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.ProtocolVersion;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.protocol.packet.EncryptionResponse;
 import net.md_5.bungee.protocol.packet.Handshake;
 import net.md_5.bungee.protocol.packet.Kick;
-import net.md_5.bungee.protocol.packet.Kick.StatusResponce;
+import net.md_5.bungee.protocol.packet.LegacyClientCommand;
+import net.md_5.bungee.protocol.packet.LegacyLoginRequest;
+import net.md_5.bungee.protocol.packet.LegacyStatusRequest;
 import net.md_5.bungee.protocol.packet.LoginPayloadResponse;
 import net.md_5.bungee.protocol.packet.LoginRequest;
 import net.md_5.bungee.protocol.packet.LoginSuccess;
@@ -63,9 +65,6 @@ import net.md_5.bungee.protocol.packet.PingPacket;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 import net.md_5.bungee.protocol.packet.StatusRequest;
 import net.md_5.bungee.protocol.packet.StatusResponse;
-import net.md_5.bungee.protocol.packet.old.ClientCommandOld;
-import net.md_5.bungee.protocol.packet.old.LoginRequestOld;
-import net.md_5.bungee.protocol.packet.old.StatusRequestOld;
 import net.md_5.bungee.util.BoundedArrayList;
 import net.md_5.bungee.util.BufUtil;
 import net.md_5.bungee.util.QuietException;
@@ -89,7 +88,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     private final Unsafe unsafe = new Unsafe()
     {
         @Override
-        public void sendPacket(DefinedPacket packet)
+        public void sendPacket(Packet packet)
         {
             ch.write( packet );
         }
@@ -266,21 +265,21 @@ public class InitialHandler extends PacketHandler implements PendingConnection
 
         bungee.getPluginManager().callEvent( new PlayerHandshakeEvent( InitialHandler.this, handshake ) );
 
-        switch ( handshake.getRequestedProtocol() )
+        switch ( handshake.getRequestedConnectionStatus() )
         {
-            case 1:
+            case STATUS:
                 // Ping
                 thisState = State.STATUS;
-                ch.setProtocol( Protocol.STATUS );
+                ch.setConnectionStatus( NetworkState.STATUS );
                 break;
-            case 2:
+            case LOGIN:
                 // Login
                 if ( !bungee.getConfig().isLogPings() )
                 {
                     bungee.getLogger().log( Level.INFO, "{0} has connected", this );
                 }
                 thisState = State.USERNAME;
-                ch.setProtocol( Protocol.LOGIN );
+                ch.setConnectionStatus( NetworkState.LOGIN );
 
                 if (  handshake.getProtocolVersion() == null )
                 {
@@ -296,7 +295,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
                 }
                 break;
             default:
-                throw new IllegalArgumentException( "Cannot request protocol " + handshake.getRequestedProtocol() );
+                throw new IllegalArgumentException( "Cannot request protocol " + handshake.getRequestedConnectionStatus() );
         }
     }
 
@@ -508,7 +507,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
                                 unsafe.sendPacket( new LoginSuccess( getUUID(), getName() ) ); // Without dashes, for older clients.
                             }
                             if(!getVersion().isLegacy())
-                            	ch.setProtocol( Protocol.GAME );
+                            	ch.setConnectionStatus( NetworkState.GAME );
 
                             ch.getHandle().pipeline().get( HandlerBoss.class ).setHandler( new UpstreamBridge( bungee, userCon ) );
                             bungee.getPluginManager().callEvent( new PostLoginEvent( userCon ) );
@@ -629,25 +628,25 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     }
     
     @Override
-    public void handle(final StatusRequestOld request) throws Exception {
+    public void handle(final LegacyStatusRequest request) throws Exception {
     	handshake = new Handshake();
     	handshake.setHost(request.getIp());
     	handshake.setPort(request.getPort());
-    	handshake.setProtocolVersion(ProtocolVersion.getByNumber(request.getProtocolVer(), ProtocolGen.PRE_NETTY));
-    	handshake.setRequestedProtocol(1);
+    	handshake.setProtocolVersion(ProtocolVersion.byNumber(request.getProtocolVer(), ProtocolGen.PRE_NETTY));
+    	handshake.setRequestedConnectionStatus(NetworkState.STATUS);
     	
     	thisState = State.STATUS;
     	handle(new StatusRequest());
     }
     
     @Override
-    public void handle(LoginRequestOld handshakeOld) throws Exception {
+    public void handle(LegacyLoginRequest handshakeOld) throws Exception {
     	Preconditions.checkState( thisState == State.HANDSHAKE, "Not expecting NADSHAKE" );
     	handshake = new Handshake();
-    	handshake.setProtocolVersion(ProtocolVersion.getByNumber(handshakeOld.getProtocolVer(), ProtocolGen.PRE_NETTY));
+    	handshake.setProtocolVersion(ProtocolVersion.byNumber(handshakeOld.getProtocolVer(), ProtocolGen.PRE_NETTY));
     	handshake.setHost(handshakeOld.getHost());
     	handshake.setPort(handshakeOld.getPort());
-    	handshake.setRequestedProtocol(2);
+    	handshake.setRequestedConnectionStatus(NetworkState.LOGIN);
     	
     	loginRequest = new LoginRequest();
     	loginRequest.setData(handshakeOld.getUserName());
@@ -664,7 +663,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     }
     
     @Override
-    public void handle(ClientCommandOld clientCommandOld) {
+    public void handle(LegacyClientCommand clientCommandOld) {
     	if(clientCommandOld.command != 0)
     		 throw new RuntimeException();
     	
