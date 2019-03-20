@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 
 @Data
 @NoArgsConstructor
@@ -22,10 +22,10 @@ public class EncryptionRequest extends Packet
     private byte[] verifyToken;
 
     @Override
-    public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
+    public void read(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
         
-        if(protocolVersion.olderOrEqual(ProtocolVersion.MC_1_6_4)) {
+        if(protocolVersion.olderOrEqual(Protocol.MC_1_6_4)) {
         	serverId = readLegacyString(buf, 20);
         	publicKey = readLegacyByteArray(buf);
         	verifyToken = readLegacyByteArray(buf);
@@ -33,7 +33,7 @@ public class EncryptionRequest extends Packet
         }
         
         serverId = readString( buf );
-        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8_0) )
+        if ( protocolVersion.olderThan(Protocol.MC_1_8_0) )
         {
             publicKey = readArrayLegacy( buf );
             verifyToken = readArrayLegacy( buf );
@@ -45,9 +45,9 @@ public class EncryptionRequest extends Packet
     }
 
     @Override
-    public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
+    public void write(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
-    	if(protocolVersion.olderOrEqual(ProtocolVersion.MC_1_6_4)) {
+    	if(protocolVersion.olderOrEqual(Protocol.MC_1_6_4)) {
     		writeLegacyString(serverId, buf);
     		writeLegacyByteArray(buf, publicKey);
     		writeLegacyByteArray(buf, verifyToken);
@@ -55,7 +55,7 @@ public class EncryptionRequest extends Packet
     	}
     	
         writeString( serverId, buf );
-        if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8_0) )
+        if ( protocolVersion.olderThan(Protocol.MC_1_8_0) )
         {
             writeArrayLegacy( publicKey, buf, false );
             writeArrayLegacy( verifyToken, buf, false );

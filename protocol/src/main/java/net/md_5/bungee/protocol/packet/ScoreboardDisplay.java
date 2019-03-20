@@ -2,7 +2,7 @@ package net.md_5.bungee.protocol.packet;
 
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,14 +24,14 @@ public class ScoreboardDisplay extends Packet
     private String name;
 
     @Override
-    public void read(ByteBuf buf, Direction d, ProtocolVersion v)
+    public void read(ByteBuf buf, Direction d, Protocol v)
     {
         position = buf.readByte();
         name = readString(buf, v);
     }
 
     @Override
-    public void write(ByteBuf buf, Direction d, ProtocolVersion v)
+    public void write(ByteBuf buf, Direction d, Protocol v)
     {
         buf.writeByte( position );
         writeString(name, buf, v);

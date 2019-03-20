@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 
 @Data
 @NoArgsConstructor
@@ -28,19 +28,19 @@ public class ScoreboardObjective extends Packet
     private byte action;
 
     @Override
-    public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
+    public void read(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
     	
         name = readString( buf, protocolVersion );
         
-        if ( protocolVersion.olderOrEqual(ProtocolVersion.MC_1_7_6 ))
+        if ( protocolVersion.olderOrEqual(Protocol.MC_1_7_6 ))
             value = readString( buf, protocolVersion );
         
         action = buf.readByte();
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0) && ( action == 0 || action == 2 ) )
+        if ( protocolVersion.newerOrEqual(Protocol.MC_1_8_0) && ( action == 0 || action == 2 ) )
         {
             value = readString( buf );
-            if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13_0 ))
+            if ( protocolVersion.newerOrEqual(Protocol.MC_1_13_0 ))
             {
                 type = HealthDisplay.values()[readVarInt( buf )];
             } else
@@ -51,7 +51,7 @@ public class ScoreboardObjective extends Packet
     }
 
     @Override
-    public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
+    public void write(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
     	if(protocolVersion.isLegacy()) {
     		writeLegacyString(name, buf);
@@ -61,15 +61,15 @@ public class ScoreboardObjective extends Packet
     	}
     	
         writeString( name, buf, protocolVersion );
-        if ( protocolVersion.olderOrEqual(ProtocolVersion.MC_1_7_6 ))
+        if ( protocolVersion.olderOrEqual(Protocol.MC_1_7_6 ))
         {
             writeString( value, buf, protocolVersion );
         }
         buf.writeByte( action );
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0 ) && ( action == 0 || action == 2 ) )
+        if ( protocolVersion.newerOrEqual(Protocol.MC_1_8_0 ) && ( action == 0 || action == 2 ) )
         {
             writeString( value, buf );
-            if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13_0 ))
+            if ( protocolVersion.newerOrEqual(Protocol.MC_1_13_0 ))
             {
                 writeVarInt( type.ordinal(), buf );
             } else

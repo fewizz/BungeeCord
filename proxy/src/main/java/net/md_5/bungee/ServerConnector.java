@@ -45,7 +45,7 @@ import net.md_5.bungee.protocol.NetworkState;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.MinecraftOutput;
 import net.md_5.bungee.protocol.PacketWrapper;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.protocol.packet.EncryptionResponse;
 import net.md_5.bungee.protocol.packet.EntityStatus;
@@ -112,7 +112,7 @@ public class ServerConnector extends PacketHandler
 
         this.handshakeHandler = new ForgeServerHandler( user, ch, target );
         Handshake originalHandshake = user.getPendingConnection().getHandshake();
-        Handshake copiedHandshake = new Handshake( originalHandshake.getProtocolVersion(), originalHandshake.getHost(), originalHandshake.getPort(), NetworkState.LOGIN );
+        Handshake copiedHandshake = new Handshake( originalHandshake.getProtocol(), originalHandshake.getHost(), originalHandshake.getPort(), NetworkState.LOGIN );
 
         if ( BungeeCord.getInstance().config.isIpForward() )
         {
@@ -151,7 +151,7 @@ public class ServerConnector extends PacketHandler
             copiedHandshake.setHost( copiedHandshake.getHost() + user.getExtraDataInHandshake() );
         }
         
-        if(!originalHandshake.getProtocolVersion().isLegacy()) {
+        if(!originalHandshake.getProtocol().isLegacy()) {
         	channel.write( copiedHandshake );
         	channel.setConnectionStatus(NetworkState.LOGIN);
         	thisState = State.LOGIN_SUCCESS;
@@ -161,7 +161,7 @@ public class ServerConnector extends PacketHandler
         	LegacyLoginRequest lr = new LegacyLoginRequest();
         	lr.setHost(copiedHandshake.getHost());
         	lr.setPort(copiedHandshake.getPort());
-        	lr.setProtocolVer(copiedHandshake.getProtocolVersion().version);
+        	lr.setProtocolVer(copiedHandshake.getProtocol().version);
         	lr.setUserName(user.getName());
         	thisState = State.LOGIN_REQUEST;
         	channel.write(lr);
@@ -229,7 +229,7 @@ public class ServerConnector extends PacketHandler
         ServerConnectedEvent event = new ServerConnectedEvent( user, server );
         bungee.getPluginManager().callEvent( event );
 
-        ch.write( BungeeCord.getInstance().registerChannels( user.getPendingConnection().getVersion() ) );
+        ch.write( BungeeCord.getInstance().registerChannels( user.getPendingConnection().getProtocol() ) );
 
         Queue<Packet> packetQueue = target.getPacketQueue();
         synchronized (packetQueue)
@@ -276,7 +276,7 @@ public class ServerConnector extends PacketHandler
 
             user.unsafe().sendPacket( modLogin );
 
-            if (user.getPendingConnection().getVersion().olderThan(ProtocolVersion.MC_1_8_0))
+            if (user.getPendingConnection().getProtocol().olderThan(Protocol.MC_1_8_0))
             {
                 MinecraftOutput out = new MinecraftOutput();
                 out.writeStringUTF8WithoutLengthHeaderBecauseDinnerboneStuffedUpTheMCBrandPacket(ProxyServer.getInstance().getName() + " (" + ProxyServer.getInstance().getVersion() + ")");
@@ -286,7 +286,7 @@ public class ServerConnector extends PacketHandler
             {
                 ByteBuf brand = ByteBufAllocator.DEFAULT.heapBuffer();
                 Packet.writeString( bungee.getName() + " (" + bungee.getVersion() + ")", brand );
-                user.unsafe().sendPacket( new PluginMessage( user.getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_13_0) ? "minecraft:brand" : "MC|Brand", Packet.toArray( brand ), handshakeHandler.isServerForge() ) );
+                user.unsafe().sendPacket( new PluginMessage( user.getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_13_0) ? "minecraft:brand" : "MC|Brand", Packet.toArray( brand ), handshakeHandler.isServerForge() ) );
                 brand.release();
             }
             
@@ -367,7 +367,7 @@ public class ServerConnector extends PacketHandler
         ServerConnectedEvent event = new ServerConnectedEvent( user, server );
         bungee.getPluginManager().callEvent( event );
 
-        ch.write( BungeeCord.getInstance().registerChannels( user.getPendingConnection().getVersion() ) );
+        ch.write( BungeeCord.getInstance().registerChannels( user.getPendingConnection().getProtocol() ) );
 
         Queue<Packet> packetQueue = target.getPacketQueue();
         synchronized (packetQueue)

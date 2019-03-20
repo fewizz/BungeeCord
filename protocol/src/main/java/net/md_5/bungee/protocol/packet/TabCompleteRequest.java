@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 
 @Data
 @NoArgsConstructor
@@ -32,15 +32,15 @@ public class TabCompleteRequest extends Packet {
 	}
 
 	@Override
-	public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion) {
-		if (protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13_0))
+	public void read(ByteBuf buf, Direction direction, Protocol protocolVersion) {
+		if (protocolVersion.newerOrEqual(Protocol.MC_1_13_0))
 			transactionId = readVarInt(buf);
 		
 
 		cursor = readString(buf, protocolVersion);
 
-		if (protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0) && protocolVersion.olderThan(ProtocolVersion.MC_1_13_0)) {
-			if (protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9_0))
+		if (protocolVersion.newerOrEqual(Protocol.MC_1_8_0) && protocolVersion.olderThan(Protocol.MC_1_13_0)) {
+			if (protocolVersion.newerOrEqual(Protocol.MC_1_9_0))
 				assumeCommand = buf.readBoolean();
 			
 			if (hasPositon = buf.readBoolean())
@@ -49,15 +49,15 @@ public class TabCompleteRequest extends Packet {
 	}
 
 	@Override
-	public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion) {
-		if (protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13_0))
+	public void write(ByteBuf buf, Direction direction, Protocol protocolVersion) {
+		if (protocolVersion.newerOrEqual(Protocol.MC_1_13_0))
 			writeVarInt(transactionId, buf);
 		
 
 		writeString(cursor, buf, protocolVersion);
 
-		if (protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0) && protocolVersion.olderThan(ProtocolVersion.MC_1_13_0)) {
-			if (protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9_0))
+		if (protocolVersion.newerOrEqual(Protocol.MC_1_8_0) && protocolVersion.olderThan(Protocol.MC_1_13_0)) {
+			if (protocolVersion.newerOrEqual(Protocol.MC_1_9_0))
 				buf.writeBoolean(assumeCommand);
 
 			buf.writeBoolean(hasPositon);

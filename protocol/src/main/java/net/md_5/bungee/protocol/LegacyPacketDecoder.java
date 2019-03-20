@@ -18,11 +18,11 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
     private final Direction direction;
     @Setter
     @Getter
-    private ProtocolVersion protocolVersion;
+    private Protocol protocolVersion;
     
     public LegacyPacketDecoder(Direction dir, int pv) {
 		this.direction = dir;
-		protocolVersion = ProtocolVersion.byNumber(pv, ProtocolGen.PRE_NETTY);
+		protocolVersion = Protocol.byNumber(pv, ProtocolGen.PRE_NETTY);
 	}
 
     @Override

@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 
 @Data
 @NoArgsConstructor
@@ -20,7 +20,7 @@ public class Kick extends Packet
     private String message;
 
     @Override
-    public void read(ByteBuf buf, Direction d, ProtocolVersion pv)
+    public void read(ByteBuf buf, Direction d, Protocol pv)
     {
     	if(pv.isLegacy())
 			message = readLegacyString(buf, 256);
@@ -29,7 +29,7 @@ public class Kick extends Packet
     }
 
     @Override
-    public void write(ByteBuf buf, Direction d, ProtocolVersion pv)
+    public void write(ByteBuf buf, Direction d, Protocol pv)
     {
     	if(pv.isLegacy())
     		writeLegacyString(message, buf);

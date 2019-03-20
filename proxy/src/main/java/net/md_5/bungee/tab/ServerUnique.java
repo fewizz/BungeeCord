@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.UUID;
 
 import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.PlayerListItem;
 
 public class ServerUnique extends TabList
@@ -72,7 +72,7 @@ public class ServerUnique extends TabList
             item.setDisplayName( username );
         }
         packet.setItems( items );
-        if ( player.getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_8_0 ))
+        if ( player.getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_8_0 ))
         {
             player.unsafe().sendPacket( packet );
         } else

@@ -19,7 +19,7 @@ public class PacketEncoder extends MessageToByteEncoder<Packet>
     @Setter
     @Getter
     @NonNull
-    private ProtocolVersion protocolVersion;
+    private Protocol protocolVersion;
 
     @Override
     protected void encode(ChannelHandlerContext ctx, Packet msg, ByteBuf out) throws Exception {

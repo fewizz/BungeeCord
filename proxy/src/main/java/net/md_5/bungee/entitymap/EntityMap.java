@@ -10,9 +10,9 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 
-import static net.md_5.bungee.protocol.ProtocolVersion.*;
+import static net.md_5.bungee.protocol.Protocol.*;
 
 /**
  * Class to rewrite integers within packets.
@@ -27,7 +27,7 @@ public abstract class EntityMap
     private final boolean[] serverboundVarInts = new boolean[ 256 ];
 
     // Returns the correct entity map for the protocol version
-    public static EntityMap getEntityMap(ProtocolVersion version)
+    public static EntityMap getEntityMap(Protocol version)
     {
         switch ( version )
         {
@@ -87,12 +87,12 @@ public abstract class EntityMap
         }
     }
 
-    public void rewriteServerbound(ByteBuf packet, int oldId, int newId, ProtocolVersion pv)
+    public void rewriteServerbound(ByteBuf packet, int oldId, int newId, Protocol pv)
     {
         rewrite( packet, oldId, newId, serverboundInts, serverboundVarInts, pv);
     }
 
-    public void rewriteClientbound(ByteBuf packet, int oldId, int newId, ProtocolVersion pv)
+    public void rewriteClientbound(ByteBuf packet, int oldId, int newId, Protocol pv)
     {
         rewrite( packet, oldId, newId, clientboundInts, clientboundVarInts, pv );
     }
@@ -131,7 +131,7 @@ public abstract class EntityMap
         rewriteMetaVarInt( packet, oldId, newId, metaIndex, null );
     }
 
-    protected static void rewriteMetaVarInt(ByteBuf packet, int oldId, int newId, int metaIndex, ProtocolVersion protocolVersion)
+    protected static void rewriteMetaVarInt(ByteBuf packet, int oldId, int newId, int metaIndex, Protocol protocolVersion)
     {
         int readerIndex = packet.readerIndex();
 
@@ -242,7 +242,7 @@ public abstract class EntityMap
         packet.readerIndex( readerIndex );
     }
 
-    private static void readSkipSlot(ByteBuf packet, ProtocolVersion protocolVersion)
+    private static void readSkipSlot(ByteBuf packet, Protocol protocolVersion)
     {
         if ( protocolVersion.newerOrEqual(MC_1_13_2) ? packet.readBoolean() : packet.readShort() != -1 )
         {
@@ -269,7 +269,7 @@ public abstract class EntityMap
     }
 
     // Handles simple packets
-    private static void rewrite(ByteBuf packet, int oldId, int newId, boolean[] ints, boolean[] varints, ProtocolVersion pv)
+    private static void rewrite(ByteBuf packet, int oldId, int newId, boolean[] ints, boolean[] varints, Protocol pv)
     {
         int readerIndex = packet.readerIndex();
         int packetId = pv.newerThan(MC_1_6_4) ? Packet.readVarInt( packet ) : packet.readUnsignedByte();

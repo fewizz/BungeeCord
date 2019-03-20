@@ -10,13 +10,13 @@ import com.google.gson.JsonSerializer;
 import java.lang.reflect.Type;
 import java.util.UUID;
 import net.md_5.bungee.api.ServerPing;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 
 public class PlayerInfoSerializer implements JsonSerializer<ServerPing.PlayerInfo>, JsonDeserializer<ServerPing.PlayerInfo>
 {
-    private final ProtocolVersion protocol;
+    private final Protocol protocol;
 
-    public PlayerInfoSerializer(ProtocolVersion protocol)
+    public PlayerInfoSerializer(Protocol protocol)
     {
         this.protocol = protocol;
     }

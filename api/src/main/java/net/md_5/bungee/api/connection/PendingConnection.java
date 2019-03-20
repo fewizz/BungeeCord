@@ -3,7 +3,7 @@ package net.md_5.bungee.api.connection;
 import java.net.InetSocketAddress;
 import java.util.UUID;
 import net.md_5.bungee.api.config.ListenerInfo;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 
 /**
  * Represents a user attempting to log into the proxy.
@@ -23,7 +23,15 @@ public interface PendingConnection extends Connection
      *
      * @return the protocol version of the remote client
      */
-    ProtocolVersion getVersion();
+    @Deprecated
+    default int getVersion() {
+    	return getProtocol().version;
+    }
+    
+    /**
+     * @return the protocol of the remote client
+     */
+    Protocol getProtocol();
 
     /**
      * Get the requested virtual host that the client tried to connect to.
@@ -89,5 +97,7 @@ public interface PendingConnection extends Connection
      *
      * @return Whether the client is using a legacy client.
      */
-    boolean isLegacy();
+    default boolean isLegacy() {
+    	return getProtocol().isLegacy();
+    }
 }

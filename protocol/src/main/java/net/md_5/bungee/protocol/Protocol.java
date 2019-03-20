@@ -6,7 +6,7 @@ import java.util.List;
 import io.netty.buffer.ByteBuf;
 import net.md_5.bungee.protocol.packet.*;
 
-public enum ProtocolVersion {
+public enum Protocol {
 	MC_1_6_4(78, ProtocolGen.PRE_NETTY) {{
 		forStatus(NetworkState.LEGACY, new Do() { void apply() {
 			packet(0, KeepAlive::new);
@@ -266,7 +266,7 @@ public enum ProtocolVersion {
 			packet(255, Kick::new);
 		}});	
 	}},
-	MC_1_7_2(4, ProtocolGen.MODERN){{
+	MC_1_7_2(4, ProtocolGen.POST_NETTY){{
 		forStatus(NetworkState.HANDSHAKE, new Do() { void apply() {
 			serverboundPacket(0x00, Handshake::new);
 		};});
@@ -307,13 +307,13 @@ public enum ProtocolVersion {
 			clientboundPacket(0x47, PlayerListHeaderFooter::new);
 		};});
 	}},
-	MC_1_7_6(5, ProtocolGen.MODERN) { void postInit() {
+	MC_1_7_6(5, ProtocolGen.POST_NETTY) { void postInit() {
 		inherit(MC_1_7_2);
 	}},
-	MC_1_8_0(47, ProtocolGen.MODERN) { void postInit() {
+	MC_1_8_0(47, ProtocolGen.POST_NETTY) { void postInit() {
 		inherit(MC_1_7_2);
 	}},
-	MC_1_9_0(107, ProtocolGen.MODERN) { void postInit() {
+	MC_1_9_0(107, ProtocolGen.POST_NETTY) { void postInit() {
 		inheritStatusesFromProtocol(MC_1_8_0, NetworkState.HANDSHAKE, NetworkState.LOGIN, NetworkState.STATUS);
 		
 		forStatus(NetworkState.GAME, new Do() { void apply() {
@@ -341,26 +341,26 @@ public enum ProtocolVersion {
 			clientboundPacket(0x48, PlayerListHeaderFooter::new);
 		};});
 	}},
-	MC_1_9_1(108, ProtocolGen.MODERN) { void postInit() {
+	MC_1_9_1(108, ProtocolGen.POST_NETTY) { void postInit() {
 		inherit(MC_1_9_0);
 	}},
-	MC_1_9_2(19, ProtocolGen.MODERN) { void postInit() {
+	MC_1_9_2(19, ProtocolGen.POST_NETTY) { void postInit() {
 		inherit(MC_1_9_0);
 	}},
-	MC_1_9_4(110, ProtocolGen.MODERN) { void postInit() {
+	MC_1_9_4(110, ProtocolGen.POST_NETTY) { void postInit() {
 		inherit(MC_1_9_0);
 		reassign(PlayerListHeaderFooter.class, Direction.TO_CLIENT, 0x47);
 	}},
-	MC_1_10_0(210, ProtocolGen.MODERN) { void postInit() {
+	MC_1_10_0(210, ProtocolGen.POST_NETTY) { void postInit() {
 		inherit(MC_1_9_4);
 	}},
-	MC_1_11_0(315, ProtocolGen.MODERN) { void postInit() {
+	MC_1_11_0(315, ProtocolGen.POST_NETTY) { void postInit() {
 		inherit(MC_1_10_0);
 	}},
-	MC_1_11_1(316, ProtocolGen.MODERN) { void postInit() {
+	MC_1_11_1(316, ProtocolGen.POST_NETTY) { void postInit() {
 		inherit(MC_1_11_0);
 	}},
-	MC_1_12_0(335, ProtocolGen.MODERN) { void postInit() {
+	MC_1_12_0(335, ProtocolGen.POST_NETTY) { void postInit() {
 		inheritStatusesFromProtocol(MC_1_11_1, NetworkState.HANDSHAKE, NetworkState.LOGIN, NetworkState.STATUS);
 		
 		forStatus(NetworkState.GAME, new Do() { void apply() {
@@ -388,7 +388,7 @@ public enum ProtocolVersion {
 			clientboundPacket(0x49, PlayerListHeaderFooter::new);
 		};});
 	}},
-	MC_1_12_1(338, ProtocolGen.MODERN) { void postInit() {
+	MC_1_12_1(338, ProtocolGen.POST_NETTY) { void postInit() {
 		inheritStatusesFromProtocol(MC_1_11_1, NetworkState.HANDSHAKE, NetworkState.LOGIN, NetworkState.STATUS);
 		
 		forStatus(NetworkState.GAME, new Do() { void apply() {
@@ -416,10 +416,10 @@ public enum ProtocolVersion {
 			clientboundPacket(0x4A, PlayerListHeaderFooter::new);
 		};});
 	}},
-	MC_1_12_2(340, ProtocolGen.MODERN) { void postInit() {
+	MC_1_12_2(340, ProtocolGen.POST_NETTY) { void postInit() {
 		inherit(MC_1_12_1);
 	}},
-	MC_1_13_0(393, ProtocolGen.MODERN) { void postInit() {
+	MC_1_13_0(393, ProtocolGen.POST_NETTY) { void postInit() {
 		inheritStatusesFromProtocol(MC_1_11_1, NetworkState.HANDSHAKE, NetworkState.LOGIN, NetworkState.STATUS);
 		packet(NetworkState.LOGIN, 0x04, Direction.TO_CLIENT, LoginPayloadRequest::new);
 		packet(NetworkState.LOGIN, 0x02, Direction.TO_SERVER, LoginPayloadResponse::new);
@@ -451,14 +451,14 @@ public enum ProtocolVersion {
 			clientboundPacket(0x4E, PlayerListHeaderFooter::new);
 		};});
 	}},
-	MC_1_13_1(401, ProtocolGen.MODERN) { void postInit() {
+	MC_1_13_1(401, ProtocolGen.POST_NETTY) { void postInit() {
 		inherit(MC_1_13_0);
 	}},
-	MC_1_13_2(404, ProtocolGen.MODERN) { void postInit() {
+	MC_1_13_2(404, ProtocolGen.POST_NETTY) { void postInit() {
 		inherit(MC_1_13_1);
 	}};
 	
-	private ProtocolVersion(int ver, ProtocolGen gen) {
+	private Protocol(int ver, ProtocolGen gen) {
 		this.version = ver;
 		this.generation = gen;
 		packets = new PacketMap();
@@ -470,7 +470,7 @@ public enum ProtocolVersion {
 	
 	static abstract class Do {
 		NetworkState s;
-		ProtocolVersion pv;
+		Protocol pv;
 		
 		abstract void apply();
 		
@@ -495,19 +495,19 @@ public enum ProtocolVersion {
 	void postInit() {}
 	
 	static {
-		for(ProtocolVersion pv : values())
+		for(Protocol pv : values())
 			pv.postInit();
 	}
 	
-	void inherit(ProtocolVersion v) {
+	void inherit(Protocol v) {
 		v.packets.addFrom(v.packets, pi -> true);
 	}
 	
-	void inheritStatus(NetworkState ns, ProtocolVersion v) {
+	void inheritStatus(NetworkState ns, Protocol v) {
 		v.packets.addFrom(v.packets, pi -> pi.getNetworkState() == ns);
 	}
 	
-	void inheritStatusesFromProtocol(ProtocolVersion v, NetworkState... css) {
+	void inheritStatusesFromProtocol(Protocol v, NetworkState... css) {
 		for(NetworkState cs : css)
 			inheritStatus(cs, v);
 	}
@@ -551,15 +551,15 @@ public enum ProtocolVersion {
 	public final int version;
 	public final ProtocolGen generation;
 	
-	public boolean newerThan(ProtocolVersion ver) {return ordinal() > ver.ordinal();}
-	public boolean newerOrEqual(ProtocolVersion ver) {return ordinal() >= ver.ordinal();}
-	public boolean olderThan(ProtocolVersion ver) {return ordinal() < ver.ordinal();}
-	public boolean olderOrEqual(ProtocolVersion ver) {return ordinal() <= ver.ordinal();}
+	public boolean newerThan(Protocol ver) {return ordinal() > ver.ordinal();}
+	public boolean newerOrEqual(Protocol ver) {return ordinal() >= ver.ordinal();}
+	public boolean olderThan(Protocol ver) {return ordinal() < ver.ordinal();}
+	public boolean olderOrEqual(Protocol ver) {return ordinal() <= ver.ordinal();}
 	
 	public boolean isLegacy() { return generation == ProtocolGen.PRE_NETTY; }
 	
-	public static ProtocolVersion byNumber(int num, ProtocolGen gen) {
-		for(ProtocolVersion v : values())
+	public static Protocol byNumber(int num, ProtocolGen gen) {
+		for(Protocol v : values())
 			if(v.version == num && gen == v.generation)
 				return v;
 		return null;
@@ -568,7 +568,7 @@ public enum ProtocolVersion {
 	public static final List<String> GAME_VERSIONS = new ArrayList<>();
 	
 	static {
-		for(ProtocolVersion v : values())
+		for(Protocol v : values())
 			GAME_VERSIONS.add(v.name().substring("MC_".length()).replace('_', '.'));
 	}
 }

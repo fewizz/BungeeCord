@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 
 @Data
 @NoArgsConstructor
@@ -26,7 +26,7 @@ public class ClientSettings extends Packet
     private int mainHand;
 
     @Override
-    public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
+    public void read(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
         locale = readString( buf, protocolVersion );
         viewDistance = buf.readByte();
@@ -37,7 +37,7 @@ public class ClientSettings extends Packet
     		chatColours = (b & 0b1000) == 0b1000;
         }
         else {
-        	if(protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9_0)) {
+        	if(protocolVersion.newerOrEqual(Protocol.MC_1_9_0)) {
             	chatFlags = Packet.readVarInt( buf );
             	chatColours = buf.readBoolean();
             }
@@ -47,38 +47,38 @@ public class ClientSettings extends Packet
             }
         }
         
-        if ( protocolVersion.olderOrEqual(ProtocolVersion.MC_1_7_6 ))
+        if ( protocolVersion.olderOrEqual(Protocol.MC_1_7_6 ))
         {
             difficulty = buf.readByte();
         }
         skinParts = buf.readByte();
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9_0 ))
+        if ( protocolVersion.newerOrEqual(Protocol.MC_1_9_0 ))
         {
             mainHand = Packet.readVarInt( buf );
         }
     }
 
     @Override
-    public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
+    public void write(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
         writeString( locale, buf );
         buf.writeByte( viewDistance );
         if(protocolVersion.isLegacy()) 
         	buf.writeByte(chatFlags | ((chatColours ? 1 : 0) << 3));
         else {
-        	if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9_0 ))
+        	if ( protocolVersion.newerOrEqual(Protocol.MC_1_9_0 ))
         		Packet.writeVarInt( chatFlags, buf );
     		else
         		buf.writeByte( chatFlags );
         	buf.writeBoolean( chatColours );
     	}
         
-        if ( protocolVersion.olderOrEqual(ProtocolVersion.MC_1_7_6) )
+        if ( protocolVersion.olderOrEqual(Protocol.MC_1_7_6) )
         {
             buf.writeByte( difficulty );
         }
         buf.writeByte( skinParts );
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_9_0) )
+        if ( protocolVersion.newerOrEqual(Protocol.MC_1_9_0) )
         {
             Packet.writeVarInt( mainHand, buf );
         }

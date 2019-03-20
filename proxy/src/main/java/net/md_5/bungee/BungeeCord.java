@@ -105,7 +105,7 @@ import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.GenerationIdentifier;
 import net.md_5.bungee.protocol.ProtocolGen;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 import net.md_5.bungee.query.RemoteQuery;
@@ -177,7 +177,7 @@ public class BungeeCord extends ProxyServer
             .registerTypeAdapter( KeybindComponent.class, new KeybindComponentSerializer() )
             .registerTypeAdapter( ScoreComponent.class, new ScoreComponentSerializer() )
             .registerTypeAdapter( SelectorComponent.class, new SelectorComponentSerializer() )
-            .registerTypeAdapter( ServerPing.PlayerInfo.class, new PlayerInfoSerializer( ProtocolVersion.MC_1_7_6 ) )
+            .registerTypeAdapter( ServerPing.PlayerInfo.class, new PlayerInfoSerializer( Protocol.MC_1_7_6 ) )
             .registerTypeAdapter( Favicon.class, Favicon.getFaviconTypeAdapter() ).create();
     public final Gson gsonLegacy = new GsonBuilder()
             .registerTypeAdapter( BaseComponent.class, new ComponentSerializer() )
@@ -186,7 +186,7 @@ public class BungeeCord extends ProxyServer
             .registerTypeAdapter( KeybindComponent.class, new KeybindComponentSerializer() )
             .registerTypeAdapter( ScoreComponent.class, new ScoreComponentSerializer() )
             .registerTypeAdapter( SelectorComponent.class, new SelectorComponentSerializer() )
-            .registerTypeAdapter( ServerPing.PlayerInfo.class, new PlayerInfoSerializer( ProtocolVersion.MC_1_7_2 ) )
+            .registerTypeAdapter( ServerPing.PlayerInfo.class, new PlayerInfoSerializer( Protocol.MC_1_7_2 ) )
             .registerTypeAdapter( Favicon.class, Favicon.getFaviconTypeAdapter() ).create();
     @Getter
     private ConnectionThrottle connectionThrottle;
@@ -332,7 +332,7 @@ public class BungeeCord extends ProxyServer
 					ch.pipeline().addFirst(new GenerationIdentifier() {
 						@Override
 						public void onIdentified(ProtocolGen gen, ChannelHandlerContext ctx) {
-							ProtocolVersion pv = gen == ProtocolGen.MODERN ? getProtocolVersion() : ProtocolVersion.MC_1_6_4;
+							Protocol pv = gen == ProtocolGen.POST_NETTY ? getProtocolVersion() : Protocol.MC_1_6_4;
 							PipelineUtil.packetHandlers(ch, pv, Direction.TO_CLIENT);
 						}
 					});
@@ -622,9 +622,9 @@ public class BungeeCord extends ProxyServer
         return Collections.unmodifiableCollection( pluginChannels );
     }
 
-    public PluginMessage registerChannels(ProtocolVersion protocolVersion)
+    public PluginMessage registerChannels(Protocol protocolVersion)
     {
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13_0) )
+        if ( protocolVersion.newerOrEqual(Protocol.MC_1_13_0) )
         {
             return new PluginMessage( "minecraft:register", Util.format( Iterables.transform( pluginChannels, PluginMessage.MODERNISE ), "\00" ).getBytes( Charsets.UTF_8 ), false );
         }
@@ -633,17 +633,17 @@ public class BungeeCord extends ProxyServer
     }
 
     @Override
-    public ProtocolVersion getProtocolVersion()
+    public Protocol getProtocolVersion()
     {
         //return ProtocolConstants.SUPPORTED_VERSION_IDS.get( ProtocolConstants.SUPPORTED_VERSION_IDS.size() - 1 );
-    	return ProtocolVersion.values()[ProtocolVersion.values().length-1];
+    	return Protocol.values()[Protocol.values().length-1];
     }
 
     @Override
     public String getGameVersion()
     {
         //return ProtocolConstants.SUPPORTED_VERSIONS.get( 0 ) + "-" + ProtocolConstants.SUPPORTED_VERSIONS.get( ProtocolConstants.SUPPORTED_VERSIONS.size() - 1 );
-    	return ProtocolVersion.GAME_VERSIONS.get(0) + "-" + ProtocolVersion.GAME_VERSIONS.get(ProtocolVersion.GAME_VERSIONS.size()-1);
+    	return Protocol.GAME_VERSIONS.get(0) + "-" + Protocol.GAME_VERSIONS.get(Protocol.GAME_VERSIONS.size()-1);
     }
 
     @Override

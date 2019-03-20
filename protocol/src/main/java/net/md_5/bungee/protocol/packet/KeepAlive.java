@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 
 @Data
 @NoArgsConstructor
@@ -20,12 +20,12 @@ public class KeepAlive extends Packet
     private long randomId;
 
     @Override
-    public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
+    public void read(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_12_2 ))
+        if ( protocolVersion.newerOrEqual(Protocol.MC_1_12_2 ))
         {
             randomId = buf.readLong();
-        } else if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0 ))
+        } else if ( protocolVersion.newerOrEqual(Protocol.MC_1_8_0 ))
         {
             randomId = readVarInt( buf );
         } else
@@ -35,12 +35,12 @@ public class KeepAlive extends Packet
     }
 
     @Override
-    public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
+    public void write(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_12_2 ))
+        if ( protocolVersion.newerOrEqual(Protocol.MC_1_12_2 ))
         {
             buf.writeLong( randomId );
-        } else if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0 ))
+        } else if ( protocolVersion.newerOrEqual(Protocol.MC_1_8_0 ))
         {
             writeVarInt( (int) randomId, buf );
         } else

@@ -2,7 +2,7 @@ package net.md_5.bungee.entitymap;
 
 import io.netty.buffer.ByteBuf;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 
 public class EntityMap_1_6_4 extends EntityMap {
 	static final EntityMap_1_6_4 INSTANCE = new EntityMap_1_6_4();
@@ -38,7 +38,7 @@ public class EntityMap_1_6_4 extends EntityMap {
 	}
 	
 	@Override
-	public void rewriteClientbound(ByteBuf packet, int oldId, int newId, ProtocolVersion pv) {
+	public void rewriteClientbound(ByteBuf packet, int oldId, int newId, Protocol pv) {
 		super.rewriteServerbound(packet, oldId, newId, pv);
 		int begin = packet.readerIndex();
 		int packetID = packet.readUnsignedByte();

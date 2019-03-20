@@ -7,7 +7,7 @@ import java.util.function.Predicate;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
-import net.md_5.bungee.protocol.ProtocolVersion.Factory;
+import net.md_5.bungee.protocol.Protocol.Factory;
 
 public class PacketMap {
 	@Data @RequiredArgsConstructor

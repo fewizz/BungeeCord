@@ -6,7 +6,7 @@ import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.connection.LoginResult;
 import net.md_5.bungee.protocol.Packet;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 
 class EntityMap_1_7_6 extends EntityMap_1_7_2
 {
@@ -15,7 +15,7 @@ class EntityMap_1_7_6 extends EntityMap_1_7_2
 
     @Override
     @SuppressFBWarnings("DLS_DEAD_LOCAL_STORE")
-    public void rewriteClientbound(ByteBuf packet, int oldId, int newId, ProtocolVersion pv)
+    public void rewriteClientbound(ByteBuf packet, int oldId, int newId, Protocol pv)
     {
         super.rewriteClientbound( packet, oldId, newId, pv );
 

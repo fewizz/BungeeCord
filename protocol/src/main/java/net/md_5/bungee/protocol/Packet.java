@@ -232,7 +232,7 @@ public abstract class Packet
         throw new UnsupportedOperationException( "Packet must implement read method" );
     }
 
-    public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
+    public void read(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
         read( buf );
     }
@@ -242,7 +242,7 @@ public abstract class Packet
         throw new UnsupportedOperationException( "Packet must implement write method" );
     }
 
-    public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
+    public void write(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
         write( buf );
     }
@@ -364,18 +364,18 @@ public abstract class Packet
     	}
     }
     
-    public static void writeString(String s, ByteBuf buf, ProtocolVersion pv) {
+    public static void writeString(String s, ByteBuf buf, Protocol pv) {
         if(pv.isLegacy())
         	writeLegacyString(s, buf);
         else 
         	writeString(s, buf);
     }
     
-    public static String readString(ByteBuf buf, ProtocolVersion pv, int maxSize) {
+    public static String readString(ByteBuf buf, Protocol pv, int maxSize) {
     	return pv.isLegacy() ? readLegacyString(buf, maxSize) : readString(buf);
     }
     
-    public static String readString(ByteBuf buf, ProtocolVersion pv) {
+    public static String readString(ByteBuf buf, Protocol pv) {
     	return readString(buf, pv, Short.MAX_VALUE); // We don't care. =P
     }
 }

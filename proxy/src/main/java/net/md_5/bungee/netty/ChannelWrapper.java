@@ -17,7 +17,7 @@ import net.md_5.bungee.protocol.NetworkState;
 import net.md_5.bungee.protocol.PacketDecoder;
 import net.md_5.bungee.protocol.PacketEncoder;
 import net.md_5.bungee.protocol.PacketWrapper;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.Kick;
 
 public class ChannelWrapper
@@ -46,7 +46,7 @@ public class ChannelWrapper
     
     public NetworkState getConnectionStatus() { return ch.pipeline().get(PacketEncoder.class).getConnectionStatus(); }
 
-    public void setVersion(ProtocolVersion protocol)
+    public void setVersion(Protocol protocol)
     {
     	PacketDecoder dec = (PacketDecoder) ch.pipeline().get(PipelineUtil.PACKET_DEC);
     	if(dec.getProtocolVersion().generation != protocol.generation)

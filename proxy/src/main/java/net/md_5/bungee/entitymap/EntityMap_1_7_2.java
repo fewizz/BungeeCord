@@ -3,7 +3,7 @@ package net.md_5.bungee.entitymap;
 import io.netty.buffer.ByteBuf;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 
 class EntityMap_1_7_2 extends EntityMap
 {
@@ -43,7 +43,7 @@ class EntityMap_1_7_2 extends EntityMap
     }
 
     @Override
-    public void rewriteClientbound(ByteBuf packet, int oldId, int newId, ProtocolVersion pv)
+    public void rewriteClientbound(ByteBuf packet, int oldId, int newId, Protocol pv)
     {
         super.rewriteClientbound( packet, oldId, newId, pv );
 

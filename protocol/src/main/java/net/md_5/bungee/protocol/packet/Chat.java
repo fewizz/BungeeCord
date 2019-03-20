@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 
 @Data
 @NoArgsConstructor
@@ -24,24 +24,24 @@ public class Chat extends Packet {
 	}
 
 	@Override
-	public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion) {
+	public void read(ByteBuf buf, Direction direction, Protocol protocolVersion) {
 		if (protocolVersion.isLegacy())
 			message = readLegacyString(buf, 32767);
 		else
 			message = readString(buf);
 
-		if (direction == Direction.TO_CLIENT && protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0))
+		if (direction == Direction.TO_CLIENT && protocolVersion.newerOrEqual(Protocol.MC_1_8_0))
 			position = buf.readByte();
 	}
 
 	@Override
-	public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion) {
+	public void write(ByteBuf buf, Direction direction, Protocol protocolVersion) {
 		if (protocolVersion.isLegacy())
 			writeLegacyString(message, buf);
 		else
 			writeString(message, buf);
 
-		if (direction == Direction.TO_CLIENT && protocolVersion.newerOrEqual(ProtocolVersion.MC_1_8_0))
+		if (direction == Direction.TO_CLIENT && protocolVersion.newerOrEqual(Protocol.MC_1_8_0))
 			buf.writeByte(position);
 	}
 

@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 
 @Data
 @NoArgsConstructor
@@ -26,11 +26,11 @@ public class Login extends Packet
     private boolean reducedDebugInfo;
 
     @Override
-    public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
+    public void read(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
         entityId = buf.readInt();
         gameMode = buf.readUnsignedByte();
-        if ( protocolVersion.newerThan(ProtocolVersion.MC_1_9_0 ))
+        if ( protocolVersion.newerThan(Protocol.MC_1_9_0 ))
         {
             dimension = buf.readInt();
         } else
@@ -47,11 +47,11 @@ public class Login extends Packet
     }
 
     @Override
-    public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
+    public void write(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
         buf.writeInt( entityId );
         buf.writeByte( gameMode );
-        if ( protocolVersion.newerThan(ProtocolVersion.MC_1_9_0 ))
+        if ( protocolVersion.newerThan(Protocol.MC_1_9_0 ))
         {
             buf.writeInt( dimension );
         } else

@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 
 @Data
 @NoArgsConstructor
@@ -26,12 +26,12 @@ public class Title extends Packet
     private int fadeOut;
 
     @Override
-    public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
+    public void read(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
         int index = readVarInt( buf );
 
         // If we're working on 1.10 or lower, increment the value of the index so we pull out the correct value.
-        if ( protocolVersion.olderOrEqual(ProtocolVersion.MC_1_10_0) && index >= 2 )
+        if ( protocolVersion.olderOrEqual(Protocol.MC_1_10_0) && index >= 2 )
         {
             index++;
         }
@@ -53,12 +53,12 @@ public class Title extends Packet
     }
 
     @Override
-    public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
+    public void write(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
         int index = action.ordinal();
 
         // If we're working on 1.10 or lower, increment the value of the index so we pull out the correct value.
-        if ( protocolVersion.olderOrEqual(ProtocolVersion.MC_1_10_0) && index >= 2 )
+        if ( protocolVersion.olderOrEqual(Protocol.MC_1_10_0) && index >= 2 )
         {
             index--;
         }

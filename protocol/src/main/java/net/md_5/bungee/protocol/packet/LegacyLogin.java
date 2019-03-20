@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 
 @Data
 @NoArgsConstructor
@@ -25,7 +25,7 @@ public class LegacyLogin extends Packet {
     public byte maxPlayers;
     
     @Override
-    public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion) {
+    public void read(ByteBuf buf, Direction direction, Protocol protocolVersion) {
     	entityId = buf.readInt();
 		levelType = readLegacyString(buf, 16);
 		int mode = buf.readUnsignedByte();
@@ -38,7 +38,7 @@ public class LegacyLogin extends Packet {
     }
     
     @Override
-    public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion) {
+    public void write(ByteBuf buf, Direction direction, Protocol protocolVersion) {
     	buf.writeInt(entityId);
     	writeLegacyString(levelType, buf);
     	buf.writeByte(gameMode | (hardcore ? 0b1000 : 0));

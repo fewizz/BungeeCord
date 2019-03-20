@@ -52,7 +52,7 @@ import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.PacketWrapper;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.ClientSettings;
 import net.md_5.bungee.protocol.packet.Kick;
@@ -147,7 +147,7 @@ public final class UserConnection implements ProxiedPlayer {
 	};
 
 	public void init() {
-		this.entityRewrite = EntityMap.getEntityMap(getPendingConnection().getVersion());
+		this.entityRewrite = EntityMap.getEntityMap(getPendingConnection().getProtocol());
 
 		this.displayName = name;
 
@@ -180,7 +180,7 @@ public final class UserConnection implements ProxiedPlayer {
 	@Override
 	public void setDisplayName(String name) {
 		Preconditions.checkNotNull(name, "displayName");
-		if (pendingConnection.getVersion().olderOrEqual(ProtocolVersion.MC_1_7_6))
+		if (pendingConnection.getProtocol().olderOrEqual(Protocol.MC_1_7_6))
 			Preconditions.checkArgument(name.length() <= 16, "Display name cannot be longer than 16 characters");
 
 		displayName = name;
@@ -287,7 +287,7 @@ public final class UserConnection implements ProxiedPlayer {
 		ChannelInitializer<Channel> initializer = new ChannelInitializer<Channel>() {
 			@Override
 			protected void initChannel(Channel ch) throws Exception {
-				PipelineUtil.addHandlers(ch, pendingConnection.getVersion(), Direction.TO_SERVER, new ServerConnector(bungee, UserConnection.this, target));
+				PipelineUtil.addHandlers(ch, pendingConnection.getProtocol(), Direction.TO_SERVER, new ServerConnector(bungee, UserConnection.this, target));
 			}
 		};
 		ChannelFutureListener listener = new ChannelFutureListener() {
@@ -390,7 +390,7 @@ public final class UserConnection implements ProxiedPlayer {
 
 		// Action bar doesn't display the new JSON formattings, legacy works - send it
 		// using this for now
-		if (position == ChatMessageType.ACTION_BAR && pendingConnection.getVersion().newerOrEqual(ProtocolVersion.MC_1_8_0))
+		if (position == ChatMessageType.ACTION_BAR && pendingConnection.getProtocol().newerOrEqual(Protocol.MC_1_8_0))
 			sendMessage(position, ComponentSerializer.toString(new TextComponent(BaseComponent.toLegacyText(message))));
 		else// if (!pendingConnection.getVersion().isLegacy())
 			sendMessage(position, ComponentSerializer.toString(message));
@@ -404,7 +404,7 @@ public final class UserConnection implements ProxiedPlayer {
 
 		// Action bar doesn't display the new JSON formattings, legacy works - send it
 		// using this for now
-		if (position == ChatMessageType.ACTION_BAR && pendingConnection.getVersion().newerOrEqual(ProtocolVersion.MC_1_8_0))
+		if (position == ChatMessageType.ACTION_BAR && pendingConnection.getProtocol().newerOrEqual(Protocol.MC_1_8_0))
 			sendMessage(position, ComponentSerializer.toString(new TextComponent(BaseComponent.toLegacyText(message))));
 		else// if (!pendingConnection.getVersion().isLegacy())
 			sendMessage(position, ComponentSerializer.toString(message));
@@ -551,7 +551,7 @@ public final class UserConnection implements ProxiedPlayer {
 
 	@Override
 	public void setTabHeader(BaseComponent header, BaseComponent footer) {
-		if (pendingConnection.getVersion().newerOrEqual(ProtocolVersion.MC_1_8_0)) {
+		if (pendingConnection.getProtocol().newerOrEqual(Protocol.MC_1_8_0)) {
 			header = ChatComponentTransformer.getInstance().transform(this, header)[0];
 			footer = ChatComponentTransformer.getInstance().transform(this, footer)[0];
 
@@ -561,7 +561,7 @@ public final class UserConnection implements ProxiedPlayer {
 
 	@Override
 	public void setTabHeader(BaseComponent[] header, BaseComponent[] footer) {
-		if (pendingConnection.getVersion().newerOrEqual(ProtocolVersion.MC_1_8_0)) {
+		if (pendingConnection.getProtocol().newerOrEqual(Protocol.MC_1_8_0)) {
 			header = ChatComponentTransformer.getInstance().transform(this, header);
 			footer = ChatComponentTransformer.getInstance().transform(this, footer);
 
@@ -586,7 +586,7 @@ public final class UserConnection implements ProxiedPlayer {
 	}
 
 	public void setCompressionThreshold(int compressionThreshold) {
-		if (!ch.isClosing() && this.compressionThreshold == -1 && getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_8_0) && compressionThreshold >= 0) {
+		if (!ch.isClosing() && this.compressionThreshold == -1 && getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_8_0) && compressionThreshold >= 0) {
 			this.compressionThreshold = compressionThreshold;
 			unsafe.sendPacket(new SetCompression(compressionThreshold));
 			ch.setCompressionThreshold(compressionThreshold);

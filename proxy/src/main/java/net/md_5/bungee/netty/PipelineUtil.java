@@ -19,7 +19,7 @@ import net.md_5.bungee.protocol.LegacyPacketDecoder;
 import net.md_5.bungee.protocol.ModernPacketDecoder;
 import net.md_5.bungee.protocol.PacketEncoder;
 import net.md_5.bungee.protocol.ProtocolGen;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.Varint21FrameDecoder;
 import net.md_5.bungee.protocol.Varint21LengthFieldPrepender;
 
@@ -61,7 +61,7 @@ public class PipelineUtil {
 			new PacketEncoder(
 				NetworkState.HANDSHAKE,
 				dir,
-				ProtocolVersion.byNumber(protocolVersion, ProtocolGen.MODERN)
+				Protocol.byNumber(protocolVersion, ProtocolGen.POST_NETTY)
 			)
 		);
     }
@@ -80,7 +80,7 @@ public class PipelineUtil {
 			new PacketEncoder(
 				NetworkState.LEGACY,
 				dir,
-				ProtocolVersion.byNumber(protocolVersion, ProtocolGen.PRE_NETTY)
+				Protocol.byNumber(protocolVersion, ProtocolGen.PRE_NETTY)
 			)
 		);
     }
@@ -101,9 +101,9 @@ public class PipelineUtil {
     	ch.pipeline().addLast(PipelineUtil.BOSS, new HandlerBoss().setHandler(ph));
     }
     
-    public static void packetHandlers(Channel ch, ProtocolVersion pv, Direction dir) {
+    public static void packetHandlers(Channel ch, Protocol pv, Direction dir) {
     	switch (pv.generation) {
-		case MODERN:
+		case POST_NETTY:
 			modernPacketHandlers(ch, pv.version, dir);
 			break;
 
@@ -113,7 +113,7 @@ public class PipelineUtil {
 		}
     }
     
-    public static void addHandlers(Channel ch, ProtocolVersion pv, Direction dir, PacketHandler ph) {
+    public static void addHandlers(Channel ch, Protocol pv, Direction dir, PacketHandler ph) {
     	basicHandlers(ch, ph);
     	packetHandlers(ch, pv, dir);
     }

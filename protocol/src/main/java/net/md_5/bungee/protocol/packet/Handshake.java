@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.ProtocolGen;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.NetworkState;
 
@@ -16,36 +16,32 @@ import net.md_5.bungee.protocol.NetworkState;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class Handshake extends Packet
-{
+public class Handshake extends Packet {
 
-    private ProtocolVersion protocolVersion;
-    private String host;
-    private int port;
-    @Setter
-    private NetworkState requestedConnectionStatus;
+	private Protocol protocol;
+	private String host;
+	private int port;
+	@Setter
+	private NetworkState requestedNetworkState;
 
-    @Override
-    public void read(ByteBuf buf)
-    {
-        protocolVersion = ProtocolVersion.byNumber(readVarInt( buf ), ProtocolGen.MODERN );
-        host = readString( buf );
-        port = buf.readUnsignedShort();
-        requestedConnectionStatus = NetworkState.byID(readVarInt( buf ));
-    }
+	@Override
+	public void read(ByteBuf buf) {
+		protocol = Protocol.byNumber(readVarInt(buf), ProtocolGen.POST_NETTY);
+		host = readString(buf);
+		port = buf.readUnsignedShort();
+		requestedNetworkState = NetworkState.byID(readVarInt(buf));
+	}
 
-    @Override
-    public void write(ByteBuf buf)
-    {
-        writeVarInt( protocolVersion.version, buf );
-        writeString( host, buf );
-        buf.writeShort( port );
-        writeVarInt( requestedConnectionStatus.getId(), buf );
-    }
+	@Override
+	public void write(ByteBuf buf) {
+		writeVarInt(protocol.version, buf);
+		writeString(host, buf);
+		buf.writeShort(port);
+		writeVarInt(requestedNetworkState.getId(), buf);
+	}
 
-    @Override
-    public void handle(AbstractPacketHandler handler) throws Exception
-    {
-        handler.handle( this );
-    }
+	@Override
+	public void handle(AbstractPacketHandler handler) throws Exception {
+		handler.handle(this);
+	}
 }

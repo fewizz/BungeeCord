@@ -24,7 +24,7 @@ import net.md_5.bungee.forge.ForgeConstants;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.protocol.PacketWrapper;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.ClientSettings;
 import net.md_5.bungee.protocol.packet.KeepAlive;
@@ -46,7 +46,7 @@ public class UpstreamBridge extends PacketHandler
 
         BungeeCord.getInstance().addConnection( con );
         con.getTabListHandler().onConnect();
-        con.unsafe().sendPacket( BungeeCord.getInstance().registerChannels( con.getPendingConnection().getVersion() ) );
+        con.unsafe().sendPacket( BungeeCord.getInstance().registerChannels( con.getPendingConnection().getProtocol() ) );
     }
 
     @Override
@@ -82,7 +82,7 @@ public class UpstreamBridge extends PacketHandler
             } );
             for ( ProxiedPlayer player : con.getServer().getInfo().getPlayers() )
             {
-                if ( player.getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_8_0) )
+                if ( player.getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_8_0) )
                 {
                     player.unsafe().sendPacket( packet );
                 }
@@ -118,7 +118,7 @@ public class UpstreamBridge extends PacketHandler
     {
         if ( con.getServer() != null )
         {
-            con.getEntityRewrite().rewriteServerbound( packet.buf, con.getClientEntityId(), con.getServerEntityId(), con.getPendingConnection().getVersion() );
+            con.getEntityRewrite().rewriteServerbound( packet.buf, con.getClientEntityId(), con.getServerEntityId(), con.getPendingConnection().getProtocol() );
             con.getServer().getCh().write( packet );
         }
     }
@@ -140,7 +140,7 @@ public class UpstreamBridge extends PacketHandler
     @Override
     public void handle(Chat chat) throws Exception
     {
-        int maxLength = ( con.getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_11_0 )) ? 256 : 100;
+        int maxLength = ( con.getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_11_0 )) ? 256 : 100;
         Preconditions.checkArgument( chat.getMessage().length() <= maxLength, "Chat message too long" ); // Mojang limit, check on updates
 
         ChatEvent chatEvent = new ChatEvent( con, con.getServer(), chat.getMessage() );
@@ -178,7 +178,7 @@ public class UpstreamBridge extends PacketHandler
         {
             // Unclear how to handle 1.13 commands at this point. Because we don't inject into the command packets we are unlikely to get this far unless
             // Bungee plugins are adding results for commands they don't own anyway
-            if ( con.getPendingConnection().getVersion().olderThan(ProtocolVersion.MC_1_13_0 ))
+            if ( con.getPendingConnection().getProtocol().olderThan(Protocol.MC_1_13_0 ))
             {
                 con.unsafe().sendPacket( new TabCompleteResponse( results ) );
             } else if ( BungeeCord.getInstance().config.isInjectCommands() )

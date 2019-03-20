@@ -33,7 +33,7 @@ import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 
 @RequiredArgsConstructor
@@ -127,7 +127,7 @@ public class BungeeServerInfo implements ServerInfo
         ping( callback, ProxyServer.getInstance().getProtocolVersion() );
     }
 
-    public void ping(final Callback<ServerPing> callback, final ProtocolVersion protocolVersion) {
+    public void ping(final Callback<ServerPing> callback, final Protocol protocolVersion) {
         Preconditions.checkNotNull( callback, "callback" );
 
         new Bootstrap()

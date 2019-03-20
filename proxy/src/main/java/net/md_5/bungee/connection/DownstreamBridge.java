@@ -40,7 +40,7 @@ import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.PacketWrapper;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.BossBar;
 import net.md_5.bungee.protocol.packet.Commands;
 import net.md_5.bungee.protocol.packet.KeepAlive;
@@ -108,7 +108,7 @@ public class DownstreamBridge extends PacketHandler
     @Override
     public void handle(PacketWrapper packet) throws Exception
     {
-        con.getEntityRewrite().rewriteClientbound( packet.buf, con.getServerEntityId(), con.getClientEntityId(), con.getPendingConnection().getVersion() );
+        con.getEntityRewrite().rewriteClientbound( packet.buf, con.getServerEntityId(), con.getClientEntityId(), con.getPendingConnection().getProtocol() );
         con.sendPacket( packet );
     }
     
@@ -240,9 +240,9 @@ public class DownstreamBridge extends PacketHandler
             throw CancelSendSignal.INSTANCE;
         }
 
-        if ( pluginMessage.getTag().equals( con.getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_13_0) ? "minecraft:brand" : "MC|Brand" ) )
+        if ( pluginMessage.getTag().equals( con.getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_13_0) ? "minecraft:brand" : "MC|Brand" ) )
         {
-            if (con.getPendingConnection().getVersion().newerOrEqual(ProtocolVersion.MC_1_8_0))
+            if (con.getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_8_0))
             {
                 ByteBuf brand = Unpooled.wrappedBuffer(pluginMessage.getData());
                 String serverBrand = Packet.readString(brand);

@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 
 @Data
 @NoArgsConstructor
@@ -41,9 +41,9 @@ public class TabCompleteResponse extends Packet
     }
 
     @Override
-    public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
+    public void read(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13_0 ))
+        if ( protocolVersion.newerOrEqual(Protocol.MC_1_13_0 ))
         {
             transactionId = readVarInt( buf );
             int start = readVarInt( buf );
@@ -67,16 +67,16 @@ public class TabCompleteResponse extends Packet
         	commands = new ArrayList<>();
         	commands.add(readLegacyString(buf, Short.MAX_VALUE));
         }
-        else if ( protocolVersion.olderThan(ProtocolVersion.MC_1_13_0 ))
+        else if ( protocolVersion.olderThan(Protocol.MC_1_13_0 ))
         {
             commands = readStringArray( buf );
         }
     }
 
     @Override
-    public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
+    public void write(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
-        if ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13_0 ))
+        if ( protocolVersion.newerOrEqual(Protocol.MC_1_13_0 ))
         {
             writeVarInt( transactionId, buf );
             writeVarInt( suggestions.getRange().getStart(), buf );
@@ -97,7 +97,7 @@ public class TabCompleteResponse extends Packet
         if(protocolVersion.isLegacy()) {
         	writeLegacyString(commands.get(0), buf);
         }
-        else if ( protocolVersion.olderThan(ProtocolVersion.MC_1_13_0 ))
+        else if ( protocolVersion.olderThan(Protocol.MC_1_13_0 ))
         {
             writeStringArray( commands, buf );
         }

@@ -19,7 +19,7 @@ import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.MinecraftInput;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 
 @Data
 @NoArgsConstructor
@@ -71,7 +71,7 @@ public class PluginMessage extends Packet
     private boolean allowExtendedPacket = false;
 
     @Override
-    public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
+    public void read(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
     	if(protocolVersion.isLegacy()) {
     		tag = readLegacyString(buf, 20);
@@ -81,13 +81,13 @@ public class PluginMessage extends Packet
     			buf.readBytes(data);
     		}
     	}
-    	else if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8_0) )
+    	else if ( protocolVersion.olderThan(Protocol.MC_1_8_0) )
         {
         	tag = readString( buf );
             data = readArrayLegacy( buf );
         } else
         {
-        	tag = ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13_0 )) ? MODERNISE.apply( readString( buf ) ) : readString( buf );
+        	tag = ( protocolVersion.newerOrEqual(Protocol.MC_1_13_0 )) ? MODERNISE.apply( readString( buf ) ) : readString( buf );
             int maxSize = direction == Direction.TO_SERVER ? Short.MAX_VALUE : 0x100000;
             Preconditions.checkArgument( buf.readableBytes() < maxSize );
             data = new byte[ buf.readableBytes() ];
@@ -96,7 +96,7 @@ public class PluginMessage extends Packet
     }
 
     @Override
-    public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
+    public void write(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
     	if(protocolVersion.isLegacy()) {
     		writeLegacyString(tag, buf);
@@ -105,13 +105,13 @@ public class PluginMessage extends Packet
     		else
     			buf.writeShort(0);
     	}
-    	else if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8_0 ))
+    	else if ( protocolVersion.olderThan(Protocol.MC_1_8_0 ))
         {
         	writeString( tag, buf );
             writeArrayLegacy( data, buf, allowExtendedPacket );
         } else
         {
-        	writeString( ( protocolVersion.newerOrEqual(ProtocolVersion.MC_1_13_0 )) ? MODERNISE.apply( tag ) : tag, buf );
+        	writeString( ( protocolVersion.newerOrEqual(Protocol.MC_1_13_0 )) ? MODERNISE.apply( tag ) : tag, buf );
             buf.writeBytes( data );
         }
     }

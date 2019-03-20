@@ -13,7 +13,7 @@ import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.protocol.NetworkState;
 import net.md_5.bungee.protocol.PacketWrapper;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.Kick;
 import net.md_5.bungee.protocol.packet.LegacyStatusRequest;
 import net.md_5.bungee.protocol.packet.StatusRequest;
@@ -26,7 +26,7 @@ public class PingHandler extends PacketHandler {
 
 	private final ServerInfo target;
 	private final Callback<ServerPing> callback;
-	private final ProtocolVersion protocol;
+	private final Protocol protocol;
 	private ChannelWrapper channel;
 
 	@Override
@@ -55,7 +55,7 @@ public class PingHandler extends PacketHandler {
 	@Override
 	@SuppressFBWarnings("UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
 	public void handle(StatusResponse statusResponse) throws Exception {
-		Gson gson = protocol == ProtocolVersion.MC_1_7_2 ? BungeeCord.getInstance().gsonLegacy : BungeeCord.getInstance().gson;
+		Gson gson = protocol == Protocol.MC_1_7_2 ? BungeeCord.getInstance().gsonLegacy : BungeeCord.getInstance().gson;
 		callback.done(gson.fromJson(statusResponse.getResponse(), ServerPing.class), null);
 		channel.close();
 	}

@@ -7,7 +7,7 @@ import lombok.EqualsAndHashCode;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.ProtocolVersion;
+import net.md_5.bungee.protocol.Protocol;
 
 @Data
 @AllArgsConstructor
@@ -24,13 +24,13 @@ public class EncryptionResponse extends Packet
     }
 
     @Override
-    public void read(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
+    public void read(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
-    	if (protocolVersion.olderOrEqual(ProtocolVersion.MC_1_6_4)) {
+    	if (protocolVersion.olderOrEqual(Protocol.MC_1_6_4)) {
     		sharedSecret = readLegacyByteArray(buf);
     		verifyToken = readLegacyByteArray(buf);
     	}
-    	else if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8_0) )
+    	else if ( protocolVersion.olderThan(Protocol.MC_1_8_0) )
         {
             sharedSecret = readArrayLegacy( buf );
             verifyToken = readArrayLegacy( buf );
@@ -42,13 +42,13 @@ public class EncryptionResponse extends Packet
     }
 
     @Override
-    public void write(ByteBuf buf, Direction direction, ProtocolVersion protocolVersion)
+    public void write(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
-    	if(protocolVersion.olderOrEqual(ProtocolVersion.MC_1_6_4)) {
+    	if(protocolVersion.olderOrEqual(Protocol.MC_1_6_4)) {
     		writeLegacyByteArray(buf, sharedSecret);
     		writeLegacyByteArray(buf, verifyToken);
     	}
-    	else if ( protocolVersion.olderThan(ProtocolVersion.MC_1_8_0) )
+    	else if ( protocolVersion.olderThan(Protocol.MC_1_8_0) )
         {
             writeArrayLegacy( sharedSecret, buf, false );
             writeArrayLegacy( verifyToken, buf, false );

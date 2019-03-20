@@ -16,11 +16,11 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
     private final Direction direction;
     @Setter
     @Getter
-    private ProtocolVersion protocolVersion;
+    private Protocol protocolVersion;
     
     public ModernPacketDecoder(Direction dir, int pv) {
 		this.direction = dir;
-		protocolVersion = ProtocolVersion.byNumber(pv, ProtocolGen.MODERN);
+		protocolVersion = Protocol.byNumber(pv, ProtocolGen.POST_NETTY);
 	}
 
     @Override
