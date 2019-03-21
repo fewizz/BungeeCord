@@ -399,9 +399,9 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 		}
 
 		offlineId = UUID.nameUUIDFromBytes(("OfflinePlayer:" + getName()).getBytes(Charsets.UTF_8));
-		if (uniqueId == null) {
+		
+		if (uniqueId == null)
 			uniqueId = offlineId;
-		}
 
 		Callback<LoginEvent> complete = new Callback<LoginEvent>() {
 			@Override
@@ -419,11 +419,10 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 						userCon.setCompressionThreshold(BungeeCord.getInstance().config.getCompressionThreshold());
 						userCon.init();
 
-						if (getProtocol().newerOrEqual(Protocol.MC_1_7_6)) {
+						if (getProtocol().newerOrEqual(Protocol.MC_1_7_6))
 							unsafe.sendPacket(new LoginSuccess(getUniqueId().toString(), getName())); // With dashes in between
-						} else if (!isLegacy()) {
+						else if (!isLegacy())
 							unsafe.sendPacket(new LoginSuccess(getUUID(), getName())); // Without dashes, for older clients.
-						}
 
 						if (!isLegacy())
 							ch.setConnectionStatus(NetworkState.GAME);
@@ -431,14 +430,14 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 						ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new UpstreamBridge(bungee, userCon));
 						bungee.getPluginManager().callEvent(new PostLoginEvent(userCon));
 						ServerInfo server;
-						if (bungee.getReconnectHandler() != null) {
+						
+						if (bungee.getReconnectHandler() != null)
 							server = bungee.getReconnectHandler().getServer(userCon);
-						} else {
+						else
 							server = AbstractReconnectHandler.getForcedHost(InitialHandler.this);
-						}
-						if (server == null) {
+						
+						if (server == null)
 							server = bungee.getServerInfo(listener.getDefaultServer());
-						}
 
 						userCon.connect(server, null, true, ServerConnectEvent.Reason.JOIN_PROXY);
 
@@ -536,16 +535,16 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 	}
 
 	@Override
-	public void handle(LegacyLoginRequest handshakeOld) throws Exception {
+	public void handle(LegacyLoginRequest lr) throws Exception {
 		Preconditions.checkState(thisState == State.HANDSHAKE, "Not expecting NADSHAKE");
 		handshake = new Handshake();
-		handshake.setProtocol(Protocol.byNumber(handshakeOld.getProtocolVer(), ProtocolGen.PRE_NETTY));
-		handshake.setHost(handshakeOld.getHost());
-		handshake.setPort(handshakeOld.getPort());
+		handshake.setProtocol(Protocol.byNumber(lr.getProtocolVersion(), ProtocolGen.PRE_NETTY));
+		handshake.setHost(lr.getHost());
+		handshake.setPort(lr.getPort());
 		handshake.setRequestedNetworkState(NetworkState.LOGIN);
 
 		loginRequest = new LoginRequest();
-		loginRequest.setData(handshakeOld.getUserName());
+		loginRequest.setData(lr.getUserName());
 
 		thisState = InitialHandler.State.ENCRYPT;
 

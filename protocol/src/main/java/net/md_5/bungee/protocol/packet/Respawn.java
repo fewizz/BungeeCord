@@ -1,46 +1,49 @@
 package net.md_5.bungee.protocol.packet;
 
 import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.Protocol;
 import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
+import net.md_5.bungee.protocol.Direction;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class Respawn extends Packet
-{
+public class Respawn extends Packet {
 
-    private int dimension;
-    private short difficulty;
-    private short gameMode;
-    private String levelType;
+	private int dimension;
+	private short difficulty;
+	private short gameMode;
+	private byte worldHeight;
+	private String levelType;
 
-    @Override
-    public void read(ByteBuf buf)
-    {
-        dimension = buf.readInt();
-        difficulty = buf.readUnsignedByte();
-        gameMode = buf.readUnsignedByte();
-        levelType = readString( buf );
-    }
+	@Override
+	public void read(ByteBuf buf, Direction d, Protocol p) {
+		dimension = buf.readInt();
+		difficulty = buf.readUnsignedByte();
+		gameMode = buf.readUnsignedByte();
+		if(p.isLegacy())
+			worldHeight = buf.readByte();
+		levelType = readString(buf, p);
+	}
 
-    @Override
-    public void write(ByteBuf buf)
-    {
-        buf.writeInt( dimension );
-        buf.writeByte( difficulty );
-        buf.writeByte( gameMode );
-        writeString( levelType, buf );
-    }
+	@Override
+	public void write(ByteBuf buf, Direction d, Protocol p) {
+		buf.writeInt(dimension);
+		buf.writeByte(difficulty);
+		buf.writeByte(gameMode);
+		if(p.isLegacy())
+			buf.writeByte(worldHeight);
+		writeString(levelType, buf, p);
+	}
 
-    @Override
-    public void handle(AbstractPacketHandler handler) throws Exception
-    {
-        handler.handle( this );
-    }
+	@Override
+	public void handle(AbstractPacketHandler handler) throws Exception {
+		handler.handle(this);
+	}
 }

@@ -11,14 +11,14 @@ import net.md_5.bungee.protocol.Packet;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class LegacyLoginRequest extends Packet {
-	int protocolVer;
+	int protocolVersion;
 	String userName;
 	String host;
 	int port; 
 	
 	@Override
 	public void read(ByteBuf buf) {
-		protocolVer = buf.readUnsignedByte();
+		protocolVersion = buf.readUnsignedByte();
 		userName = readLegacyString(buf, 16);
 		host = readLegacyString(buf, 255);
 		port = buf.readInt();
@@ -26,7 +26,7 @@ public class LegacyLoginRequest extends Packet {
 	
 	@Override
 	public void write(ByteBuf buf) {
-		buf.writeByte(protocolVer);
+		buf.writeByte(protocolVersion);
 		writeLegacyString(userName, buf);
 		writeLegacyString(host, buf);
 		buf.writeInt(port);

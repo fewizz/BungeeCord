@@ -12,9 +12,7 @@ import net.md_5.bungee.protocol.packet.Handshake;
 import net.md_5.bungee.protocol.packet.KeepAlive;
 import net.md_5.bungee.protocol.packet.Kick;
 import net.md_5.bungee.protocol.packet.LegacyClientCommand;
-import net.md_5.bungee.protocol.packet.LegacyLogin;
 import net.md_5.bungee.protocol.packet.LegacyLoginRequest;
-import net.md_5.bungee.protocol.packet.LegacyRespawn;
 import net.md_5.bungee.protocol.packet.LegacyStatusRequest;
 import net.md_5.bungee.protocol.packet.Login;
 import net.md_5.bungee.protocol.packet.LoginPayloadRequest;
@@ -139,11 +137,5 @@ public abstract class AbstractPacketHandler {
 	}
 
 	public void handle(LegacyClientCommand clientCommandOld) throws Exception {
-	}
-
-	public void handle(LegacyLogin loginOld) {
-	}
-
-	public void handle(LegacyRespawn respawnOld) {
 	}
 }

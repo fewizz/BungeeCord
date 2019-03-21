@@ -9,67 +9,81 @@ import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.Protocol;
+import net.md_5.bungee.protocol.ProtocolGen;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class Login extends Packet
-{
+public class Login extends Packet {
 
-    private int entityId;
-    private short gameMode;
-    private int dimension;
-    private short difficulty;
-    private short maxPlayers;
-    private String levelType;
-    private boolean reducedDebugInfo;
+	private int entityId;
+	private short gameMode;
+	private int dimension;
+	private short difficulty;
+	private short maxPlayers;
+	private String levelType;
+	private boolean reducedDebugInfo;
+	private byte worldHeight = -1;
 
-    @Override
-    public void read(ByteBuf buf, Direction direction, Protocol protocolVersion)
-    {
-        entityId = buf.readInt();
-        gameMode = buf.readUnsignedByte();
-        if ( protocolVersion.newerThan(Protocol.MC_1_9_0 ))
-        {
-            dimension = buf.readInt();
-        } else
-        {
-            dimension = buf.readByte();
-        }
-        difficulty = buf.readUnsignedByte();
-        maxPlayers = buf.readUnsignedByte();
-        levelType = readString( buf );
-        if ( protocolVersion.version >= 29 )
-        {
-            reducedDebugInfo = buf.readBoolean();
-        }
-    }
+	@Override
+	public void read(ByteBuf buf, Direction direction, Protocol protocolVersion) {
+		entityId = buf.readInt();
+		
+		if(protocolVersion.isLegacy())
+			levelType = readLegacyString(buf, 16);
+			
+		gameMode = buf.readUnsignedByte();
+		
+		if (protocolVersion.newerThan(Protocol.MC_1_9_0))
+			dimension = buf.readInt();
+		else
+			dimension = buf.readByte();
+		
+		difficulty = buf.readUnsignedByte();
+		
+		if(protocolVersion.isLegacy())
+			worldHeight = buf.readByte();
+		
+		maxPlayers = buf.readUnsignedByte();
+		
+		if(!protocolVersion.isLegacy())
+			levelType = readString(buf);
+		
+		if (protocolVersion.generation == ProtocolGen.POST_NETTY && protocolVersion.version >= 29)
+			reducedDebugInfo = buf.readBoolean();
+	}
 
-    @Override
-    public void write(ByteBuf buf, Direction direction, Protocol protocolVersion)
-    {
-        buf.writeInt( entityId );
-        buf.writeByte( gameMode );
-        if ( protocolVersion.newerThan(Protocol.MC_1_9_0 ))
-        {
-            buf.writeInt( dimension );
-        } else
-        {
-            buf.writeByte( dimension );
-        }
-        buf.writeByte( difficulty );
-        buf.writeByte( maxPlayers );
-        writeString( levelType, buf );
-        if ( protocolVersion.version >= 29 )
-        {
-            buf.writeBoolean( reducedDebugInfo );
-        }
-    }
+	@Override
+	public void write(ByteBuf buf, Direction direction, Protocol protocolVersion) {
+		buf.writeInt(entityId);
+		
+		if(protocolVersion.isLegacy())
+			writeLegacyString(levelType, buf);
+		
+		buf.writeByte(gameMode);
+		
+		if (protocolVersion.newerThan(Protocol.MC_1_9_0))
+			buf.writeInt(dimension);
+		else
+			buf.writeByte(dimension);
+		
+		buf.writeByte(difficulty);
+		
+		if(protocolVersion.isLegacy())
+			buf.writeByte(worldHeight);
+		
+		buf.writeByte(maxPlayers);
+		
+		if(!protocolVersion.isLegacy())
+			writeString(levelType, buf);
+		
+		if (protocolVersion.generation == ProtocolGen.POST_NETTY && protocolVersion.version >= 29)
+			buf.writeBoolean(reducedDebugInfo);
+	}
 
-    @Override
-    public void handle(AbstractPacketHandler handler) throws Exception
-    {
-        handler.handle( this );
-    }
+	@Override
+	public void handle(AbstractPacketHandler handler) throws Exception {
+		handler.handle(this);
+	}
 }

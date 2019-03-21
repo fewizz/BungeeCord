@@ -45,7 +45,6 @@ import net.md_5.bungee.protocol.packet.BossBar;
 import net.md_5.bungee.protocol.packet.Commands;
 import net.md_5.bungee.protocol.packet.KeepAlive;
 import net.md_5.bungee.protocol.packet.Kick;
-import net.md_5.bungee.protocol.packet.LegacyRespawn;
 import net.md_5.bungee.protocol.packet.PlayerListItem;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 import net.md_5.bungee.protocol.packet.Respawn;
@@ -541,11 +540,6 @@ public class DownstreamBridge extends PacketHandler
     public void handle(Respawn respawn)
     {
         con.setDimension( respawn.getDimension() );
-    }
-    
-    @Override
-    public void handle(LegacyRespawn respawnOld) {
-    	con.setDimension(respawnOld.getDimension());
     }
 
     @Override

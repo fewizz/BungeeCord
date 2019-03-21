@@ -7,10 +7,10 @@ import io.netty.buffer.ByteBuf;
 import net.md_5.bungee.protocol.packet.*;
 
 public enum Protocol {
-	MC_1_6_4(78, ProtocolGen.PRE_NETTY) {{
+	MC_1_6_4(78, ProtocolGen.PRE_NETTY) { void postInit() {
 		forStatus(NetworkState.LEGACY, new Do() { void apply() {
 			packet(0, KeepAlive::new);
-			packet(1, LegacyLogin::new);
+			packet(1, Login::new);
 			serverboundPacket(2, LegacyLoginRequest::new);
 			packet(3, Chat::new);
 			clientboundPacket(4, ()-> new SkipPacket() { void skip(ByteBuf buf) {
@@ -29,7 +29,7 @@ public enum Protocol {
 			clientboundPacket(8, ()-> new SkipPacket() { void skip(ByteBuf buf) {
 				buf.skipBytes(Float.BYTES*2 + Short.BYTES);
 			};});
-			packet(9, LegacyRespawn::new);
+			packet(9, Respawn::new);
 			packet(10, ()-> new SkipPacket() { void skip(ByteBuf buf) {
 				buf.skipBytes(1);
 			};});
@@ -266,13 +266,13 @@ public enum Protocol {
 			packet(255, Kick::new);
 		}});	
 	}},
-	MC_1_7_2(4, ProtocolGen.POST_NETTY){{
+	MC_1_7_2(4, ProtocolGen.POST_NETTY){ void postInit(){
 		forStatus(NetworkState.HANDSHAKE, new Do() { void apply() {
 			serverboundPacket(0x00, Handshake::new);
 		};});
 		forStatus(NetworkState.STATUS, new Do() { void apply() {
 			serverboundPacket(0x00, StatusRequest::new);
-			serverboundPacket(0x00, StatusResponse::new);
+			clientboundPacket(0x00, StatusResponse::new);
 			packet(0x01, PingPacket::new);
 		};});
 		forStatus(NetworkState.LOGIN, new Do() { void apply() {
@@ -344,7 +344,7 @@ public enum Protocol {
 	MC_1_9_1(108, ProtocolGen.POST_NETTY) { void postInit() {
 		inherit(MC_1_9_0);
 	}},
-	MC_1_9_2(19, ProtocolGen.POST_NETTY) { void postInit() {
+	MC_1_9_2(109, ProtocolGen.POST_NETTY) { void postInit() {
 		inherit(MC_1_9_0);
 	}},
 	MC_1_9_4(110, ProtocolGen.POST_NETTY) { void postInit() {
@@ -500,11 +500,11 @@ public enum Protocol {
 	}
 	
 	void inherit(Protocol v) {
-		v.packets.addFrom(v.packets, pi -> true);
+		packets.addFrom(v.packets, pi -> true);
 	}
 	
 	void inheritStatus(NetworkState ns, Protocol v) {
-		v.packets.addFrom(v.packets, pi -> pi.getNetworkState() == ns);
+		packets.addFrom(v.packets, pi -> pi.getNetworkState() == ns);
 	}
 	
 	void inheritStatusesFromProtocol(Protocol v, NetworkState... css) {

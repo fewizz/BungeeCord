@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import com.google.common.base.Preconditions;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +54,8 @@ public class PacketMap {
 	
 	public void addFrom(PacketMap pm, Predicate<PacketInfo> p) {
 		pm.byNSIDD.forEach((k, v) -> {
+			if(!p.test(v))
+				return;
 			byNSIDD.put(k, v);
 			byCD.put(new CD(v.clazz, v.direction), v);
 		});
@@ -67,7 +71,7 @@ public class PacketMap {
 	
 	public PacketInfo remove(Class<? extends Packet> c, Direction dir) {
 		PacketInfo i = getInfo(c, dir);
-		
+		Preconditions.checkNotNull(i);
 		byNSIDD.remove(i);
 		byCD.remove(new CD(c, dir));
 		return i;
