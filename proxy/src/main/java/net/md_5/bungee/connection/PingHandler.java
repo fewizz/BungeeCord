@@ -34,7 +34,7 @@ public class PingHandler extends PacketHandler {
 		this.channel = channel;
 
 		if (!protocol.isLegacy()) {
-			channel.setConnectionStatus(NetworkState.STATUS);
+			channel.setConnectionState(NetworkState.STATUS);
 			channel.write(new StatusRequest());
 		} 
 		else

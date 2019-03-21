@@ -143,39 +143,35 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 		ServerInfo forced = AbstractReconnectHandler.getForcedHost(this);
 		final String motd = (forced != null) ? forced.getMotd() : listener.getMotd();
 
-		Callback<ServerPing> pingBack = new Callback<ServerPing>() {
-			@Override
-			public void done(ServerPing result, Throwable error) {
-				if (error != null) {
-					result = new ServerPing();
-					result.setDescription(bungee.getTranslation("ping_cannot_connect"));
-					bungee.getLogger().log(Level.WARNING, "Error pinging remote server", error);
-				}
-
-				Callback<ProxyPingEvent> callback = new Callback<ProxyPingEvent>() {
-					@Override
-					public void done(ProxyPingEvent pingResult, Throwable error) {
-						if (isLegacy()) {
-							Kick.StatusResponce r = new Kick.StatusResponce();
-							r.setMax(pingResult.getResponse().getPlayers().getMax());
-							r.setPlayers(pingResult.getResponse().getPlayers().getOnline());
-							r.setMotd(pingResult.getResponse().getDescription());
-							r.setMcVersion("");
-							r.setProtocolVersion(pingResult.getConnection().getProtocol().version);
-							unsafe.sendPacket(new Kick(r.build())); // TODO
-							ch.close();
-						} else {
-							Gson gson = getProtocol() == Protocol.MC_1_7_2 ? BungeeCord.getInstance().gsonLegacy : BungeeCord.getInstance().gson;
-							unsafe.sendPacket(new StatusResponse(gson.toJson(pingResult.getResponse())));
-						}
-						if (bungee.getConnectionThrottle() != null) {
-							bungee.getConnectionThrottle().unthrottle(getAddress().getAddress());
-						}
-					}
-				};
-
-				bungee.getPluginManager().callEvent(new ProxyPingEvent(InitialHandler.this, result, callback));
+		Callback<ServerPing> pingBack = (ServerPing result, Throwable e) -> { 
+			if (e != null) {
+				result = new ServerPing();
+				result.setDescription(bungee.getTranslation("ping_cannot_connect"));
+				bungee.getLogger().log(Level.WARNING, "Error pinging remote server", e);
 			}
+
+			Callback<ProxyPingEvent> callback = (ProxyPingEvent pingResult, Throwable error) -> {
+				if (isLegacy()) {
+					Kick.StatusResponce r = new Kick.StatusResponce();
+					r.setMax(pingResult.getResponse().getPlayers().getMax());
+					r.setPlayers(pingResult.getResponse().getPlayers().getOnline());
+					r.setMotd(pingResult.getResponse().getDescription());
+					r.setMcVersion("");
+					r.setProtocolVersion(pingResult.getConnection().getProtocol().version);
+					unsafe.sendPacket(new Kick(r.build())); // TODO
+					ch.close();
+				} else {
+					Gson gson = getProtocol() == Protocol.MC_1_7_2 ? BungeeCord.getInstance().gsonLegacy : BungeeCord.getInstance().gson;
+					unsafe.sendPacket(new StatusResponse(gson.toJson(pingResult.getResponse())));
+				}
+				
+				if (bungee.getConnectionThrottle() != null)
+					bungee.getConnectionThrottle().unthrottle(getAddress().getAddress());
+				
+			};
+
+			bungee.getPluginManager().callEvent(new ProxyPingEvent(InitialHandler.this, result, callback));
+		
 		};
 
 		if (forced != null && listener.isPingPassthrough())
@@ -199,7 +195,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 	public void handle(Handshake handshake) throws Exception {
 		Preconditions.checkState(thisState == State.HANDSHAKE, "Not expecting HANDSHAKE");
 		this.handshake = handshake;
-		ch.setVersion(handshake.getProtocol());
+		ch.setProtocol(handshake.getProtocol());
 
 		// Starting with FML 1.8, a "\0FML\0" token is appended to the handshake. This
 		// interferes
@@ -232,7 +228,8 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 		case STATUS:
 			// Ping
 			thisState = State.STATUS;
-			ch.setConnectionStatus(NetworkState.STATUS);
+			if(!isLegacy())
+				ch.setConnectionState(NetworkState.STATUS);
 			break;
 		case LOGIN:
 			// Login
@@ -240,7 +237,8 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 				bungee.getLogger().log(Level.INFO, "{0} has connected", this);
 			}
 			thisState = State.USERNAME;
-			ch.setConnectionStatus(NetworkState.LOGIN);
+			if(!isLegacy())
+				ch.setConnectionState(NetworkState.LOGIN);
 
 			if (handshake.getProtocol() == null) {
 				// TODO
@@ -316,6 +314,8 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 
 	@Override
 	public void handle(final EncryptionResponse encryptResponse) throws Exception {
+		if(isLegacy() && thisState == State.USERNAME)
+			thisState = State.ENCRYPT;
 		Preconditions.checkState(thisState == State.ENCRYPT, "Not expecting ENCRYPT");
 		this.encryptResponse = encryptResponse;
 
@@ -425,7 +425,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 							unsafe.sendPacket(new LoginSuccess(getUUID(), getName())); // Without dashes, for older clients.
 
 						if (!isLegacy())
-							ch.setConnectionStatus(NetworkState.GAME);
+							ch.setConnectionState(NetworkState.GAME);
 
 						ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new UpstreamBridge(bungee, userCon));
 						bungee.getPluginManager().callEvent(new PostLoginEvent(userCon));
@@ -524,29 +524,28 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 
 	@Override
 	public void handle(final LegacyStatusRequest request) throws Exception {
-		handshake = new Handshake();
+		Handshake handshake = new Handshake();
 		handshake.setHost(request.getIp());
 		handshake.setPort(request.getPort());
 		handshake.setProtocol(Protocol.byNumber(request.getProtocolVer(), ProtocolGen.PRE_NETTY));
 		handshake.setRequestedNetworkState(NetworkState.STATUS);
-
-		thisState = State.STATUS;
+		handle(handshake);
 		handle(new StatusRequest());
 	}
 
 	@Override
 	public void handle(LegacyLoginRequest lr) throws Exception {
 		Preconditions.checkState(thisState == State.HANDSHAKE, "Not expecting NADSHAKE");
-		handshake = new Handshake();
+		Handshake handshake = new Handshake();
 		handshake.setProtocol(Protocol.byNumber(lr.getProtocolVersion(), ProtocolGen.PRE_NETTY));
 		handshake.setHost(lr.getHost());
 		handshake.setPort(lr.getPort());
 		handshake.setRequestedNetworkState(NetworkState.LOGIN);
-
+		handle(handshake);
+		
+		//thisState = State.ENCRYPT;
 		loginRequest = new LoginRequest();
 		loginRequest.setData(lr.getUserName());
-
-		thisState = InitialHandler.State.ENCRYPT;
 
 		EncryptionRequest request = EncryptionUtil.encryptRequest();
 		this.request = request;

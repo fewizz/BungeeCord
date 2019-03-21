@@ -14,28 +14,28 @@ public class PacketEncoder extends MessageToByteEncoder<Packet>
     @Setter
     @Getter
     @NonNull
-    private NetworkState connectionStatus;
+    private NetworkState connectionState;
     private final Direction direction;
     @Setter
     @Getter
     @NonNull
-    private Protocol protocolVersion;
+    private Protocol protocol;
 
     @Override
     protected void encode(ChannelHandlerContext ctx, Packet msg, ByteBuf out) throws Exception {
     	int packetID = -1;
     	try {
-    		packetID = protocolVersion.idOf(msg, direction);
+    		packetID = protocol.idOf(msg, direction);
     	} catch(Exception e) {
     		throw new RuntimeException("Can't find id of packet " + msg.getClass().getName());
     	}
         //System.out.println("ENC, id: " + packetID + ", dir: " + direction.name());
         
-        if(!protocolVersion.isLegacy())
+        if(!protocol.isLegacy())
         	Packet.writeVarInt( packetID, out );
         else
         	out.writeByte(packetID);
         
-        msg.write( out, direction, protocolVersion );
+        msg.write( out, direction, protocol );
     }
 }

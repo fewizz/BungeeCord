@@ -38,26 +38,32 @@ public class ChannelWrapper
         this.remoteAddress = (InetSocketAddress) this.ch.remoteAddress();
     }
 
-    public void setConnectionStatus(NetworkState status)
+    public void setConnectionState(NetworkState state)
     {
-        ((PacketDecoder)ch.pipeline().get( PipelineUtil.PACKET_DEC)).setConnectionStatus(status);
-        ((PacketEncoder)ch.pipeline().get( PipelineUtil.PACKET_ENC )).setConnectionStatus(status);
+    	if(getProtocol().isLegacy() && state != NetworkState.LEGACY)
+    		throw new RuntimeException("You can't use NetworkState other than Legacy, when protocol is legacy itself");
+        ((PacketDecoder)ch.pipeline().get( PipelineUtil.PACKET_DEC)).setConnectionState(state);
+        ((PacketEncoder)ch.pipeline().get( PipelineUtil.PACKET_ENC )).setConnectionState(state);
     }
     
-    public NetworkState getConnectionStatus() { return ch.pipeline().get(PacketEncoder.class).getConnectionStatus(); }
+    public NetworkState getConnectionState() { return ch.pipeline().get(PacketEncoder.class).getConnectionState(); }
 
-    public void setVersion(Protocol protocol)
+    public void setProtocol(Protocol protocol)
     {
     	PacketDecoder dec = (PacketDecoder) ch.pipeline().get(PipelineUtil.PACKET_DEC);
-    	if(dec.getProtocolVersion().generation != protocol.generation)
+    	if(dec.getProtocol().generation != protocol.generation)
     		throw new RuntimeException( "Incompatible decoder generation" );
     	
     	PacketEncoder enc = (PacketEncoder) ch.pipeline().get(PipelineUtil.PACKET_ENC);
-    	if(enc.getProtocolVersion().generation != protocol.generation)
+    	if(enc.getProtocol().generation != protocol.generation)
     		throw new RuntimeException( "Incompatible encoder generation" );
     	
-        dec.setProtocolVersion(protocol);
-        enc.setProtocolVersion(protocol);
+        dec.setProtocol(protocol);
+        enc.setProtocol(protocol);
+    }
+    
+    public Protocol getProtocol() {
+    	return ch.pipeline().get(PacketEncoder.class).getProtocol();
     }
 
     public void write(Object packet)

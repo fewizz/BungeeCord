@@ -38,7 +38,7 @@ public class PipelineUtil {
     	FRAME_DEC = "frame_decoder",
     	PACKET_DEC = "packet_decoder",
     	FRAME_ENC = "frame_encoder",
-    	PACKET_ENC = "frame_encoder",
+    	PACKET_ENC = "packet_encoder",
     	TIMEOUT = "timeout",
     	DECRYPT = "decrypt",
     	ENCRYPT = "encrypt";

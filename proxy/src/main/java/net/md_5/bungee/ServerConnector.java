@@ -138,7 +138,7 @@ public class ServerConnector extends PacketHandler {
 
 		if (!originalHandshake.getProtocol().isLegacy()) {
 			channel.write(copiedHandshake);
-			channel.setConnectionStatus(NetworkState.LOGIN);
+			channel.setConnectionState(NetworkState.LOGIN);
 			thisState = State.LOGIN_SUCCESS;
 			channel.write(new LoginRequest(user.getName()));
 		} else {
@@ -164,13 +164,13 @@ public class ServerConnector extends PacketHandler {
 				"id: " + packet.id +
 				", dump(16): " + BufUtil.dump(packet.buf, 16) +
 				", state: " + thisState.name() +
-				", cs: " + ch.getConnectionStatus().name());
+				", cs: " + ch.getConnectionState().name());
 	}
 
 	@Override
 	public void handle(LoginSuccess loginSuccess) throws Exception {
 		Preconditions.checkState(thisState == State.LOGIN_SUCCESS, "Not expecting LOGIN_SUCCESS");
-		ch.setConnectionStatus(NetworkState.GAME);
+		ch.setConnectionState(NetworkState.GAME);
 		thisState = State.LOGIN;
 
 		// Only reset the Forge client when:

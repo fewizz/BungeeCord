@@ -12,15 +12,15 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 {
     @Setter
     @Getter
-    private NetworkState connectionStatus = NetworkState.HANDSHAKE;
+    private NetworkState connectionState = NetworkState.HANDSHAKE;
     private final Direction direction;
     @Setter
     @Getter
-    private Protocol protocolVersion;
+    private Protocol protocol;
     
     public ModernPacketDecoder(Direction dir, int pv) {
 		this.direction = dir;
-		protocolVersion = Protocol.byNumber(pv, ProtocolGen.POST_NETTY);
+		protocol = Protocol.byNumber(pv, ProtocolGen.POST_NETTY);
 	}
 
     @Override
@@ -30,18 +30,18 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 		try {
     		int packetId = Packet.readVarInt( in );
 
-    		Packet packet = protocolVersion.createPacket(connectionStatus, packetId, direction);
+    		Packet packet = protocol.createPacket(connectionState, packetId, direction);
     		
     		if(packet == null)
     			in.skipBytes( in.readableBytes() );
     		else
-    			packet.read( in, direction, protocolVersion );
+    			packet.read( in, direction, protocol );
     		
 			out.add( new PacketWrapper( packet, slice, packetId ) );
 			slice = null;
         		
 			if ( in.isReadable() )
-				throw new BadPacketException( "Did not read all bytes from packet " + packet.getClass() + " " + packetId + " cs " + connectionStatus + " Direction " + direction );
+				throw new BadPacketException( "Did not read all bytes from packet " + packet.getClass() + " " + packetId + " cs " + connectionState + " Direction " + direction );
 					
     	} finally {
     		if ( slice != null )

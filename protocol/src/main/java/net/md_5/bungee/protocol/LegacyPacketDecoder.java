@@ -14,15 +14,15 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 {
     @Setter
     @Getter
-    private NetworkState connectionStatus = NetworkState.LEGACY;
+    private NetworkState connectionState = NetworkState.LEGACY;
     private final Direction direction;
     @Setter
     @Getter
-    private Protocol protocolVersion;
+    private Protocol protocol;
     
     public LegacyPacketDecoder(Direction dir, int pv) {
 		this.direction = dir;
-		protocolVersion = Protocol.byNumber(pv, ProtocolGen.PRE_NETTY);
+		protocol = Protocol.byNumber(pv, ProtocolGen.PRE_NETTY);
 	}
 
     @Override
@@ -33,17 +33,18 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 			try {
 				int packetId = in.readUnsignedByte();
 
-				Packet packet = protocolVersion.createPacket(connectionStatus, packetId, direction);
+				Packet packet = protocol.createPacket(connectionState, packetId, direction);
     		
 				if(packet == null)
 					throw new RuntimeException(
 							"Don't know that packet" +
 							", id: " + packetId +
-							", direction: " + direction.name()
+							", direction: " + direction.name() + 
+							", protocol: " + protocol
     					);
     			//System.out.println("DEC, id: " + packetId + ", dir: " + direction.name());
     		
-    			packet.read( in, direction, protocolVersion );
+    			packet.read( in, direction, protocol );
     			out.add( new PacketWrapper( packet, in.copy(begin, in.readerIndex() - begin), packetId ) );
     		} catch(Exception e) {// Temp. solution. //TODO
     			in.readerIndex(begin);
