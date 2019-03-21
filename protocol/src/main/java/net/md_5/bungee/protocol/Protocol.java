@@ -3,7 +3,10 @@ package net.md_5.bungee.protocol;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.common.base.Preconditions;
+
 import io.netty.buffer.ByteBuf;
+import net.md_5.bungee.protocol.PacketMap.PacketInfo;
 import net.md_5.bungee.protocol.packet.*;
 
 public enum Protocol {
@@ -536,11 +539,13 @@ public enum Protocol {
 	}
 	
 	public Factory packetFactory(NetworkState ns, int id, Direction d) {
-		return packets.getInfo(ns, id, d).getFactory();
+		PacketInfo pi = packets.getInfo(ns, id, d);
+		return pi == null ? null : pi.getFactory();
 	}
 	
 	public Packet createPacket(NetworkState cs, int id, Direction d) {
-		return packetFactory(cs, id, d).create();
+		Factory f = packetFactory(cs, id, d);
+		return f == null ? null : f.create();
 	}
 	
 	public int idOf(Packet p, Direction dir) {

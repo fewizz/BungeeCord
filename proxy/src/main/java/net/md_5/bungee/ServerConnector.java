@@ -200,7 +200,9 @@ public class ServerConnector extends PacketHandler {
 
 	@Override
 	public void handle(Login login) throws Exception {
-		Preconditions.checkState(thisState == State.LOGIN, "Not expecting LOGIN");
+		if(user.getPendingConnection().getProtocol().isLegacy() && thisState != State.LOGIN)
+			thisState = State.LOGIN;
+		Preconditions.checkState(thisState == State.LOGIN, "Not expecting " + thisState.name());
 
 		ServerConnection server = new ServerConnection(ch, target);
 		ServerConnectedEvent event = new ServerConnectedEvent(user, server);
@@ -279,7 +281,8 @@ public class ServerConnector extends PacketHandler {
 			user.getSentBossBars().clear();
 
 			// Update debug info from login packet
-			user.unsafe().sendPacket(new EntityStatus(user.getClientEntityId(), login.isReducedDebugInfo() ? EntityStatus.DEBUG_INFO_REDUCED : EntityStatus.DEBUG_INFO_NORMAL));
+			if(!user.getPendingConnection().isLegacy())
+				user.unsafe().sendPacket(new EntityStatus(user.getClientEntityId(), login.isReducedDebugInfo() ? EntityStatus.DEBUG_INFO_REDUCED : EntityStatus.DEBUG_INFO_NORMAL));
 
 			user.setDimensionChange(true);
 			if (login.getDimension() == user.getDimension())

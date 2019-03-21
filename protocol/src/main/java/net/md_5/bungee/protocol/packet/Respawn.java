@@ -19,7 +19,7 @@ public class Respawn extends Packet {
 	private int dimension;
 	private short difficulty;
 	private short gameMode;
-	private byte worldHeight;
+	private short worldHeight;
 	private String levelType;
 
 	@Override
@@ -28,7 +28,7 @@ public class Respawn extends Packet {
 		difficulty = buf.readUnsignedByte();
 		gameMode = buf.readUnsignedByte();
 		if(p.isLegacy())
-			worldHeight = buf.readByte();
+			worldHeight = buf.readShort();
 		levelType = readString(buf, p);
 	}
 
@@ -38,7 +38,7 @@ public class Respawn extends Packet {
 		buf.writeByte(difficulty);
 		buf.writeByte(gameMode);
 		if(p.isLegacy())
-			buf.writeByte(worldHeight);
+			buf.writeShort(worldHeight);
 		writeString(levelType, buf, p);
 	}
 

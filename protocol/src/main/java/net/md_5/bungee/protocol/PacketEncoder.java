@@ -23,7 +23,12 @@ public class PacketEncoder extends MessageToByteEncoder<Packet>
 
     @Override
     protected void encode(ChannelHandlerContext ctx, Packet msg, ByteBuf out) throws Exception {
-        int packetID = protocolVersion.idOf(msg, direction);
+    	int packetID = -1;
+    	try {
+    		packetID = protocolVersion.idOf(msg, direction);
+    	} catch(Exception e) {
+    		throw new RuntimeException("Can't find id of packet " + msg.getClass().getName());
+    	}
         //System.out.println("ENC, id: " + packetID + ", dir: " + direction.name());
         
         if(!protocolVersion.isLegacy())
