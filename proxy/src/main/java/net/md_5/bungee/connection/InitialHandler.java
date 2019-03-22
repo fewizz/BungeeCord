@@ -12,6 +12,7 @@ import javax.crypto.SecretKey;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
+import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
 
 import lombok.Getter;
@@ -38,6 +39,7 @@ import net.md_5.bungee.api.event.PreLoginEvent;
 import net.md_5.bungee.api.event.ProxyPingEvent;
 import net.md_5.bungee.api.event.ServerConnectEvent;
 import net.md_5.bungee.chat.ComponentSerializer;
+import net.md_5.bungee.forge.ForgeConstants;
 import net.md_5.bungee.http.HttpClient;
 import net.md_5.bungee.jni.cipher.BungeeCipher;
 import net.md_5.bungee.netty.ChannelWrapper;
@@ -51,6 +53,7 @@ import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.Protocol;
+import net.md_5.bungee.protocol.packet.BossBar;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.protocol.packet.EncryptionResponse;
 import net.md_5.bungee.protocol.packet.Handshake;
@@ -58,6 +61,7 @@ import net.md_5.bungee.protocol.packet.Kick;
 import net.md_5.bungee.protocol.packet.LegacyClientCommand;
 import net.md_5.bungee.protocol.packet.LegacyLoginRequest;
 import net.md_5.bungee.protocol.packet.LegacyStatusRequest;
+import net.md_5.bungee.protocol.packet.Login;
 import net.md_5.bungee.protocol.packet.LoginPayloadResponse;
 import net.md_5.bungee.protocol.packet.LoginRequest;
 import net.md_5.bungee.protocol.packet.LoginSuccess;
@@ -103,6 +107,8 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 	private LoginResult loginProfile;
 	@Getter
 	private String extraDataInHandshake = "";
+	@Getter
+	public Login forgeLogin;
 
 	@Override
 	public boolean shouldHandle(PacketWrapper packet) throws Exception {
@@ -132,6 +138,11 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 	@Override
 	public void handle(PluginMessage pluginMessage) throws Exception {
 		// TODO: Unregister?
+		/*if(pluginMessage.getTag().equals(ForgeConstants.FML_TAG)
+				&& isLegacy()
+				&& BungeeCord.getInstance().config.isForgeSupport()) {
+			get
+		}*/
 		if (PluginMessage.SHOULD_RELAY.apply(pluginMessage))
 			relayMessages.add(pluginMessage);
 	}
@@ -239,19 +250,12 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 			thisState = State.USERNAME;
 			if(!isLegacy())
 				ch.setConnectionState(NetworkState.LOGIN);
-
-			if (handshake.getProtocol() == null) {
-				// TODO
-				// if ( handshake.getProtocolVersion().newerThan(bungee.getProtocolVersion()) )
-				// {
-				// disconnect( bungee.getTranslation( "outdated_server", bungee.getGameVersion()
-				// ) );
-				// } else
-				// {
-				disconnect(bungee.getTranslation("outdated_client", bungee.getGameVersion()));
-				// }
-				// return;
-			}
+			
+			//if (handshake.getProtocol().newerThan(bungee.getProtocolVersion()))
+			//	disconnect(bungee.getTranslation("outdated_server", bungee.getGameVersion()));
+			//else if(handshake.getProtocol().olderThan(bungee.getProtocolVersion()))
+			//	disconnect(bungee.getTranslation("outdated_client", bungee.getGameVersion()));
+			
 			break;
 		default:
 			throw new IllegalArgumentException("Cannot request protocol " + handshake.getRequestedNetworkState());
@@ -286,24 +290,26 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 			return;
 		}
 
-		Callback<PreLoginEvent> callback = new Callback<PreLoginEvent>() {
-
-			@Override
-			public void done(PreLoginEvent result, Throwable error) {
-				if (result.isCancelled()) {
-					disconnect(result.getCancelReasonComponents());
-					return;
-				}
-				if (ch.isClosed())
-					return;
-				
-				if (onlineMode)
-					unsafe().sendPacket(request = EncryptionUtil.encryptRequest());
-				else 
-					finish();
-				
-				thisState = State.ENCRYPT;
+		Callback<PreLoginEvent> callback = (PreLoginEvent result, Throwable error) -> {
+			if (result.isCancelled()) {
+				disconnect(result.getCancelReasonComponents());
+				return;
 			}
+			if (ch.isClosed())
+				return;
+			
+			if (onlineMode)
+				unsafe().sendPacket(request = EncryptionUtil.encryptRequest());
+			else if(isLegacy()) {
+				request = EncryptionUtil.encryptRequest();
+				request.setServerId("-");
+				unsafe.sendPacket(request);
+			}
+			else
+				finish();
+			
+			thisState = State.ENCRYPT;
+			
 		};
 
 		// fire pre login event
@@ -327,7 +333,8 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 			BungeeCipher encrypt = EncryptionUtil.getCipher(true, sharedKey);
 			ch.addBefore(PipelineUtil.FRAME_ENC, PipelineUtil.ENCRYPT, new CipherEncoder(encrypt));
 
-			checkAuth(sharedKey);
+			if(isOnlineMode())
+				checkAuth(sharedKey);
 		} else {
 			ch.write(new EncryptionResponse());
 
@@ -403,48 +410,46 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 		if (uniqueId == null)
 			uniqueId = offlineId;
 
-		Callback<LoginEvent> complete = new Callback<LoginEvent>() {
-			@Override
-			public void done(LoginEvent result, Throwable error) {
-				if (result.isCancelled()) {
-					disconnect(result.getCancelReasonComponents());
-					return;
-				}
-				if (ch.isClosed())
-					return;
-
-				ch.getHandle().eventLoop().execute(() -> {
-					if (!ch.isClosing()) {
-						UserConnection userCon = new UserConnection(bungee, ch, getName(), InitialHandler.this);
-						userCon.setCompressionThreshold(BungeeCord.getInstance().config.getCompressionThreshold());
-						userCon.init();
-
-						if (getProtocol().newerOrEqual(Protocol.MC_1_7_6))
-							unsafe.sendPacket(new LoginSuccess(getUniqueId().toString(), getName())); // With dashes in between
-						else if (!isLegacy())
-							unsafe.sendPacket(new LoginSuccess(getUUID(), getName())); // Without dashes, for older clients.
-
-						if (!isLegacy())
-							ch.setConnectionState(NetworkState.GAME);
-
-						ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new UpstreamBridge(bungee, userCon));
-						bungee.getPluginManager().callEvent(new PostLoginEvent(userCon));
-						ServerInfo server;
-						
-						if (bungee.getReconnectHandler() != null)
-							server = bungee.getReconnectHandler().getServer(userCon);
-						else
-							server = AbstractReconnectHandler.getForcedHost(InitialHandler.this);
-						
-						if (server == null)
-							server = bungee.getServerInfo(listener.getDefaultServer());
-
-						userCon.connect(server, null, true, ServerConnectEvent.Reason.JOIN_PROXY);
-
-						thisState = State.FINISHED;
-					}
-				});
+		Callback<LoginEvent> complete = (LoginEvent result, Throwable error) -> {
+			if (result.isCancelled()) {
+				disconnect(result.getCancelReasonComponents());
+				return;
 			}
+			if (ch.isClosed())
+				return;
+
+			ch.getHandle().eventLoop().execute(() -> {
+				if (!ch.isClosing()) {
+					UserConnection userCon = new UserConnection(bungee, ch, getName(), InitialHandler.this);
+					userCon.setCompressionThreshold(BungeeCord.getInstance().config.getCompressionThreshold());
+					userCon.init();
+
+					if (getProtocol().newerOrEqual(Protocol.MC_1_7_6))
+						unsafe.sendPacket(new LoginSuccess(getUniqueId().toString(), getName())); // With dashes in between
+					else if (!isLegacy())
+						unsafe.sendPacket(new LoginSuccess(getUUID(), getName())); // Without dashes, for older clients.
+
+					if (!isLegacy())
+						ch.setConnectionState(NetworkState.GAME);
+
+					ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new UpstreamBridge(bungee, userCon));
+					bungee.getPluginManager().callEvent(new PostLoginEvent(userCon));
+					ServerInfo server;
+						
+					if (bungee.getReconnectHandler() != null)
+						server = bungee.getReconnectHandler().getServer(userCon);
+					else
+						server = AbstractReconnectHandler.getForcedHost(InitialHandler.this);
+						
+					if (server == null)
+						server = bungee.getServerInfo(listener.getDefaultServer());
+
+					userCon.connect(server, null, true, ServerConnectEvent.Reason.JOIN_PROXY);
+
+					thisState = State.FINISHED;
+				}
+			});
+		
 		};
 
 		// fire login event
@@ -542,18 +547,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 		handshake.setPort(lr.getPort());
 		handshake.setRequestedNetworkState(NetworkState.LOGIN);
 		handle(handshake);
-		
-		//thisState = State.ENCRYPT;
-		loginRequest = new LoginRequest();
-		loginRequest.setData(lr.getUserName());
-
-		EncryptionRequest request = EncryptionUtil.encryptRequest();
-		this.request = request;
-
-		if (!onlineMode)
-			request.setServerId("-");
-
-		unsafe.sendPacket(request);
+		handle(new LoginRequest(lr.getUserName()));
 	}
 
 	@Override
@@ -564,5 +558,14 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 		if (onlineMode)
 			checkAuth(EncryptionUtil.getSecret(encryptResponse, request));
 		finish();
+	}
+	
+	@Override
+	public void handle(Login login) throws Exception {
+		if(login.getEntityId() != Hashing.murmur3_32().hashString("FML", Charsets.US_ASCII).asInt()
+				&& login.getDimension() != 2)
+			return;
+		// Forge client
+		forgeLogin = login;
 	}
 }

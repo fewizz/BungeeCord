@@ -221,8 +221,10 @@ public class UpstreamBridge extends PacketHandler
             // Hack around Forge race conditions
             if ( pluginMessage.getTag().equals( "FML" ) && pluginMessage.getStream().readUnsignedByte() == 1 )
             {
-                throw CancelSendSignal.INSTANCE;
-            }
+            	con.getServer().unsafe().sendPacket(pluginMessage);
+            	return;
+                //throw CancelSendSignal.INSTANCE;
+           	}
 
             // We handle forge handshake messages if forge support is enabled.
             if ( pluginMessage.getTag().equals( ForgeConstants.FML_HANDSHAKE_TAG ) )

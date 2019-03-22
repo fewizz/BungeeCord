@@ -18,7 +18,6 @@ import com.google.common.collect.ImmutableMap;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.epoll.EpollSocketChannel;
@@ -49,8 +48,8 @@ import net.md_5.bungee.forge.ForgeConstants;
 import net.md_5.bungee.forge.ForgeServerHandler;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PipelineUtil;
-import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
+import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.Chat;
@@ -79,8 +78,8 @@ public final class UserConnection implements ProxiedPlayer {
 	private final InitialHandler pendingConnection;
 	/* ======================================================================== */
 	@Getter
-	@Setter
 	private ServerConnection server;
+	public void setServer(ServerConnection sc) {server = sc; connectionsToServerCount++;}
 	@Getter
 	@Setter
 	private int dimension;
@@ -89,6 +88,8 @@ public final class UserConnection implements ProxiedPlayer {
 	private boolean dimensionChange = true;
 	@Getter
 	private final Collection<ServerInfo> pendingConnects = new HashSet<>();
+	@Getter
+	private int connectionsToServerCount = 0;
 	/* ======================================================================== */
 	@Getter
 	@Setter
@@ -163,9 +164,10 @@ public final class UserConnection implements ProxiedPlayer {
 
 		// No-config FML handshake marker.
 		// Set whether the connection has a 1.8 FML marker in the handshake.
-		if (this.getPendingConnection().getExtraDataInHandshake().contains(ForgeConstants.FML_HANDSHAKE_TOKEN)) {
+		if (this.getPendingConnection().getExtraDataInHandshake().contains(ForgeConstants.FML_HANDSHAKE_TOKEN))
 			forgeClientHandler.setFmlTokenInHandshake(true);
-		}
+		
+		forgeClientHandler.setForgeLogin(this.getPendingConnection().forgeLogin);
 	}
 
 	public void sendPacket(PacketWrapper packet) {
@@ -283,44 +285,44 @@ public final class UserConnection implements ProxiedPlayer {
 		}
 
 		pendingConnects.add(target);
-
-		ChannelInitializer<Channel> initializer = new ChannelInitializer<Channel>() {
-			@Override
-			protected void initChannel(Channel ch) throws Exception {
-				PipelineUtil.addHandlers(ch, pendingConnection.getProtocol(), Direction.TO_SERVER, new ServerConnector(bungee, UserConnection.this, target));
-			}
-		};
-		ChannelFutureListener listener = new ChannelFutureListener() {
-			@Override
-			@SuppressWarnings("ThrowableResultIgnored")
-			public void operationComplete(ChannelFuture future) throws Exception {
-				if (callback != null) {
-					callback.done((future.isSuccess()) ? ServerConnectRequest.Result.SUCCESS : ServerConnectRequest.Result.FAIL, future.cause());
+		
+		Bootstrap b = 
+			new Bootstrap()
+			.channel(BungeeCord.USE_EPOLL ? EpollSocketChannel.class : NioSocketChannel.class)
+			.group(ch.getHandle().eventLoop())
+			.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, request.getConnectTimeout())
+			.remoteAddress(target.getAddress())
+			.handler(new ChannelInitializer<Channel>() {
+				@Override
+				protected void initChannel(Channel ch) throws Exception {
+					PipelineUtil.addHandlers(ch, pendingConnection.getProtocol(), Direction.TO_SERVER, new ServerConnector(bungee, UserConnection.this, target));
 				}
-
-				if (!future.isSuccess()) {
-					future.channel().close();
-					pendingConnects.remove(target);
-
-					ServerInfo def = updateAndGetNextServer(target);
-					if (request.isRetry() && def != null && (getServer() == null || def != getServer().getInfo())) {
-						sendMessage(bungee.getTranslation("fallback_lobby"));
-						connect(def, null, true, ServerConnectEvent.Reason.LOBBY_FALLBACK);
-					} else if (dimensionChange) {
-						disconnect(bungee.getTranslation("fallback_kick", future.cause().getClass().getName()));
-					} else {
-						sendMessage(bungee.getTranslation("fallback_kick", future.cause().getClass().getName()));
-					}
-				}
-			}
-		};
-		Bootstrap b = new Bootstrap().channel(BungeeCord.USE_EPOLL ? EpollSocketChannel.class : NioSocketChannel.class).group(ch.getHandle().eventLoop()).handler(initializer).option(ChannelOption.CONNECT_TIMEOUT_MILLIS, request.getConnectTimeout()).remoteAddress(target.getAddress());
+			});
+		
 		// Windows is bugged, multi homed users will just have to live with random
 		// connecting IPs
-		if (getPendingConnection().getListener().isSetLocalAddress() && !PlatformDependent.isWindows()) {
+		if (getPendingConnection().getListener().isSetLocalAddress() && !PlatformDependent.isWindows())
 			b.localAddress(getPendingConnection().getListener().getHost().getHostString(), 0);
-		}
-		b.connect().addListener(listener);
+		
+		b.connect().addListener((ChannelFuture future) -> {
+			if (callback != null)
+				callback.done((future.isSuccess()) ? ServerConnectRequest.Result.SUCCESS : ServerConnectRequest.Result.FAIL, future.cause());
+
+			if (!future.isSuccess()) {
+				future.channel().close();
+				pendingConnects.remove(target);
+
+				ServerInfo def = updateAndGetNextServer(target);
+				if (request.isRetry() && def != null && (getServer() == null || def != getServer().getInfo())) {
+					sendMessage(bungee.getTranslation("fallback_lobby"));
+					connect(def, null, true, ServerConnectEvent.Reason.LOBBY_FALLBACK);
+				} 
+				else if (dimensionChange)
+					disconnect(bungee.getTranslation("fallback_kick", future.cause().getClass().getName()));
+				else
+					sendMessage(bungee.getTranslation("fallback_kick", future.cause().getClass().getName()));
+			}
+		});
 	}
 
 	@Override
@@ -342,7 +344,14 @@ public final class UserConnection implements ProxiedPlayer {
 		if (!ch.isClosing()) {
 			bungee.getLogger().log(Level.INFO, "[{0}] disconnected with: {1}", new Object[] { getName(), BaseComponent.toLegacyText(reason) });
 
-			ch.delayedClose(new Kick(ComponentSerializer.toString(reason)));
+			ch.delayedClose(
+				new Kick(
+					getPendingConnection().isLegacy() ? 
+					BaseComponent.toLegacyText(reason)
+					:
+					ComponentSerializer.toString(reason)
+				)
+			);
 
 			if (server != null) {
 				server.setObsolete(true);

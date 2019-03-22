@@ -1,5 +1,6 @@
 package net.md_5.bungee;
 
+import java.io.DataInput;
 import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.Locale;
@@ -18,6 +19,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.event.ServerConnectEvent;
 import net.md_5.bungee.api.event.ServerConnectedEvent;
@@ -68,6 +70,7 @@ import net.md_5.bungee.util.QuietException;
 public class ServerConnector extends PacketHandler {
 
 	private final ProxyServer bungee;
+	@Getter
 	private ChannelWrapper ch;
 	private final UserConnection user;
 	private final BungeeServerInfo target;
@@ -93,6 +96,13 @@ public class ServerConnector extends PacketHandler {
 			user.disconnect(message);
 		else
 			user.sendMessage(ChatColor.RED + message);
+	}
+	
+	@Override
+	public void prepareBeforeDecoding(Packet packet) {
+		if(packet instanceof Login) {
+			((Login) packet).setLegacyForgeVanillaComp(handshakeHandler.getLegacyForgeCompLevel() == 0);
+		}
 	}
 
 	@Override
@@ -150,8 +160,13 @@ public class ServerConnector extends PacketHandler {
 			thisState = State.LOGIN_REQUEST;
 			channel.write(lr);
 		}
+		
+		ServerConnection server = new ServerConnection(ch, target);
+		ServerConnectedEvent event = new ServerConnectedEvent(user, server);
+		bungee.getPluginManager().callEvent(event);
+		user.setServer(server);
 	}
-
+	
 	@Override
 	public void disconnected(ChannelWrapper channel) throws Exception {
 		user.getPendingConnects().remove(target);
@@ -204,10 +219,6 @@ public class ServerConnector extends PacketHandler {
 			thisState = State.LOGIN;
 		Preconditions.checkState(thisState == State.LOGIN, "Not expecting " + thisState.name());
 
-		ServerConnection server = new ServerConnection(ch, target);
-		ServerConnectedEvent event = new ServerConnectedEvent(user, server);
-		bungee.getPluginManager().callEvent(event);
-
 		ch.write(BungeeCord.getInstance().registerChannels(user.getPendingConnection().getProtocol()));
 
 		Queue<Packet> packetQueue = target.getPacketQueue();
@@ -226,7 +237,7 @@ public class ServerConnector extends PacketHandler {
 		if (user.getForgeClientHandler().getClientModList() == null && !user.getForgeClientHandler().isHandshakeComplete()) // Vanilla
 			user.getForgeClientHandler().setHandshakeComplete();
 
-		if (user.getServer() == null) {
+		if (user.getConnectionsToServerCount() == 1) {
 			// Once again, first connection
 			user.setClientEntityId(login.getEntityId());
 			user.setServerEntityId(login.getEntityId());
@@ -234,14 +245,7 @@ public class ServerConnector extends PacketHandler {
 			// Set tab list size, this sucks balls, TODO: what shall we do about packet
 			// mutability
 			// Forge allows dimension ID's > 127
-
-			Login modLogin;
-			if (handshakeHandler != null && handshakeHandler.isServerForge())
-				modLogin = new Login(login.getEntityId(), login.getGameMode(), login.getDimension(), login.getDifficulty(), (byte) user.getPendingConnection().getListener().getTabListSize(), login.getLevelType(), login.isReducedDebugInfo(), login.getWorldHeight());
-			else
-				modLogin = new Login(login.getEntityId(), login.getGameMode(), (byte) login.getDimension(), login.getDifficulty(), (byte) user.getPendingConnection().getListener().getTabListSize(), login.getLevelType(), login.isReducedDebugInfo(), login.getWorldHeight());
-
-			user.unsafe().sendPacket(modLogin);
+			user.unsafe().sendPacket(login.clone().setMaxPlayers(user.getPendingConnection().getListener().getTabListSize()));
 
 			if (user.getPendingConnection().getProtocol().olderThan(Protocol.MC_1_8_0)) {
 				MinecraftOutput out = new MinecraftOutput();
@@ -260,12 +264,9 @@ public class ServerConnector extends PacketHandler {
 			user.getTabListHandler().onServerChange();
 
 			Scoreboard serverScoreboard = user.getServerSentScoreboard();
-			for (Objective objective : serverScoreboard.getObjectives()) {
-				// user.unsafe().sendPacket( new ScoreboardObjective( objective.getName(),
-				// objective.getValue(), ScoreboardObjective.HealthDisplay.fromString(
-				// objective.getType() ), (byte) 1 ) );
+			for (Objective objective : serverScoreboard.getObjectives())
 				user.unsafe().sendPacket(new ScoreboardObjective(objective.getName(), objective.getValue(), objective.getType() == null ? null : ScoreboardObjective.HealthDisplay.fromString(objective.getType()), (byte) 1)); // Travertine - 1.7
-			}
+			
 			for (Score score : serverScoreboard.getScores())
 				user.unsafe().sendPacket(new ScoreboardScore(score.getItemName(), (byte) 1, score.getScoreName(), score.getValue()));
 			
@@ -298,7 +299,7 @@ public class ServerConnector extends PacketHandler {
 
 		// TODO: Fix this?
 		if (!user.isActive()) {
-			server.disconnect("Quitting");
+			user.getServer().disconnect("Quitting");
 			// Silly server admins see stack trace and die
 			bungee.getLogger().warning("No client connected for pending server!");
 			return;
@@ -310,9 +311,8 @@ public class ServerConnector extends PacketHandler {
 		user.getPendingConnects().remove(target);
 		user.setServerJoinQueue(null);
 		user.setDimensionChange(false);
-
-		user.setServer(server);
-		ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new DownstreamBridge(bungee, user, server));
+		
+		ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new DownstreamBridge(bungee, user, user.getServer()));
 
 		bungee.getPluginManager().callEvent(new ServerSwitchEvent(user));
 
@@ -324,7 +324,10 @@ public class ServerConnector extends PacketHandler {
 	@Override
 	public void handle(EncryptionRequest encryptionRequest) throws Exception {
 		Preconditions.checkState(thisState == State.LOGIN_REQUEST, "Not expecting LOGIN_REQUEST");
-
+		
+		if(!user.getPendingConnection().isLegacy() || !encryptionRequest.getServerId().equals("-"))
+			throw new QuietException( "Server is online mode!" );
+		
 		PublicKey pub = EncryptionUtil.getPubkey(encryptionRequest);
 		KeyGenerator kg = KeyGenerator.getInstance("AES");
 		kg.init(128);
@@ -351,7 +354,10 @@ public class ServerConnector extends PacketHandler {
 		ch.addBefore(PipelineUtil.PACKET_DEC, PipelineUtil.DECRYPT, new CipherDecoder(encrypt));
 
 		thisState = State.LOGIN;
-
+		if(BungeeCord.getInstance().config.isForgeSupport() && user.isForgeUser()) {
+			ch.write(user.getForgeClientHandler().getForgeLogin());
+		}
+		
 		ch.write(new LegacyClientCommand(0));
 
 		throw CancelSendSignal.INSTANCE;
@@ -360,7 +366,16 @@ public class ServerConnector extends PacketHandler {
 	@Override
 	public void handle(Kick kick) throws Exception {
 		ServerInfo def = user.updateAndGetNextServer(target);
-		ServerKickEvent event = new ServerKickEvent(user, target, ComponentSerializer.parse(kick.getMessage()), def, ServerKickEvent.State.CONNECTING);
+		ServerKickEvent event = new ServerKickEvent(
+				user,
+				target,
+				user.getPendingConnection().isLegacy() ? 
+					TextComponent.fromLegacyText(kick.getMessage())
+					:
+					ComponentSerializer.parse(kick.getMessage()),
+				def,
+				ServerKickEvent.State.CONNECTING
+		);
 		if (event.getKickReason().toLowerCase(Locale.ROOT).contains("outdated") && def != null) {
 			// Pre cancel the event if we are going to try another server
 			event.setCancelled(true);
@@ -384,6 +399,26 @@ public class ServerConnector extends PacketHandler {
 	@Override
 	public void handle(PluginMessage pluginMessage) throws Exception {
 		if (BungeeCord.getInstance().config.isForgeSupport()) {
+			if (pluginMessage.getTag().equals(ForgeConstants.FML_TAG)) {
+				handshakeHandler.setServerAsForgeServer();
+				user.setForgeServerHandler(handshakeHandler);
+				
+				DataInput i = pluginMessage.getStream();
+				int type = i.readUnsignedByte();
+				System.out.println("FML packet type: " + type);
+				
+				if(type == 0) {
+					int count = i.readInt();
+					System.out.println("Mod count: " + count);
+					for(int x = 0; x < count; x++ )
+						i.readUTF();
+					int compLevel = i.readByte();
+					System.out.println("Comp. level: " + compLevel);
+					handshakeHandler.setLegacyForgeCompLevel(compLevel);
+				}
+				
+			}
+			
 			if (pluginMessage.getTag().equals(ForgeConstants.FML_REGISTER)) {
 				Set<String> channels = ForgeUtils.readRegisteredChannels(pluginMessage);
 				boolean isForgeServer = false;

@@ -29,7 +29,7 @@ public class PacketEncoder extends MessageToByteEncoder<Packet>
     	} catch(Exception e) {
     		throw new RuntimeException("Can't find id of packet " + msg.getClass().getName());
     	}
-        //System.out.println("ENC, id: " + packetID + ", dir: " + direction.name());
+        System.out.println("ENC, id: " + packetID + ", dir: " + direction.name());
         
         if(!protocol.isLegacy())
         	Packet.writeVarInt( packetID, out );

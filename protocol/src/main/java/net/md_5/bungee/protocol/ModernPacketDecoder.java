@@ -34,8 +34,10 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
     		
     		if(packet == null)
     			in.skipBytes( in.readableBytes() );
-    		else
+    		else {
+    			ctx.fireChannelRead(new PacketDecodingPreparer(packet));
     			packet.read( in, direction, protocol );
+    		}
     		
 			out.add( new PacketWrapper( packet, slice, packetId ) );
 			slice = null;
