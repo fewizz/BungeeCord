@@ -46,7 +46,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
     			ctx.fireChannelRead(new PacketDecodingPreparer(packet));
     		
     			packet.read( in, direction, protocol );
-    			out.add( new PacketWrapper( packet, in.copy(begin, in.readerIndex() - begin), packetId ) );
+    			ctx.fireChannelRead(( new PacketWrapper( packet, in.copy(begin, in.readerIndex() - begin), packetId ) ));
     		} catch(Exception e) {// Temp. solution. //TODO
     			in.readerIndex(begin);
     			if(!(e instanceof IndexOutOfBoundsException))

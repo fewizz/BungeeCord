@@ -211,6 +211,8 @@ public class UpstreamBridge extends PacketHandler
     @Override
     public void handle(PluginMessage pluginMessage) throws Exception
     {
+    	System.out.println("US PM: " + pluginMessage.getTag());
+    	
         if ( pluginMessage.getTag().equals( "BungeeCord" ) )
         {
             throw CancelSendSignal.INSTANCE;

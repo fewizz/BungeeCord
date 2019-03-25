@@ -14,44 +14,34 @@ import net.md_5.bungee.protocol.Protocol;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class KeepAlive extends Packet
-{
+public class KeepAlive extends Packet {
 
-    private long randomId;
+	private long randomId;
 
-    @Override
-    public void read(ByteBuf buf, Direction direction, Protocol protocolVersion)
-    {
-        if ( protocolVersion.newerOrEqual(Protocol.MC_1_12_2 ))
-        {
-            randomId = buf.readLong();
-        } else if ( protocolVersion.newerOrEqual(Protocol.MC_1_8_0 ))
-        {
-            randomId = readVarInt( buf );
-        } else
-        {
-            randomId = buf.readInt();
-        }
-    }
+	@Override
+	public void read(ByteBuf buf, Direction direction, Protocol protocolVersion) {
+		if (protocolVersion.newerOrEqual(Protocol.MC_1_12_2)) {
+			randomId = buf.readLong();
+		} else if (protocolVersion.newerOrEqual(Protocol.MC_1_8_0)) {
+			randomId = readVarInt(buf);
+		} else {
+			randomId = buf.readInt();
+		}
+	}
 
-    @Override
-    public void write(ByteBuf buf, Direction direction, Protocol protocolVersion)
-    {
-        if ( protocolVersion.newerOrEqual(Protocol.MC_1_12_2 ))
-        {
-            buf.writeLong( randomId );
-        } else if ( protocolVersion.newerOrEqual(Protocol.MC_1_8_0 ))
-        {
-            writeVarInt( (int) randomId, buf );
-        } else
-        {
-            buf.writeInt( (int) randomId );
-        }
-    }
+	@Override
+	public void write(ByteBuf buf, Direction direction, Protocol protocolVersion) {
+		if (protocolVersion.newerOrEqual(Protocol.MC_1_12_2)) {
+			buf.writeLong(randomId);
+		} else if (protocolVersion.newerOrEqual(Protocol.MC_1_8_0)) {
+			writeVarInt((int) randomId, buf);
+		} else {
+			buf.writeInt((int) randomId);
+		}
+	}
 
-    @Override
-    public void handle(AbstractPacketHandler handler) throws Exception
-    {
-        handler.handle( this );
-    }
+	@Override
+	public void handle(AbstractPacketHandler handler) throws Exception {
+		handler.handle(this);
+	}
 }

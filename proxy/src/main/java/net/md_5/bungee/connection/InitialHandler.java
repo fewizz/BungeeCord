@@ -138,11 +138,6 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 	@Override
 	public void handle(PluginMessage pluginMessage) throws Exception {
 		// TODO: Unregister?
-		/*if(pluginMessage.getTag().equals(ForgeConstants.FML_TAG)
-				&& isLegacy()
-				&& BungeeCord.getInstance().config.isForgeSupport()) {
-			get
-		}*/
 		if (PluginMessage.SHOULD_RELAY.apply(pluginMessage))
 			relayMessages.add(pluginMessage);
 	}

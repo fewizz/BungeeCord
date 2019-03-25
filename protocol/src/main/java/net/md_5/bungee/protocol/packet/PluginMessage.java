@@ -25,110 +25,91 @@ import net.md_5.bungee.protocol.Protocol;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class PluginMessage extends Packet
-{
+public class PluginMessage extends Packet {
 
-    public static final Function<String, String> MODERNISE = new Function<String, String>()
-    {
-        @Override
-        public String apply(String tag)
-        {
-            // Transform as per Bukkit
-            if ( tag.equals( "BungeeCord" ) )
-            {
-                return "bungeecord:main";
-            }
-            if ( tag.equals( "bungeecord:main" ) )
-            {
-                return "BungeeCord";
-            }
+	public static final Function<String, String> MODERNISE = new Function<String, String>() {
+		@Override
+		public String apply(String tag) {
+			// Transform as per Bukkit
+			if (tag.equals("BungeeCord")) {
+				return "bungeecord:main";
+			}
+			if (tag.equals("bungeecord:main")) {
+				return "BungeeCord";
+			}
 
-            // Code that gets to here is UNLIKELY to be viable on the Bukkit side of side things,
-            // but we keep it anyway. It will eventually be enforced API side.
-            if ( tag.indexOf( ':' ) != -1 )
-            {
-                return tag;
-            }
+			// Code that gets to here is UNLIKELY to be viable on the Bukkit side of side
+			// things,
+			// but we keep it anyway. It will eventually be enforced API side.
+			if (tag.indexOf(':') != -1) {
+				return tag;
+			}
 
-            return "legacy:" + tag.toLowerCase( Locale.ROOT );
-        }
-    };
-    public static final Predicate<PluginMessage> SHOULD_RELAY = new Predicate<PluginMessage>()
-    {
-        @Override
-        public boolean apply(PluginMessage input)
-        {
-            return ( input.getTag().equals( "REGISTER" ) || input.getTag().equals( "minecraft:register" ) || input.getTag().equals( "MC|Brand" ) || input.getTag().equals( "minecraft:brand" ) ) && input.getData().length < Byte.MAX_VALUE;
-        }
-    };
-    //
-    private String tag;
-    private byte[] data;
+			return "legacy:" + tag.toLowerCase(Locale.ROOT);
+		}
+	};
+	public static final Predicate<PluginMessage> SHOULD_RELAY = new Predicate<PluginMessage>() {
+		@Override
+		public boolean apply(PluginMessage input) {
+			return (input.getTag().equals("REGISTER") || input.getTag().equals("minecraft:register") || input.getTag().equals("MC|Brand") || input.getTag().equals("minecraft:brand")) && input.getData().length < Byte.MAX_VALUE;
+		}
+	};
+	//
+	private String tag;
+	private byte[] data = new byte[0];
 
-    /**
-     * Allow this packet to be sent as an "extended" packet.
-     */
-    private boolean allowExtendedPacket = false;
+	/**
+	 * Allow this packet to be sent as an "extended" packet.
+	 */
+	private boolean allowExtendedPacket = false;
 
-    @Override
-    public void read(ByteBuf buf, Direction direction, Protocol protocolVersion)
-    {
-    	if(protocolVersion.isLegacy()) {
-    		tag = readLegacyString(buf, 20);
-    		int len = buf.readShort();
-    		if(len > 0 && len < Short.MAX_VALUE) {
-    			data = new byte[len];
-    			buf.readBytes(data);
-    		}
-    	}
-    	else if ( protocolVersion.olderThan(Protocol.MC_1_8_0) )
-        {
-        	tag = readString( buf );
-            data = readArrayLegacy( buf );
-        } else
-        {
-        	tag = ( protocolVersion.newerOrEqual(Protocol.MC_1_13_0 )) ? MODERNISE.apply( readString( buf ) ) : readString( buf );
-            int maxSize = direction == Direction.TO_SERVER ? Short.MAX_VALUE : 0x100000;
-            Preconditions.checkArgument( buf.readableBytes() < maxSize );
-            data = new byte[ buf.readableBytes() ];
-            buf.readBytes( data );
-        }
-    }
+	@Override
+	public void read(ByteBuf buf, Direction direction, Protocol protocolVersion) {
+		if (protocolVersion.isLegacy()) {
+			tag = readLegacyString(buf, 20);
+			int len = buf.readShort();
+			if (len > 0) {
+				data = new byte[len];
+				buf.readBytes(data);
+			}
+		} else if (protocolVersion.olderThan(Protocol.MC_1_8_0)) {
+			tag = readString(buf);
+			data = readArrayLegacy(buf);
+		} else {
+			tag = (protocolVersion.newerOrEqual(Protocol.MC_1_13_0)) ? MODERNISE.apply(readString(buf)) : readString(buf);
+			int maxSize = direction == Direction.TO_SERVER ? Short.MAX_VALUE : 0x100000;
+			Preconditions.checkArgument(buf.readableBytes() < maxSize);
+			data = new byte[buf.readableBytes()];
+			buf.readBytes(data);
+		}
+	}
 
-    @Override
-    public void write(ByteBuf buf, Direction direction, Protocol protocolVersion)
-    {
-    	if(protocolVersion.isLegacy()) {
-    		writeLegacyString(tag, buf);
-    		if(data != null)
-    			writeLegacyByteArray(buf, data);
-    		else
-    			buf.writeShort(0);
-    	}
-    	else if ( protocolVersion.olderThan(Protocol.MC_1_8_0 ))
-        {
-        	writeString( tag, buf );
-            writeArrayLegacy( data, buf, allowExtendedPacket );
-        } else
-        {
-        	writeString( ( protocolVersion.newerOrEqual(Protocol.MC_1_13_0 )) ? MODERNISE.apply( tag ) : tag, buf );
-            buf.writeBytes( data );
-        }
-    }
+	@Override
+	public void write(ByteBuf buf, Direction direction, Protocol protocolVersion) {
+		if (protocolVersion.isLegacy()) {
+			writeLegacyString(tag, buf);
+			buf.writeShort(data.length);
+			if (data.length > 0)
+				buf.writeBytes(data);
+		} else if (protocolVersion.olderThan(Protocol.MC_1_8_0)) {
+			writeString(tag, buf);
+			writeArrayLegacy(data, buf, allowExtendedPacket);
+		} else {
+			writeString((protocolVersion.newerOrEqual(Protocol.MC_1_13_0)) ? MODERNISE.apply(tag) : tag, buf);
+			buf.writeBytes(data);
+		}
+	}
 
-    @Override
-    public void handle(AbstractPacketHandler handler) throws Exception
-    {
-        handler.handle( this );
-    }
+	@Override
+	public void handle(AbstractPacketHandler handler) throws Exception {
+		handler.handle(this);
+	}
 
-    public DataInput getStream()
-    {
-        return new DataInputStream( new ByteArrayInputStream( data ) );
-    }
-    
-    public MinecraftInput getMCStream()
-    {
-        return new MinecraftInput( Unpooled.wrappedBuffer( data ) );
-    }
+	public DataInput getStream() {
+		return new DataInputStream(new ByteArrayInputStream(data == null ? new byte[0] : data));
+	}
+
+	public MinecraftInput getMCStream() {
+		return new MinecraftInput(Unpooled.wrappedBuffer(data));
+	}
 }
