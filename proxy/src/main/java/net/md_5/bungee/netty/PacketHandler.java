@@ -1,6 +1,5 @@
 package net.md_5.bungee.netty;
 
-import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.PacketWrapper;
 
 public abstract class PacketHandler extends net.md_5.bungee.protocol.AbstractPacketHandler {
@@ -10,8 +9,6 @@ public abstract class PacketHandler extends net.md_5.bungee.protocol.AbstractPac
 	public boolean shouldHandle(PacketWrapper packet) throws Exception {
 		return true;
 	}
-	
-	public void prepareBeforeDecoding(Packet packet) {}
 
 	public void exception(Throwable t) throws Exception {
 	}

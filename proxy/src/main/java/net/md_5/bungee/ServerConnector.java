@@ -43,6 +43,7 @@ import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.netty.cipher.CipherDecoder;
 import net.md_5.bungee.netty.cipher.CipherEncoder;
+import net.md_5.bungee.protocol.LegacyPacketDecoder;
 import net.md_5.bungee.protocol.MinecraftOutput;
 import net.md_5.bungee.protocol.NetworkState;
 import net.md_5.bungee.protocol.Packet;
@@ -63,7 +64,6 @@ import net.md_5.bungee.protocol.packet.Respawn;
 import net.md_5.bungee.protocol.packet.ScoreboardObjective;
 import net.md_5.bungee.protocol.packet.ScoreboardScore;
 import net.md_5.bungee.protocol.packet.SetCompression;
-import net.md_5.bungee.util.BufUtil;
 import net.md_5.bungee.util.QuietException;
 
 @RequiredArgsConstructor
@@ -96,13 +96,6 @@ public class ServerConnector extends PacketHandler {
 			user.disconnect(message);
 		else
 			user.sendMessage(ChatColor.RED + message);
-	}
-	
-	@Override
-	public void prepareBeforeDecoding(Packet packet) {
-		if(packet instanceof Login) {
-			((Login) packet).setLegacyForgeVanillaComp(handshakeHandler.getLegacyForgeCompLevel() == 0);
-		}
 	}
 
 	@Override
@@ -152,6 +145,21 @@ public class ServerConnector extends PacketHandler {
 			thisState = State.LOGIN_SUCCESS;
 			channel.write(new LoginRequest(user.getName()));
 		} else {
+			if(BungeeCord.getInstance().config.isForgeSupport()) {
+				LegacyPacketDecoder lpd = (LegacyPacketDecoder) ch.getHandle().pipeline().get(PipelineUtil.PACKET_DEC);
+				ch.getHandle().pipeline().replace(
+					PipelineUtil.PACKET_DEC,
+					PipelineUtil.PACKET_DEC,
+					new LegacyPacketDecoder(lpd) {
+						@Override
+						protected void read0(ByteBuf buf, Packet p) {
+							if(p instanceof Login)
+								((Login) p).setLegacyForgeVanillaComp(handshakeHandler.getLegacyForgeCompLevel() == 0);
+							super.read0(buf, p);
+						}
+					});
+			}
+			
 			LegacyLoginRequest lr = new LegacyLoginRequest();
 			lr.setHost(copiedHandshake.getHost());
 			lr.setPort(copiedHandshake.getPort());
@@ -176,8 +184,6 @@ public class ServerConnector extends PacketHandler {
 	public void handle(PacketWrapper packet) throws Exception {
 		if (packet.packet == null)
 			throw new QuietException("Unexpected packet received during server login process!\n" +
-				"id: " + packet.id +
-				", dump(16): " + BufUtil.dump(packet.buf, 16) +
 				", state: " + thisState.name() +
 				", cs: " + ch.getConnectionState().name());
 	}

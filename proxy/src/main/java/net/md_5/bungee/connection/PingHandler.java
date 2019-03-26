@@ -49,7 +49,7 @@ public class PingHandler extends PacketHandler {
 	@Override
 	public void handle(PacketWrapper packet) throws Exception {
 		if (packet.packet == null)
-			throw new QuietException("Unexpected packet received during ping process! " + BufUtil.dump(packet.buf, 16));
+			throw new QuietException("Unexpected packet received during ping process! " + BufUtil.dump(packet.content(), 16));
 	}
 
 	@Override

@@ -118,8 +118,9 @@ public class UpstreamBridge extends PacketHandler
     {
         if ( con.getServer() != null )
         {
-            con.getEntityRewrite().rewriteServerbound( packet.buf, con.getClientEntityId(), con.getServerEntityId(), con.getPendingConnection().getProtocol() );
-            con.getServer().getCh().write( packet );
+            con.getEntityRewrite().rewriteServerbound( packet.content(), con.getClientEntityId(), con.getServerEntityId(), con.getPendingConnection().getProtocol() );
+            packet.retain();
+            con.getServer().getCh().write( packet.content() );
         }
     }
 

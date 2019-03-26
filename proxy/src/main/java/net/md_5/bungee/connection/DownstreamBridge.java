@@ -107,8 +107,9 @@ public class DownstreamBridge extends PacketHandler
     @Override
     public void handle(PacketWrapper packet) throws Exception
     {
-        con.getEntityRewrite().rewriteClientbound( packet.buf, con.getServerEntityId(), con.getClientEntityId(), con.getPendingConnection().getProtocol() );
-        con.sendPacket( packet );
+        con.getEntityRewrite().rewriteClientbound( packet.content(), con.getServerEntityId(), con.getClientEntityId(), con.getPendingConnection().getProtocol() );
+        packet.retain();
+        con.getCh().write( packet.content() );
     }
     
     @Override

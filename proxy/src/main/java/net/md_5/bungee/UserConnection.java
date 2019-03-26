@@ -50,7 +50,6 @@ import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.Packet;
-import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.ClientSettings;
@@ -70,6 +69,7 @@ public final class UserConnection implements ProxiedPlayer {
 	@NonNull
 	private final ProxyServer bungee;
 	@NonNull
+	@Getter
 	private final ChannelWrapper ch;
 	@Getter
 	@NonNull
@@ -170,9 +170,9 @@ public final class UserConnection implements ProxiedPlayer {
 		forgeClientHandler.setForgeLogin(this.getPendingConnection().forgeLogin);
 	}
 
-	public void sendPacket(PacketWrapper packet) {
+	/*public void sendPacket(PacketWrapper packet) {
 		ch.write(packet);
-	}
+	}*/
 
 	@Deprecated
 	public boolean isActive() {

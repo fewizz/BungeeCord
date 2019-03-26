@@ -39,7 +39,6 @@ import net.md_5.bungee.api.event.PreLoginEvent;
 import net.md_5.bungee.api.event.ProxyPingEvent;
 import net.md_5.bungee.api.event.ServerConnectEvent;
 import net.md_5.bungee.chat.ComponentSerializer;
-import net.md_5.bungee.forge.ForgeConstants;
 import net.md_5.bungee.http.HttpClient;
 import net.md_5.bungee.jni.cipher.BungeeCipher;
 import net.md_5.bungee.netty.ChannelWrapper;
@@ -51,9 +50,8 @@ import net.md_5.bungee.netty.cipher.CipherEncoder;
 import net.md_5.bungee.protocol.NetworkState;
 import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.PacketWrapper;
-import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.Protocol;
-import net.md_5.bungee.protocol.packet.BossBar;
+import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.protocol.packet.EncryptionResponse;
 import net.md_5.bungee.protocol.packet.Handshake;
@@ -132,7 +130,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 	@Override
 	public void handle(PacketWrapper packet) throws Exception {
 		if (packet.packet == null)
-			throw new QuietException("Unexpected packet received during login process! " + BufUtil.dump(packet.buf, 16));
+			throw new QuietException("Unexpected packet received during login process! " + BufUtil.dump(packet.content(), 16));
 	}
 
 	@Override

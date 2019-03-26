@@ -1,26 +1,14 @@
 package net.md_5.bungee.protocol;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.util.ReferenceCountUtil;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import io.netty.buffer.DefaultByteBufHolder;
 
-@RequiredArgsConstructor
-public class PacketWrapper
-{
+public class PacketWrapper extends DefaultByteBufHolder {
 
-    public final Packet packet;
-    public final ByteBuf buf;
-    public final int id;
-    @Setter
-    private boolean released;
-
-    public void trySingleRelease()
-    {
-        if ( !released )
-        {
-            ReferenceCountUtil.release(buf);
-            released = true;
-        }
-    }
+	public final Packet packet;
+	
+	public PacketWrapper(Packet p, ByteBuf buf) {
+		super(buf);
+		packet = p;
+	}
 }
