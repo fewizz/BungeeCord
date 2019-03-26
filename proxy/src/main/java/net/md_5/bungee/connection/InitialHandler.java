@@ -215,18 +215,20 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 		// add their own data to the end of the string. So, we just take everything from
 		// the \0 character
 		// and save it for later.
-		if (handshake.getHost().contains("\0")) {
-			String[] split = handshake.getHost().split("\0", 2);
-			handshake.setHost(split[0]);
-			extraDataInHandshake = "\0" + split[1];
-		}
+		if(handshake.getHost() != null) {
+			if (handshake.getHost().contains("\0")) {
+				String[] split = handshake.getHost().split("\0", 2);
+				handshake.setHost(split[0]);
+				extraDataInHandshake = "\0" + split[1];
+			}
 
-		// SRV records can end with a . depending on DNS / client.
-		if (handshake.getHost().endsWith("."))
-			handshake.setHost(handshake.getHost().substring(0, handshake.getHost().length() - 1));
+			// SRV records can end with a . depending on DNS / client.
+			if (handshake.getHost().endsWith("."))
+				handshake.setHost(handshake.getHost().substring(0, handshake.getHost().length() - 1));
 		
 
-		this.virtualHost = InetSocketAddress.createUnresolved(handshake.getHost(), handshake.getPort());
+			this.virtualHost = InetSocketAddress.createUnresolved(handshake.getHost(), handshake.getPort());
+		}
 		if (bungee.getConfig().isLogPings())
 			bungee.getLogger().log(Level.INFO, "{0} has connected", this);
 		
@@ -528,9 +530,15 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 	@Override
 	public void handle(final LegacyStatusRequest request) throws Exception {
 		Handshake handshake = new Handshake();
-		handshake.setHost(request.getIp());
-		handshake.setPort(request.getPort());
-		handshake.setProtocol(Protocol.byNumber(request.getProtocolVer(), ProtocolGen.PRE_NETTY));
+		if(!request.isOlderOrEqual_1_5()) {
+			handshake.setHost(request.getIp());
+			handshake.setPort(request.getPort());
+			handshake.setProtocol(Protocol.byNumber(request.getProtocolVersion(), ProtocolGen.PRE_NETTY));
+		}
+		else {
+			handshake.setProtocol(Protocol.MC_1_5_2);
+			ch.setProtocol(Protocol.MC_1_5_2);
+		}
 		handshake.setRequestedNetworkState(NetworkState.STATUS);
 		handle(handshake);
 		handle(new StatusRequest());

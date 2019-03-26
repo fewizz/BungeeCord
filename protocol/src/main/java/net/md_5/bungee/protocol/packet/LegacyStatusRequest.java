@@ -15,19 +15,23 @@ import net.md_5.bungee.protocol.Protocol;
 public class LegacyStatusRequest extends Packet {
 	int payloadID = -1;
 	String branding;
-	int protocolVer = -1;
+	int protocolVersion = -1;
 	String ip;
 	int port;
 	
+	boolean olderOrEqual_1_5 = false;
+	
 	@Override
-	public void read(ByteBuf buf, Direction dir, Protocol p) {
+	public void read(ByteBuf buf) {
 		buf.skipBytes(1);
-		if(p.olderOrEqual(Protocol.MC_1_5_2))
+		if(!buf.isReadable()) {
+			olderOrEqual_1_5 = true;
 			return;
+		}
 		payloadID = buf.readUnsignedByte();
 		branding = readLegacyString(buf, 255);
 		buf.skipBytes(2); //len
-		protocolVer = buf.readUnsignedByte();
+		protocolVersion = buf.readUnsignedByte();
 		ip = readLegacyString(buf, 255);
 		port = buf.readInt();
 	}
@@ -40,7 +44,7 @@ public class LegacyStatusRequest extends Packet {
 		buf.writeByte(payloadID);
 		writeLegacyString(branding, buf);
 		buf.writeShort(-1);
-		buf.writeByte(protocolVer);
+		buf.writeByte(protocolVersion);
 		writeLegacyString(ip, buf);
 		buf.writeInt(port);
 	}

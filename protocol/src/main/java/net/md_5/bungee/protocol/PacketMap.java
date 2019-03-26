@@ -72,7 +72,8 @@ public class PacketMap {
 	public PacketInfo remove(Class<? extends Packet> c, Direction dir) {
 		PacketInfo i = getInfo(c, dir);
 		Preconditions.checkNotNull(i);
-		byNSIDD.remove(i);
+		
+		byNSIDD.remove(new NSIDD(i.networkState, i.id, dir));
 		byCD.remove(new CD(c, dir));
 		return i;
 	}
@@ -80,12 +81,8 @@ public class PacketMap {
 	public PacketInfo remove(NetworkState ns, int id, Direction dir) {
 		PacketInfo i = getInfo(ns, id, dir);
 		
-		byNSIDD.remove(i);
+		byNSIDD.remove(new NSIDD(ns, id, dir));
 		byCD.remove(new CD(i.getClazz(), dir));
 		return i;
 	}
-	
-	/*public void forEach(Consumer<PacketInfo> c) {
-		byCD.forEach((cl, i) -> c.accept(i));
-	}*/
 }

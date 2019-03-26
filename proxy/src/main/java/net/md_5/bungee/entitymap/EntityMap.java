@@ -31,6 +31,7 @@ public abstract class EntityMap
     {
         switch ( version )
         {
+        	case MC_1_5_2:
         	case MC_1_6_4:
         		return EntityMap_1_6_4.INSTANCE;
             case MC_1_7_2:

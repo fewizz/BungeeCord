@@ -281,6 +281,8 @@ public enum Protocol {
 		}});
 	}},
 	MC_1_6_4(78, ProtocolGen.PRE_NETTY) { void postInit() {
+		inherit(MC_1_5_2);
+		
 		forStatus(NetworkState.LEGACY, new Do() {void apply() {
 			replace(8, Direction.TO_CLIENT, () -> new SkipPacket() {
 				void skip(ByteBuf buf) { buf.skipBytes(Float.BYTES*2 + Short.BYTES); }
