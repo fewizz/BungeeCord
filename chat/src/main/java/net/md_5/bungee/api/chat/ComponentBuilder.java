@@ -76,6 +76,19 @@ public final class ComponentBuilder
     {
         return append( component, FormatRetention.ALL );
     }
+    
+    /**
+     * Parse text to BaseComponent[] with colors and format, appends the text to
+     * the builder and makes it the current target for formatting. The component
+     * will have all the formatting from previous part.
+     *
+     * @param text the text to append
+     * @return this ComponentBuilder for chaining
+     */
+    public ComponentBuilder appendLegacy(String text)
+    {
+        return append( TextComponent.fromLegacyText( text ) );
+    }
 
     /**
      * Appends a component to the builder and makes it the current target for

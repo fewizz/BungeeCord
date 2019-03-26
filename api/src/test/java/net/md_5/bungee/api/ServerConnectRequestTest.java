@@ -58,6 +58,16 @@ public class ServerConnectRequestTest
         public void ping(Callback<ServerPing> callback)
         {
         }
+
+		@Override
+		public boolean isRestricted() {
+			return false;
+		}
+
+		@Override
+		public String getPermission() {
+			return null;
+		}
     };
 
     @Test

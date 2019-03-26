@@ -1,18 +1,20 @@
 package net.md_5.bungee.entitymap;
 
+import static net.md_5.bungee.protocol.Protocol.MC_1_13_0;
+import static net.md_5.bungee.protocol.Protocol.MC_1_13_2;
+import static net.md_5.bungee.protocol.Protocol.MC_1_6_4;
+
+import java.io.IOException;
+
 import com.flowpowered.nbt.stream.NBTInputStream;
 import com.google.common.base.Throwables;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
-import java.io.IOException;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
-import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
+import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Protocol;
-
-import static net.md_5.bungee.protocol.Protocol.*;
 
 /**
  * Class to rewrite integers within packets.

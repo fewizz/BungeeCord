@@ -79,7 +79,7 @@ public class BungeeServerInfo implements ServerInfo
     public boolean canAccess(CommandSender player)
     {
         Preconditions.checkNotNull( player, "player" );
-        return !restricted || player.hasPermission( "bungeecord.server." + name );
+        return !restricted || player.hasPermission( getPermission() );
     }
 
     @Override
@@ -149,4 +149,9 @@ public class BungeeServerInfo implements ServerInfo
                     callback.done( null, future.cause() );
             });
     }
+
+	@Override
+	public String getPermission() {
+		return "bungeecord.server." + name;
+	}
 }

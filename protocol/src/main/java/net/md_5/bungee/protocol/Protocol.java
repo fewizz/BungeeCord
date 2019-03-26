@@ -491,8 +491,7 @@ public enum Protocol {
 			clientboundPacket(0x0E, Chat::new);
 			clientboundPacket(0x0C, BossBar::new);
 			clientboundPacket(0x10, TabCompleteResponse::new);
-			if ( Boolean.getBoolean( "net.md-5.bungee.protocol.register_commands" ) )
-				clientboundPacket(0x11, Commands::new);
+			clientboundPacket(0x11, Commands::new);
 			clientboundPacket(0x19, PluginMessage::new);
 			clientboundPacket(0x1B, Kick::new);
 			clientboundPacket(0x1C, EntityStatus::new);

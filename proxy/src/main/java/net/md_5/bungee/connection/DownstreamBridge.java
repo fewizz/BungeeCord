@@ -2,14 +2,21 @@ package net.md_5.bungee.connection;
 
 
 import java.io.DataInput;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
+import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import com.mojang.brigadier.context.StringRange;
+import com.mojang.brigadier.suggestion.Suggestion;
+import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 
 import io.netty.buffer.ByteBuf;
@@ -506,16 +513,45 @@ public class DownstreamBridge extends PacketHandler
     @Override
     public void handle(TabCompleteResponse tabCompleteResponse) throws Exception
     {
-        if ( tabCompleteResponse.getCommands() == null )
+    	List<String> commands = tabCompleteResponse.getCommands();
+        if ( commands == null )
         {
-            // Passthrough on 1.13 style command responses - unclear of a sane way to process them at the moment, contributions welcome 
-            return;
+            commands = Lists.transform( tabCompleteResponse.getSuggestions().getList(), new Function<Suggestion, String>()
+            {
+                @Override
+                public String apply(Suggestion input)
+                {
+                    return input.getText();
+                }
+            } );
         }
 
-        TabCompleteResponseEvent tabCompleteResponseEvent = new TabCompleteResponseEvent( server, con, tabCompleteResponse.getCommands() );
+        TabCompleteResponseEvent tabCompleteResponseEvent = new TabCompleteResponseEvent( server, con, new ArrayList<>(commands) );
 
         if ( !bungee.getPluginManager().callEvent( tabCompleteResponseEvent ).isCancelled() )
         {
+        	// Take action only if modified
+            if ( !commands.equals( tabCompleteResponseEvent.getSuggestions() ) )
+            {
+                if ( tabCompleteResponse.getCommands() != null )
+                {
+                    // Classic style
+                    tabCompleteResponse.setCommands( tabCompleteResponseEvent.getSuggestions() );
+                } else
+                {
+                    // Brigadier style
+                    final StringRange range = tabCompleteResponse.getSuggestions().getRange();
+                    tabCompleteResponse.setSuggestions( new Suggestions( range, Lists.transform( tabCompleteResponseEvent.getSuggestions(), new Function<String, Suggestion>()
+                    {
+                        @Override
+                        public Suggestion apply(String input)
+                        {
+                            return new Suggestion( range, input );
+                        }
+                    } ) ) );
+                }
+            }
+            
             con.unsafe().sendPacket( tabCompleteResponse );
         }
 
@@ -549,20 +585,16 @@ public class DownstreamBridge extends PacketHandler
     {
         boolean modified = false;
 
-        if ( BungeeCord.getInstance().config.isInjectCommands() )
+        for ( Map.Entry<String, Command> command : bungee.getPluginManager().getCommands() )
         {
-            for ( Map.Entry<String, Command> command : bungee.getPluginManager().getCommands() )
+        	if ( !bungee.getDisabledCommands().contains( command.getKey() ) && commands.getRoot().getChild( command.getKey() ) == null && command.getValue().hasPermission( con ) )
             {
-                if ( commands.getRoot().getChild( command.getKey() ) == null && command.getValue().hasPermission( con ) )
-                {
-                    LiteralCommandNode dummy = LiteralArgumentBuilder.literal( command.getKey() )
-                            .then( RequiredArgumentBuilder.argument( "args", StringArgumentType.greedyString() )
-                            .suggests( Commands.SuggestionRegistry.ASK_SERVER ) )
-                            .build();
-                    commands.getRoot().addChild( dummy );
-
-                    modified = true;
-                }
+        		LiteralCommandNode dummy = LiteralArgumentBuilder.literal( command.getKey() )
+                        .then( RequiredArgumentBuilder.argument( "args", StringArgumentType.greedyString() )
+                                .suggests( Commands.SuggestionRegistry.ASK_SERVER ) )
+                        .build();
+                commands.getRoot().addChild( dummy );
+                modified = true;
             }
         }
 

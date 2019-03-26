@@ -182,7 +182,7 @@ public class UpstreamBridge extends PacketHandler
             if ( con.getPendingConnection().getProtocol().olderThan(Protocol.MC_1_13_0 ))
             {
                 con.unsafe().sendPacket( new TabCompleteResponse( results ) );
-            } else if ( BungeeCord.getInstance().config.isInjectCommands() )
+            } else
             {
                 int start = tabComplete.getCursor().lastIndexOf( ' ' ) + 1;
                 int end = tabComplete.getCursor().length();

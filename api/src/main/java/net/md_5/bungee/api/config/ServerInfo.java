@@ -42,6 +42,22 @@ public interface ServerInfo
      * @return the motd
      */
     String getMotd();
+    
+	/**
+	 * Whether this server is restricted and therefore only players with the given
+	 * permission can access it.
+	 *
+	 * @return if restricted
+	 */
+	boolean isRestricted();
+
+	/**
+	 * Get the permission required to access this server. Only enforced when the
+	 * server is restricted.
+	 *
+	 * @return access permission
+	 */
+	String getPermission();
 
     /**
      * Whether the player can access this server. It will only return false when
