@@ -40,7 +40,7 @@ import net.md_5.bungee.protocol.packet.Team;
 import net.md_5.bungee.protocol.packet.Title;
 
 public enum Protocol {
-	MC_1_6_4(78, ProtocolGen.PRE_NETTY) { void postInit() {
+	MC_1_5_2(61, ProtocolGen.PRE_NETTY) { void postInit() {
 		forStatus(NetworkState.LEGACY, new Do() { void apply() {
 			packet(0, KeepAlive::new);
 			packet(1, Login::new);
@@ -60,7 +60,7 @@ public enum Protocol {
 				buf.skipBytes(Integer.BYTES*2 + 1);
 			};});
 			clientboundPacket(8, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Float.BYTES*2 + Short.BYTES);
+				buf.skipBytes(Float.BYTES + Short.BYTES*2);
 			};});
 			packet(9, Respawn::new);
 			packet(10, ()-> new SkipPacket() { void skip(ByteBuf buf) {
@@ -93,7 +93,7 @@ public enum Protocol {
 				buf.skipBytes(Integer.BYTES + 1);
 			};});
 			serverboundPacket(19, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES*2 + 1);
+				buf.skipBytes(Integer.BYTES + 1);
 			};});
 			clientboundPacket(20, ()-> new SkipPacket() { void skip(ByteBuf buf) {
 				buf.skipBytes(Integer.BYTES);
@@ -121,9 +121,6 @@ public enum Protocol {
 			};});
 			clientboundPacket(26, ()-> new SkipPacket() { void skip(ByteBuf buf) {
 				buf.skipBytes(Integer.BYTES*4 + Short.BYTES);
-			};});
-			serverboundPacket(27, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Float.BYTES*2 + 2);
 			};});
 			clientboundPacket(28, ()-> new SkipPacket() { void skip(ByteBuf buf) {
 				buf.skipBytes(Integer.BYTES + Short.BYTES*3);
@@ -153,7 +150,7 @@ public enum Protocol {
 				buf.skipBytes(Integer.BYTES + 1);
 			};});
 			clientboundPacket(39, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES*2 + 1);
+				buf.skipBytes(Integer.BYTES*2);
 			};});
 			clientboundPacket(40, ()-> new SkipPacket() { void skip(ByteBuf buf) {
 				buf.skipBytes(Integer.BYTES);
@@ -167,15 +164,6 @@ public enum Protocol {
 			};});
 			clientboundPacket(43, ()-> new SkipPacket() { void skip(ByteBuf buf) {
 				buf.skipBytes(Float.BYTES + Short.BYTES*2);
-			};});
-			clientboundPacket(44, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES);
-				int count = buf.readInt();
-				while(count-- != 0) {
-					skipLegacyString(buf, 64);
-					buf.skipBytes(Double.BYTES);
-					buf.skipBytes(buf.readShort()*(Long.BYTES*2+Double.BYTES+1));
-				}
 			};});
 			clientboundPacket(51, ()-> new SkipPacket() { void skip(ByteBuf buf) {
 				buf.skipBytes(Integer.BYTES*2 + 1 + Short.BYTES*2);
@@ -224,11 +212,9 @@ public enum Protocol {
 				buf.skipBytes(Integer.BYTES*4 + 1);
 			};});
 			clientboundPacket(100, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(1);
-				int v = buf.readByte();
+				buf.skipBytes(2);
 				skipLegacyString(buf, 32);
 				buf.skipBytes(2);
-				if(v == 1) buf.skipBytes(Integer.BYTES);
 			};});
 			packet(101, ()-> new SkipPacket() { void skip(ByteBuf buf) {
 				buf.skipBytes(1);
@@ -272,22 +258,16 @@ public enum Protocol {
 				buf.skipBytes(Integer.BYTES*2 + Short.BYTES + 1);
 				skipLegacyTag(buf);
 			};});
-			clientboundPacket(133, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES*3 + 1);
-			};});
 			clientboundPacket(200, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES*2);
+				buf.skipBytes(Integer.BYTES + 1);
 			};});
 			clientboundPacket(201, PlayerListItem::new);
 			packet(202, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(1 + Float.BYTES*2);
+				buf.skipBytes(3);
 			};});
 			serverboundPacket(203, TabCompleteRequest::new);
 			clientboundPacket(203, TabCompleteResponse::new);
-			serverboundPacket(204, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				skipLegacyString(buf, 7);
-				buf.skipBytes(4);
-			};});
+			serverboundPacket(204, ClientSettings::new);
 			serverboundPacket(205, LegacyClientCommand::new);
 			clientboundPacket(206, ScoreboardObjective::new);
 			clientboundPacket(207, ScoreboardScore::new);
@@ -298,7 +278,48 @@ public enum Protocol {
 			clientboundPacket(253, EncryptionRequest::new);
 			serverboundPacket(254, LegacyStatusRequest::new);
 			packet(255, Kick::new);
-		}});	
+		}});
+	}},
+	MC_1_6_4(78, ProtocolGen.PRE_NETTY) { void postInit() {
+		forStatus(NetworkState.LEGACY, new Do() {void apply() {
+			replace(8, Direction.TO_CLIENT, () -> new SkipPacket() {
+				void skip(ByteBuf buf) { buf.skipBytes(Float.BYTES*2 + Short.BYTES); }
+			});
+			replace(19, Direction.TO_SERVER, () -> new SkipPacket() {
+				void skip(ByteBuf buf) { buf.skipBytes(Integer.BYTES*2 + 1); }
+			});
+			serverboundPacket(27, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+				buf.skipBytes(Float.BYTES*2 + 2);
+			};});
+			replace(39, Direction.TO_CLIENT, () -> new SkipPacket() { void skip(ByteBuf buf) {
+				buf.skipBytes(Integer.BYTES*2 + 1);
+			}});
+			clientboundPacket(44, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+				buf.skipBytes(Integer.BYTES);
+				int count = buf.readInt();
+				while(count-- != 0) {
+					skipLegacyString(buf, 64);
+					buf.skipBytes(Double.BYTES);
+					buf.skipBytes(buf.readShort()*(Long.BYTES*2+Double.BYTES+1));
+				}
+			}});
+			replace(100, Direction.TO_CLIENT, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+				buf.skipBytes(1);
+				int v = buf.readByte();
+				skipLegacyString(buf, 32);
+				buf.skipBytes(2);
+				if(v == 11) buf.skipBytes(Integer.BYTES);
+			}});
+			clientboundPacket(133, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+				buf.skipBytes(Integer.BYTES*3 + 1);
+			}});
+			replace(200, Direction.TO_CLIENT, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+				buf.skipBytes(Integer.BYTES*2);
+			}});
+			replace(202, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+				buf.skipBytes(1 + Float.BYTES*2);
+			};});
+		}});
 	}},
 	MC_1_7_2(4, ProtocolGen.POST_NETTY){ void postInit(){
 		forStatus(NetworkState.HANDSHAKE, new Do() { void apply() {
@@ -509,7 +530,7 @@ public enum Protocol {
 		
 		abstract void apply();
 		
-		void packet(Direction d, int id, Factory c) {
+		void packet(int id, Direction d, Factory c) {
 			pv.packet(s, id, d, c);
 		}
 		
@@ -524,6 +545,15 @@ public enum Protocol {
 		void packet(int id, Factory c) {
 			clientboundPacket(id, c);
 			serverboundPacket(id, c);
+		}
+		
+		void replace(int id, Direction d, Factory f) {
+			pv.replace(s, id, d, f);
+		}
+		
+		void replace(int id, Factory f) {
+			pv.replace(s, id, Direction.TO_CLIENT, f);
+			pv.replace(s, id, Direction.TO_SERVER, f);
 		}
 	}
 	
@@ -558,6 +588,11 @@ public enum Protocol {
 	
 	PacketMap.PacketInfo remove(NetworkState ns, int id, Direction d) {
 		return packets.remove(ns, id, d);
+	}
+	
+	void replace(NetworkState ns, int id, Direction d, Factory f) {
+		packets.remove(ns, id, d);
+		packets.add(ns, id, d, f);
 	}
 	
 	void forStatus(NetworkState cs, Do p) {

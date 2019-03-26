@@ -25,10 +25,7 @@ public class Chat extends Packet {
 
 	@Override
 	public void read(ByteBuf buf, Direction direction, Protocol protocolVersion) {
-		if (protocolVersion.isLegacy())
-			message = readLegacyString(buf, 32767);
-		else
-			message = readString(buf);
+		message = readString(buf, protocolVersion);
 
 		if (direction == Direction.TO_CLIENT && protocolVersion.newerOrEqual(Protocol.MC_1_8_0))
 			position = buf.readByte();

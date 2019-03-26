@@ -45,10 +45,6 @@ public class ForgeClientHandler {
 	@Getter
 	@Setter
 	private boolean fmlTokenInHandshake = false;
-	
-	//@Getter
-	//@Setter
-	//private Login forgeLogin;
 
 	/**
 	 * Handles the Forge packet.

@@ -80,7 +80,6 @@ public final class UserConnection implements ProxiedPlayer {
 	@Getter
 	@Setter
 	private ServerConnection server;
-	//public void setServer(ServerConnection sc) {server = sc; connectionsToServerCount++;}
 	@Getter
 	@Setter
 	private int dimension;
@@ -89,8 +88,6 @@ public final class UserConnection implements ProxiedPlayer {
 	private boolean dimensionChange = true;
 	@Getter
 	private final Collection<ServerInfo> pendingConnects = new HashSet<>();
-	//@Getter
-	//private int connectionsToServerCount = 0;
 	/* ======================================================================== */
 	@Getter
 	@Setter

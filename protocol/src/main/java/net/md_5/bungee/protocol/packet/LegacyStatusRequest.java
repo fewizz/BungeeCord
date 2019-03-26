@@ -5,7 +5,9 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
+import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.Protocol;
 
 @Data
 @NoArgsConstructor
@@ -18,8 +20,10 @@ public class LegacyStatusRequest extends Packet {
 	int port;
 	
 	@Override
-	public void read(ByteBuf buf) {
+	public void read(ByteBuf buf, Direction dir, Protocol p) {
 		buf.skipBytes(1);
+		if(p.olderOrEqual(Protocol.MC_1_5_2))
+			return;
 		payloadID = buf.readUnsignedByte();
 		branding = readLegacyString(buf, 255);
 		buf.skipBytes(2); //len
@@ -29,7 +33,9 @@ public class LegacyStatusRequest extends Packet {
 	}
 	
 	@Override
-	public void write(ByteBuf buf) {
+	public void write(ByteBuf buf, Direction dir, Protocol p) {
+		if(p.olderOrEqual(Protocol.MC_1_5_2))
+			return;
 		buf.writeByte(1);
 		buf.writeByte(payloadID);
 		writeLegacyString(branding, buf);

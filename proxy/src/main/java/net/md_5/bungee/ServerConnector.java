@@ -410,7 +410,7 @@ public class ServerConnector extends PacketHandler {
 
 	@Override
 	public void handle(PluginMessage pluginMessage) throws Exception {
-		System.out.println("SC PM: " + pluginMessage.getTag());
+		//System.out.println("SC PM: " + pluginMessage.getTag());
 		
 		if (BungeeCord.getInstance().config.isForgeSupport()) {
 			if (pluginMessage.getTag().equals(ForgeConstants.FML_TAG)) {
