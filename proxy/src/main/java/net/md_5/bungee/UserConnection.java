@@ -78,8 +78,9 @@ public final class UserConnection implements ProxiedPlayer {
 	private final InitialHandler pendingConnection;
 	/* ======================================================================== */
 	@Getter
+	@Setter
 	private ServerConnection server;
-	public void setServer(ServerConnection sc) {server = sc; connectionsToServerCount++;}
+	//public void setServer(ServerConnection sc) {server = sc; connectionsToServerCount++;}
 	@Getter
 	@Setter
 	private int dimension;
@@ -88,8 +89,8 @@ public final class UserConnection implements ProxiedPlayer {
 	private boolean dimensionChange = true;
 	@Getter
 	private final Collection<ServerInfo> pendingConnects = new HashSet<>();
-	@Getter
-	private int connectionsToServerCount = 0;
+	//@Getter
+	//private int connectionsToServerCount = 0;
 	/* ======================================================================== */
 	@Getter
 	@Setter
@@ -140,6 +141,8 @@ public final class UserConnection implements ProxiedPlayer {
 	@Setter
 	private ForgeServerHandler forgeServerHandler;
 	/* ======================================================================== */
+	@Getter
+	ServerConnector connector;
 	private final Unsafe unsafe = new Unsafe() {
 		@Override
 		public void sendPacket(Packet packet) {
@@ -167,7 +170,7 @@ public final class UserConnection implements ProxiedPlayer {
 		if (this.getPendingConnection().getExtraDataInHandshake().contains(ForgeConstants.FML_HANDSHAKE_TOKEN))
 			forgeClientHandler.setFmlTokenInHandshake(true);
 		
-		forgeClientHandler.setForgeLogin(this.getPendingConnection().forgeLogin);
+		//forgeClientHandler.setForgeLogin(this.getPendingConnection().forgeLogin);
 	}
 
 	/*public void sendPacket(PacketWrapper packet) {
@@ -295,7 +298,8 @@ public final class UserConnection implements ProxiedPlayer {
 			.handler(new ChannelInitializer<Channel>() {
 				@Override
 				protected void initChannel(Channel ch) throws Exception {
-					PipelineUtil.addHandlers(ch, pendingConnection.getProtocol(), Direction.TO_SERVER, new ServerConnector(bungee, UserConnection.this, target));
+					connector = new ServerConnector(bungee, UserConnection.this, target);
+					PipelineUtil.addHandlers(ch, pendingConnection.getProtocol(), Direction.TO_SERVER, connector);
 				}
 			});
 		

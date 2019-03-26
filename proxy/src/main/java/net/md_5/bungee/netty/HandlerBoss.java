@@ -40,10 +40,9 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter {
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
 		if (handler != null) {
 			channel = new ChannelWrapper(ctx);
-			handler.connected(channel);
-
 			if (!(handler instanceof InitialHandler || handler instanceof PingHandler))
 				ProxyServer.getInstance().getLogger().log(Level.INFO, "{0} has connected", handler);
+			handler.connected(channel);
 		}
 	}
 
@@ -78,11 +77,6 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter {
 
 		if (handler == null)
 			return;
-
-		//if (msg instanceof PacketDecodingPreparer) {
-		//	handler.prepareBeforeDecoding(((PacketDecodingPreparer) msg).getPacket());
-		//	return;
-		//}
 		
 		PacketWrapper wrapper = (PacketWrapper) msg;
 		boolean shouldHandle = handler.shouldHandle(wrapper);

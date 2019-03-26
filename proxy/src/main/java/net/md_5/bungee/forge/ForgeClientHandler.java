@@ -1,15 +1,16 @@
 package net.md_5.bungee.forge;
 
-import com.google.common.base.Preconditions;
 import java.util.ArrayDeque;
 import java.util.Map;
+
+import com.google.common.base.Preconditions;
+
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import net.md_5.bungee.UserConnection;
-import net.md_5.bungee.protocol.packet.Login;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 
 /**
@@ -45,9 +46,9 @@ public class ForgeClientHandler {
 	@Setter
 	private boolean fmlTokenInHandshake = false;
 	
-	@Getter
-	@Setter
-	private Login forgeLogin;
+	//@Getter
+	//@Setter
+	//private Login forgeLogin;
 
 	/**
 	 * Handles the Forge packet.
@@ -143,6 +144,6 @@ public class ForgeClientHandler {
 	 * @return <code>true</code> if the user is a forge user.
 	 */
 	public boolean isForgeUser() {
-		return (fmlTokenInHandshake || clientModList != null) || forgeLogin != null;
+		return (fmlTokenInHandshake || clientModList != null) || con.getPendingConnection().forgeLogin != null;
 	}
 }

@@ -72,6 +72,7 @@ public class ServerConnector extends PacketHandler {
 	private final ProxyServer bungee;
 	@Getter
 	private ChannelWrapper ch;
+	private ServerConnection server;
 	private final UserConnection user;
 	private final BungeeServerInfo target;
 	private State thisState = State.UNDEF;
@@ -167,12 +168,16 @@ public class ServerConnector extends PacketHandler {
 			lr.setUserName(user.getName());
 			thisState = State.LOGIN_REQUEST;
 			channel.write(lr);
+			
+			if(BungeeCord.getInstance().config.isForgeSupport() && user.isForgeUser()) {
+				ch.write(user.getPendingConnection().getForgeLogin());
+			}
 		}
 		
-		ServerConnection server = new ServerConnection(ch, target);
-		ServerConnectedEvent event = new ServerConnectedEvent(user, server);
-		bungee.getPluginManager().callEvent(event);
-		user.setServer(server);
+		server = new ServerConnection(ch, target);
+		//ServerConnectedEvent event = new ServerConnectedEvent(user, server);
+		//bungee.getPluginManager().callEvent(event);
+		//user.setServer(server);
 	}
 	
 	@Override
@@ -224,6 +229,9 @@ public class ServerConnector extends PacketHandler {
 		if(user.getPendingConnection().getProtocol().isLegacy() && thisState != State.LOGIN)
 			thisState = State.LOGIN;
 		Preconditions.checkState(thisState == State.LOGIN, "Not expecting " + thisState.name());
+		
+		ServerConnectedEvent event = new ServerConnectedEvent(user, server);
+		bungee.getPluginManager().callEvent(event);
 
 		ch.write(BungeeCord.getInstance().registerChannels(user.getPendingConnection().getProtocol()));
 
@@ -243,7 +251,7 @@ public class ServerConnector extends PacketHandler {
 		if (user.getForgeClientHandler().getClientModList() == null && !user.getForgeClientHandler().isHandshakeComplete()) // Vanilla
 			user.getForgeClientHandler().setHandshakeComplete();
 
-		if (user.getConnectionsToServerCount() == 1) {
+		if (user.getServer() == null) {
 			// Once again, first connection
 			user.setClientEntityId(login.getEntityId());
 			user.setServerEntityId(login.getEntityId());
@@ -318,6 +326,7 @@ public class ServerConnector extends PacketHandler {
 		user.setServerJoinQueue(null);
 		user.setDimensionChange(false);
 		
+		user.setServer(server);
 		ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new DownstreamBridge(bungee, user, user.getServer()));
 
 		bungee.getPluginManager().callEvent(new ServerSwitchEvent(user));
@@ -360,9 +369,6 @@ public class ServerConnector extends PacketHandler {
 		ch.addBefore(PipelineUtil.PACKET_DEC, PipelineUtil.DECRYPT, new CipherDecoder(encrypt));
 
 		thisState = State.LOGIN;
-		if(BungeeCord.getInstance().config.isForgeSupport() && user.isForgeUser()) {
-			ch.write(user.getForgeClientHandler().getForgeLogin());
-		}
 		
 		ch.write(new LegacyClientCommand(0));
 
@@ -413,18 +419,17 @@ public class ServerConnector extends PacketHandler {
 				
 				DataInput i = pluginMessage.getStream();
 				int type = i.readUnsignedByte();
-				System.out.println("FML packet type: " + type);
+				//System.out.println("FML packet type: " + type);
 				
 				if(type == 0) {
 					int count = i.readInt();
-					System.out.println("Mod count: " + count);
+					//System.out.println("Mod count: " + count);
 					for(int x = 0; x < count; x++ )
 						i.readUTF();
 					int compLevel = i.readByte();
-					System.out.println("Comp. level: " + compLevel);
+					//System.out.println("Comp. level: " + compLevel);
 					handshakeHandler.setLegacyForgeCompLevel(compLevel);
 				}
-				
 			}
 			
 			if (pluginMessage.getTag().equals(ForgeConstants.FML_REGISTER)) {

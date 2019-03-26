@@ -232,7 +232,7 @@ public class DownstreamBridge extends PacketHandler
     @Override
     public void handle(PluginMessage pluginMessage) throws Exception
     {
-    	System.out.println("DS PM: " + pluginMessage.getTag());
+    	//System.out.println("DS PM: " + pluginMessage.getTag());
         DataInput in = pluginMessage.getStream();
         PluginMessageEvent event = new PluginMessageEvent( server, con, pluginMessage.getTag(), pluginMessage.getData().clone() );
 

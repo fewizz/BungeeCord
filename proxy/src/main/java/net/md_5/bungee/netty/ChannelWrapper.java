@@ -71,7 +71,7 @@ public class ChannelWrapper
         if (closed)
         	return;
         
-        ch.writeAndFlush( packet);
+        ch.writeAndFlush( packet, ch.voidPromise());
     }
 
     public void markClosed()

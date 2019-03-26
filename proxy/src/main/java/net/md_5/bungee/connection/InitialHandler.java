@@ -15,8 +15,11 @@ import com.google.common.base.Preconditions;
 import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.BungeeServerInfo;
 import net.md_5.bungee.EncryptionUtil;
@@ -85,6 +88,9 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 	private EncryptionRequest request;
 	@Getter
 	private final List<PluginMessage> relayMessages = new BoundedArrayList<>(128);
+	@Getter
+	@Setter
+	private PluginMessage legacyForgeResponeMessage;
 	private State thisState = State.HANDSHAKE;
 	private final Unsafe unsafe = new Unsafe() {
 		@Override
@@ -175,7 +181,6 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 			};
 
 			bungee.getPluginManager().callEvent(new ProxyPingEvent(InitialHandler.this, result, callback));
-		
 		};
 
 		if (forced != null && listener.isPingPassthrough())

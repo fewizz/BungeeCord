@@ -46,7 +46,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 						", direction: " + direction.name() + 
 						", protocol: " + protocol);
 			
-			//System.out.println("DEC, id: " + packetId + ", dir: " + direction.name());
+			System.out.println("DEC, id: " + packetId + ", dir: " + direction.name());
 			read0(in, packet);
 			// Do it manually, because when in becomes !in.isReadable, 
 			// super BTMD not sends last message immediately, so it releases bytebuf
