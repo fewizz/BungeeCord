@@ -8,6 +8,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramPacket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
@@ -70,7 +71,7 @@ public class QueryHandler extends SimpleChannelInboundHandler<DatagramPacket>
         }
 
         ByteBuf out = ctx.alloc().buffer();
-        AddressedEnvelope response = new DatagramPacket( out, msg.sender() );
+        AddressedEnvelope<ByteBuf, InetSocketAddress> response = new DatagramPacket( out, msg.sender() );
 
         byte type = in.readByte();
         int sessionId = in.readInt();

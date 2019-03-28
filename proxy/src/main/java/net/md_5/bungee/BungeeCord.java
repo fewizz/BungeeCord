@@ -367,7 +367,8 @@ public class BungeeCord extends ProxyServer
                     listeners.add( future.channel() );
                     getLogger().log( Level.INFO, "Started query on {0}", future.channel().localAddress() );
 				} 
-                else getLogger().log( Level.WARNING, "Could not bind to host " + info.getHost(), future.cause() );
+                else
+                	getLogger().log( Level.WARNING, "Could not bind to host " + info.getHost(), future.cause() );
 			}
 		);
     }

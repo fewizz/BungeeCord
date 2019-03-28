@@ -31,7 +31,7 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter {
 	private PacketHandler handler;
 
 	public HandlerBoss setHandler(PacketHandler handler) {
-		Preconditions.checkArgument(handler != null, "handler");
+		//Preconditions.checkArgument(handler != null, "handler");
 		this.handler = handler;
 		return this;
 	}

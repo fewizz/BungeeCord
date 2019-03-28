@@ -37,8 +37,14 @@ public class PingHandler extends PacketHandler {
 			channel.setConnectionState(NetworkState.STATUS);
 			channel.write(new StatusRequest());
 		} 
-		else
-			channel.write(new LegacyStatusRequest());
+		else {
+			LegacyStatusRequest lsr = new LegacyStatusRequest();
+			lsr.setBranding("MC");
+			lsr.setIp("");
+			lsr.setOlderOrEqual_1_5(protocol.olderOrEqual(Protocol.MC_1_5_2));
+			lsr.setProtocolVersion(protocol.version);
+			channel.write(lsr);
+		}
 	}
 
 	@Override
