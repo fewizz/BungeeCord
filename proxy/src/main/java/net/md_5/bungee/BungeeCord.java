@@ -48,13 +48,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.epoll.Epoll;
-import io.netty.channel.epoll.EpollDatagramChannel;
-import io.netty.channel.epoll.EpollEventLoopGroup;
-import io.netty.channel.epoll.EpollServerSocketChannel;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.AttributeKey;
 import io.netty.util.ResourceLeakDetector;
 import jline.console.ConsoleReader;
@@ -100,12 +93,13 @@ import net.md_5.bungee.forge.ForgeConstants;
 import net.md_5.bungee.log.BungeeLogger;
 import net.md_5.bungee.log.LoggingOutputStream;
 import net.md_5.bungee.module.ModuleManager;
+import net.md_5.bungee.netty.NettyUtil;
 import net.md_5.bungee.netty.PipelineUtil;
-import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.GenerationIdentifier;
-import net.md_5.bungee.protocol.ProtocolGen;
+import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Protocol;
+import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 import net.md_5.bungee.query.RemoteQuery;
@@ -191,8 +185,6 @@ public class BungeeCord extends ProxyServer
     @Getter
     private ConnectionThrottle connectionThrottle;
     private final ModuleManager moduleManager = new ModuleManager();
-    public static final boolean USE_EPOLL =
-    		Boolean.valueOf(System.getProperty( "bungee.epoll", "true" )) && Epoll.isAvailable();
     public static final AttributeKey<ListenerInfo> LISTENER = AttributeKey.valueOf( "ListerInfo" );
     
     {
@@ -271,7 +263,7 @@ public class BungeeCord extends ProxyServer
             ResourceLeakDetector.setLevel( ResourceLeakDetector.Level.DISABLED ); // Eats performance
         
         ThreadFactory tf = new ThreadFactoryBuilder().setNameFormat( "Netty IO Thread #%1$d" ).build();
-        eventLoops = USE_EPOLL ? new EpollEventLoopGroup(0, tf) : new NioEventLoopGroup(0, tf);
+        eventLoops = NettyUtil.bestEventLoopGroup(0, tf);
 
         File moduleDirectory = new File( "modules" );
         moduleManager.load( this, moduleDirectory );
@@ -326,7 +318,7 @@ public class BungeeCord extends ProxyServer
             }
     	}
         new ServerBootstrap()
-            .channel(USE_EPOLL ? EpollServerSocketChannel.class : NioServerSocketChannel.class )
+            .channel(NettyUtil.bestServerSocketChannel())
             .option( ChannelOption.SO_REUSEADDR, true ) // TODO: Move this elsewhere!
             .childAttr( LISTENER, info )
             .childHandler( new ChannelInitializer<Channel>() {
@@ -359,7 +351,7 @@ public class BungeeCord extends ProxyServer
         	return;
         
         new RemoteQuery( this, info ).start(
-			USE_EPOLL ? EpollDatagramChannel.class : NioDatagramChannel.class,
+			NettyUtil.bestDatagramChannel(),
 			new InetSocketAddress( info.getHost().getAddress(), info.getQueryPort() ),
 			eventLoops,
 			(ChannelFuture future) -> {

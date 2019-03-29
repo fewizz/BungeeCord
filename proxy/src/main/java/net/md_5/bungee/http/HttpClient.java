@@ -14,15 +14,15 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoop;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.DefaultHttpRequest;
-import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpVersion;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.api.Callback;
+import net.md_5.bungee.netty.NettyUtil;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class HttpClient
@@ -31,7 +31,6 @@ public class HttpClient
     public static final int TIMEOUT = 5000;
     private static final Cache<String, InetAddress> addressCache = CacheBuilder.newBuilder().expireAfterWrite( 1, TimeUnit.MINUTES ).build();
 
-    @SuppressWarnings("UnusedAssignment")
     public static void get(String url, EventLoop eventLoop, final Callback<String> callback)
     {
         Preconditions.checkNotNull( url, "url" );
@@ -83,7 +82,7 @@ public class HttpClient
                     String path = uri.getRawPath() + ( ( uri.getRawQuery() == null ) ? "" : "?" + uri.getRawQuery() );
 
                     HttpRequest request = new DefaultHttpRequest( HttpVersion.HTTP_1_1, HttpMethod.GET, path );
-                    request.headers().set( HttpHeaders.Names.HOST, uri.getHost() );
+                    request.headers().set( HttpHeaderNames.HOST, uri.getHost() );
 
                     future.channel().writeAndFlush( request );
                 } else
@@ -94,7 +93,7 @@ public class HttpClient
             }
         };
 
-        new Bootstrap().channel( NioSocketChannel.class ).group( eventLoop ).handler( new HttpInitializer( callback, ssl, uri.getHost(), port ) ).
+        new Bootstrap().channel( NettyUtil.bestSocketChannel() ).group( eventLoop ).handler( new HttpInitializer( callback, ssl, uri.getHost(), port ) ).
                 option( ChannelOption.CONNECT_TIMEOUT_MILLIS, TIMEOUT ).remoteAddress( inetHost, port ).connect().addListener( future );
     }
 }

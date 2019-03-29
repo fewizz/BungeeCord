@@ -20,8 +20,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.epoll.EpollSocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.internal.PlatformDependent;
 import lombok.Getter;
 import lombok.NonNull;
@@ -47,6 +45,7 @@ import net.md_5.bungee.forge.ForgeClientHandler;
 import net.md_5.bungee.forge.ForgeConstants;
 import net.md_5.bungee.forge.ForgeServerHandler;
 import net.md_5.bungee.netty.ChannelWrapper;
+import net.md_5.bungee.netty.NettyUtil;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.Packet;
@@ -288,7 +287,7 @@ public final class UserConnection implements ProxiedPlayer {
 		
 		Bootstrap b = 
 			new Bootstrap()
-			.channel(BungeeCord.USE_EPOLL ? EpollSocketChannel.class : NioSocketChannel.class)
+			.channel(NettyUtil.bestSocketChannel())
 			.group(ch.getHandle().eventLoop())
 			.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, request.getConnectTimeout())
 			.remoteAddress(target.getAddress())

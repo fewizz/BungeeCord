@@ -229,6 +229,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 
 			this.virtualHost = InetSocketAddress.createUnresolved(handshake.getHost(), handshake.getPort());
 		}
+			
 		if (bungee.getConfig().isLogPings())
 			bungee.getLogger().log(Level.INFO, "{0} has connected", this);
 		
@@ -533,11 +534,13 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 		if(!request.isOlderOrEqual_1_5()) {
 			handshake.setHost(request.getIp());
 			handshake.setPort(request.getPort());
-			handshake.setProtocol(Protocol.byNumber(request.getProtocolVersion(), ProtocolGen.PRE_NETTY));
+			Protocol p = Protocol.byNumber(request.getProtocolVersion(), ProtocolGen.PRE_NETTY);
+			handshake.setProtocol(p == null ? Protocol.MC_1_6_4 : p);
 		}
 		else {
 			handshake.setProtocol(Protocol.MC_1_5_2);
-			ch.setProtocol(Protocol.MC_1_5_2);
+			//handshake.setHost("0.0.0.0");
+			//handshake.setPort(0);
 		}
 		handshake.setRequestedNetworkState(NetworkState.STATUS);
 		handle(handshake);
