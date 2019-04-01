@@ -15,8 +15,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -301,13 +299,15 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 			
 			if (onlineMode)
 				unsafe().sendPacket(request = EncryptionUtil.encryptRequest());
-			else if(isLegacy()) {
-				request = EncryptionUtil.encryptRequest();
-				request.setServerId("-");
-				unsafe.sendPacket(request);
+			else {
+				if(isLegacy()) {
+					request = EncryptionUtil.encryptRequest();
+					request.setServerId("-");
+					unsafe.sendPacket(request);
+				}
+				else
+					finish();
 			}
-			else
-				finish();
 			
 			thisState = State.ENCRYPT;
 			
