@@ -38,9 +38,9 @@ public class LegacyStatusRequest extends Packet {
 	
 	@Override
 	public void write(ByteBuf buf, Direction dir, Protocol p) {
+		buf.writeByte(1);
 		if(p.olderOrEqual(Protocol.MC_1_5_2))
 			return;
-		buf.writeByte(1);
 		buf.writeByte(payloadID);
 		writeLegacyString(branding, buf);
 		buf.writeShort(-1);

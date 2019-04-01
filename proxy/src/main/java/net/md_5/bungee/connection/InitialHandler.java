@@ -223,10 +223,14 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 			// SRV records can end with a . depending on DNS / client.
 			if (handshake.getHost().endsWith("."))
 				handshake.setHost(handshake.getHost().substring(0, handshake.getHost().length() - 1));
-		
-
-			this.virtualHost = InetSocketAddress.createUnresolved(handshake.getHost(), handshake.getPort());
 		}
+		
+		if(getProtocol().olderOrEqual(Protocol.MC_1_5_2)) {
+			handshake.setHost(listener.getHost().getHostString());
+			handshake.setPort(listener.getHost().getPort());
+		}
+		
+		this.virtualHost = InetSocketAddress.createUnresolved(handshake.getHost(), handshake.getPort());
 			
 		if (bungee.getConfig().isLogPings())
 			bungee.getLogger().log(Level.INFO, "{0} has connected", this);
@@ -310,7 +314,6 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 			}
 			
 			thisState = State.ENCRYPT;
-			
 		};
 
 		// fire pre login event
@@ -335,7 +338,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 			ch.addBefore(PipelineUtil.FRAME_ENC, PipelineUtil.ENCRYPT, new CipherEncoder(encrypt));
 
 			if(isOnlineMode())
-				checkAuth(sharedKey);
+				loginAndFinish(sharedKey);
 		} else {
 			ch.write(new EncryptionResponse());
 
@@ -346,7 +349,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 		}
 	}
 
-	private void checkAuth(SecretKey sharedKey) throws Exception {
+	private void loginAndFinish(SecretKey sharedKey) throws Exception {
 		String encName = URLEncoder.encode(InitialHandler.this.getName(), "UTF-8");
 
 		MessageDigest sha = MessageDigest.getInstance("SHA-1");
@@ -564,9 +567,9 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 		if (clientCommandOld.command != 0)
 			throw new RuntimeException();
 
-		if (onlineMode)
-			checkAuth(EncryptionUtil.getSecret(encryptResponse, request));
-		finish();
+		if(isOnlineMode())
+			loginAndFinish(EncryptionUtil.getSecret(encryptResponse, request));
+		else finish();
 	}
 	
 	@Override
