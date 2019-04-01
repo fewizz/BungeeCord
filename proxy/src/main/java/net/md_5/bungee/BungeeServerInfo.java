@@ -55,6 +55,8 @@ public class BungeeServerInfo implements ServerInfo
     private final boolean restricted;
     @Getter
     private final Queue<Packet> packetQueue = new LinkedList<>();
+    @Getter
+    private final Boolean ipForward;
 
     @Synchronized("players")
     public void addPlayer(ProxiedPlayer player)

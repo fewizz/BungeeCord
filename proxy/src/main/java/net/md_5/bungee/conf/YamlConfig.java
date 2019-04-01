@@ -107,9 +107,12 @@ public class YamlConfig implements ConfigurationAdapter
     {
         return get( path, def, config );
     }
-
+    
+    private <T> T get(String path, T def, Map submap) {
+    	return get(path, def, submap, true);
+	}
     @SuppressWarnings("unchecked")
-    private <T> T get(String path, T def, Map submap)
+    private <T> T get(String path, T def, Map submap, boolean save)
     {
         int index = path.indexOf( '.' );
         if ( index == -1 )
@@ -118,8 +121,10 @@ public class YamlConfig implements ConfigurationAdapter
             if ( val == null && def != null )
             {
                 val = def;
-                submap.put( path, def );
-                save();
+                if(save) {
+                	submap.put( path, def );
+                	save();
+                }
             }
             return (T) val;
         } else
@@ -127,7 +132,7 @@ public class YamlConfig implements ConfigurationAdapter
             String first = path.substring( 0, index );
             String second = path.substring( index + 1, path.length() );
             Map sub = (Map) submap.get( first );
-            if ( sub == null )
+            if ( sub == null && save)
             {
                 sub = new LinkedHashMap();
                 submap.put( first, sub );
@@ -215,8 +220,9 @@ public class YamlConfig implements ConfigurationAdapter
             String addr = get( "address", "localhost:25565", val );
             String motd = ChatColor.translateAlternateColorCodes( '&', get( "motd", "&1Just another BungeeCord - Forced Host", val ) );
             boolean restricted = get( "restricted", false, val );
+            Boolean ipForward = get( "ip_forward", null, val, false );
             InetSocketAddress address = Util.getAddr( addr );
-            ServerInfo info = ProxyServer.getInstance().constructServerInfo( name, address, motd, restricted );
+            ServerInfo info = ProxyServer.getInstance().constructServerInfo( name, address, motd, restricted, ipForward );
             ret.put( name, info );
         }
 

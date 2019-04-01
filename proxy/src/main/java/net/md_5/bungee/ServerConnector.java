@@ -107,7 +107,12 @@ public class ServerConnector extends PacketHandler {
 		Handshake originalHandshake = user.getPendingConnection().getHandshake();
 		Handshake copiedHandshake = new Handshake(originalHandshake.getProtocol(), originalHandshake.getHost(), originalHandshake.getPort(), NetworkState.LOGIN);
 
-		if (BungeeCord.getInstance().config.isIpForward()) {
+		if (target.getIpForward() != null
+			?
+			target.getIpForward()
+			:
+			BungeeCord.getInstance().config.isIpForward()
+			) {
 			String newHost = copiedHandshake.getHost() + "\00" + user.getAddress().getHostString() + "\00" + user.getUUID();
 
 			// Handle properties.

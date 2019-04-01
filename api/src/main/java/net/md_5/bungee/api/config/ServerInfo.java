@@ -104,4 +104,6 @@ public interface ServerInfo
      * @param callback the callback to call when the count has been retrieved.
      */
     void ping(Callback<ServerPing> callback);
+    
+    default Boolean getIpForward() { return null; };
 }
