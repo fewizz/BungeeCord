@@ -3,7 +3,7 @@ package net.md_5.bungee.api.connection;
 import java.net.InetSocketAddress;
 
 import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.DefinedPacket;
 
 /**
  * A proxy connection is defined as a connection directly connected to a socket.
@@ -74,6 +74,6 @@ public interface Connection
          *
          * @param packet the packet to send
          */
-        void sendPacket(Packet packet);
+        void sendPacket(DefinedPacket packet);
     }
 }

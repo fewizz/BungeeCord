@@ -1,6 +1,6 @@
 package net.md_5.bungee.protocol.packet;
 
-import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.Protocol;
 import io.netty.buffer.ByteBuf;
@@ -14,7 +14,7 @@ import net.md_5.bungee.protocol.AbstractPacketHandler;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class ScoreboardDisplay extends Packet
+public class ScoreboardDisplay extends DefinedPacket
 {
 
     /**

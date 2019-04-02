@@ -46,7 +46,7 @@ import net.md_5.bungee.netty.cipher.CipherEncoder;
 import net.md_5.bungee.protocol.LegacyPacketDecoder;
 import net.md_5.bungee.protocol.MinecraftOutput;
 import net.md_5.bungee.protocol.NetworkState;
-import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
@@ -163,7 +163,7 @@ public class ServerConnector extends PacketHandler {
 					PipelineUtil.PACKET_DEC,
 					new LegacyPacketDecoder(lpd) {
 						@Override
-						protected void read0(ByteBuf buf, Packet p) {
+						protected void read0(ByteBuf buf, DefinedPacket p) {
 							if(p instanceof Login)
 								((Login) p).setLegacyForgeVanillaComp(handshakeHandler.getLegacyForgeCompLevel() == 0);
 							super.read0(buf, p);
@@ -242,7 +242,7 @@ public class ServerConnector extends PacketHandler {
 
 		ch.write(BungeeCord.getInstance().registerChannels(user.getPendingConnection().getProtocol()));
 
-		Queue<Packet> packetQueue = target.getPacketQueue();
+		Queue<DefinedPacket> packetQueue = target.getPacketQueue();
 		synchronized (packetQueue) {
 			while (!packetQueue.isEmpty())
 				ch.write(packetQueue.poll());
@@ -274,8 +274,8 @@ public class ServerConnector extends PacketHandler {
 				user.unsafe().sendPacket(new PluginMessage("MC|Brand", out.toArray(), handshakeHandler.isServerForge()));
 			} else {
 				ByteBuf brand = ByteBufAllocator.DEFAULT.heapBuffer();
-				Packet.writeString(bungee.getName() + " (" + bungee.getVersion() + ")", brand);
-				user.unsafe().sendPacket(new PluginMessage(user.getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_13_0) ? "minecraft:brand" : "MC|Brand", Packet.toArray(brand), handshakeHandler.isServerForge()));
+				DefinedPacket.writeString(bungee.getName() + " (" + bungee.getVersion() + ")", brand);
+				user.unsafe().sendPacket(new PluginMessage(user.getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_13_0) ? "minecraft:brand" : "MC|Brand", DefinedPacket.toArray(brand), handshakeHandler.isServerForge()));
 				brand.release();
 			}
 

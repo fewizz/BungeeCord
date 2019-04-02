@@ -14,14 +14,14 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
-import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.Protocol;
 
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class TabCompleteResponse extends Packet
+public class TabCompleteResponse extends DefinedPacket
 {
 
     private int transactionId;

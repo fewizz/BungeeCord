@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
-import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.Protocol;
 
@@ -14,7 +14,7 @@ import net.md_5.bungee.protocol.Protocol;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class ClientSettings extends Packet
+public class ClientSettings extends DefinedPacket
 {
 
     private String locale;
@@ -38,7 +38,7 @@ public class ClientSettings extends Packet
         }
         else {
         	if(protocolVersion.newerOrEqual(Protocol.MC_1_9_0)) {
-            	chatFlags = Packet.readVarInt( buf );
+            	chatFlags = DefinedPacket.readVarInt( buf );
             	chatColours = buf.readBoolean();
             }
             else {
@@ -54,7 +54,7 @@ public class ClientSettings extends Packet
         skinParts = buf.readByte();
         if ( protocolVersion.newerOrEqual(Protocol.MC_1_9_0 ))
         {
-            mainHand = Packet.readVarInt( buf );
+            mainHand = DefinedPacket.readVarInt( buf );
         }
     }
 
@@ -67,7 +67,7 @@ public class ClientSettings extends Packet
         	buf.writeByte(chatFlags | ((chatColours ? 1 : 0) << 3));
         else {
         	if ( protocolVersion.newerOrEqual(Protocol.MC_1_9_0 ))
-        		Packet.writeVarInt( chatFlags, buf );
+        		DefinedPacket.writeVarInt( chatFlags, buf );
     		else
         		buf.writeByte( chatFlags );
         	buf.writeBoolean( chatColours );
@@ -80,7 +80,7 @@ public class ClientSettings extends Packet
         buf.writeByte( skinParts );
         if ( protocolVersion.newerOrEqual(Protocol.MC_1_9_0) )
         {
-            Packet.writeVarInt( mainHand, buf );
+            DefinedPacket.writeVarInt( mainHand, buf );
         }
     }
 

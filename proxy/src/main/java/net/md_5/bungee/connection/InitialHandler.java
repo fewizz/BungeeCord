@@ -49,7 +49,7 @@ import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.netty.cipher.CipherDecoder;
 import net.md_5.bungee.netty.cipher.CipherEncoder;
 import net.md_5.bungee.protocol.NetworkState;
-import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolGen;
@@ -92,7 +92,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 	private State thisState = State.HANDSHAKE;
 	private final Unsafe unsafe = new Unsafe() {
 		@Override
-		public void sendPacket(Packet packet) {
+		public void sendPacket(DefinedPacket packet) {
 			ch.write(packet);
 		}
 	};

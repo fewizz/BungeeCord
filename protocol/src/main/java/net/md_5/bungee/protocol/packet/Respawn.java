@@ -1,6 +1,6 @@
 package net.md_5.bungee.protocol.packet;
 
-import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Protocol;
 import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
@@ -14,7 +14,7 @@ import net.md_5.bungee.protocol.Direction;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class Respawn extends Packet {
+public class Respawn extends DefinedPacket {
 
 	private int dimension;
 	private short difficulty;

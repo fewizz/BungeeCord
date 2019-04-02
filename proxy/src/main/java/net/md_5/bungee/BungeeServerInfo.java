@@ -31,7 +31,7 @@ import net.md_5.bungee.api.connection.Server;
 import net.md_5.bungee.connection.PingHandler;
 import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.PipelineUtil;
-import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.PluginMessage;
@@ -54,7 +54,7 @@ public class BungeeServerInfo implements ServerInfo
     @Getter
     private final boolean restricted;
     @Getter
-    private final Queue<Packet> packetQueue = new LinkedList<>();
+    private final Queue<DefinedPacket> packetQueue = new LinkedList<>();
     @Getter
     private final Boolean ipForward;
     @Getter

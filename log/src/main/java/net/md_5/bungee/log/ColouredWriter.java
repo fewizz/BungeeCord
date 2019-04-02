@@ -1,25 +1,23 @@
 package net.md_5.bungee.log;
 
-import java.io.IOException;
 import java.util.EnumMap;
 import java.util.Map;
-import java.util.logging.Handler;
+import java.util.logging.ConsoleHandler;
 import java.util.logging.LogRecord;
-import jline.console.ConsoleReader;
-import net.md_5.bungee.api.ChatColor;
-import org.fusesource.jansi.Ansi;
-import org.fusesource.jansi.Ansi.Erase;
 
-public class ColouredWriter extends Handler
+import org.fusesource.jansi.Ansi;
+
+import net.md_5.bungee.api.ChatColor;
+
+public class ColouredWriter extends ConsoleHandler
 {
 
     private final Map<ChatColor, String> replacements = new EnumMap<>( ChatColor.class );
     private final ChatColor[] colors = ChatColor.values();
-    private final ConsoleReader console;
 
-    public ColouredWriter(ConsoleReader console)
+    public ColouredWriter()
     {
-        this.console = console;
+    	setOutputStream(System.out);
 
         replacements.put( ChatColor.BLACK, Ansi.ansi().a( Ansi.Attribute.RESET ).fg( Ansi.Color.BLACK ).boldOff().toString() );
         replacements.put( ChatColor.DARK_BLUE, Ansi.ansi().a( Ansi.Attribute.RESET ).fg( Ansi.Color.BLUE ).boldOff().toString() );
@@ -45,38 +43,15 @@ public class ColouredWriter extends Handler
         replacements.put( ChatColor.RESET, Ansi.ansi().a( Ansi.Attribute.RESET ).toString() );
     }
 
-    public void print(String s)
-    {
-        for ( ChatColor color : colors )
-        {
-            s = s.replaceAll( "(?i)" + color.toString(), replacements.get( color ) );
-        }
-        try
-        {
-            console.print( Ansi.ansi().eraseLine( Erase.ALL ).toString() + ConsoleReader.RESET_LINE + s + Ansi.ansi().reset().toString() );
-            console.drawLine();
-            console.flush();
-        } catch ( IOException ex )
-        {
-        }
-    }
-
     @Override
     public void publish(LogRecord record)
     {
-        if ( isLoggable( record ) )
+    	String s = record.getMessage();
+    	for ( ChatColor color : colors )
         {
-            print( getFormatter().format( record ) );
+            s = s.replaceAll( "(?i)" + color.toString(), replacements.get( color ) );
         }
-    }
-
-    @Override
-    public void flush()
-    {
-    }
-
-    @Override
-    public void close() throws SecurityException
-    {
+    	record.setMessage(s);
+    	super.publish(record);
     }
 }

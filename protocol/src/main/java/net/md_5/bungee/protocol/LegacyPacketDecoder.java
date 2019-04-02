@@ -38,7 +38,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 		try {
 			int packetId = in.readUnsignedByte();
 
-			Packet packet = protocol.createPacket(networkState, packetId, direction);
+			DefinedPacket packet = protocol.createPacket(networkState, packetId, direction);
 
 			if (packet == null)
 				throw new RuntimeException("Don't know that packet" + 
@@ -51,7 +51,13 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 			
 			// Do it manually, because when in becomes !in.isReadable, 
 			// super BTMD not sends last message immediately, so it releases bytebuf
-			ctx.fireChannelRead(new PacketWrapper(packet, in.slice(begin, in.readerIndex() - begin)));
+			ByteBuf sliced = in.slice(begin, in.readerIndex() - begin);
+			int was = sliced.refCnt();
+			sliced.retain(100);
+			
+			ctx.fireChannelRead(new PacketWrapper(packet, sliced));
+			
+			sliced.release(sliced.refCnt() - was);
 		} catch (Exception e) {// Temp. solution. //TODO
 			in.readerIndex(begin);
 			if (!(e instanceof IndexOutOfBoundsException))
@@ -59,7 +65,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 		}
 	}
 	
-	protected void read0(ByteBuf buf, Packet p) {
+	protected void read0(ByteBuf buf, DefinedPacket p) {
 		p.read( buf, direction, protocol );
 	}
 }

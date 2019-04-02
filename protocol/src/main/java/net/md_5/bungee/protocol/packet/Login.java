@@ -7,7 +7,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolGen;
 
@@ -15,7 +15,7 @@ import net.md_5.bungee.protocol.ProtocolGen;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class Login extends Packet implements Cloneable {
+public class Login extends DefinedPacket implements Cloneable {
 
 	private int entityId;
 	private short gameMode;

@@ -34,7 +34,7 @@ public class PipelineUtil {
     private static final WriteBufferWaterMark MARK = new WriteBufferWaterMark( LOW_MARK, HIGH_MARK );
     
     public static final String
-    	BOSS = "boss",
+    	BOSS = "inbound-boss",
     	FRAME_DEC = "frame_decoder",
     	PACKET_DEC = "packet_decoder",
     	FRAME_ENC = "frame_encoder",

@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
@@ -16,7 +16,7 @@ import net.md_5.bungee.protocol.NetworkState;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class Handshake extends Packet {
+public class Handshake extends DefinedPacket {
 
 	private Protocol protocol;
 	private String host;

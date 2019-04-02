@@ -522,7 +522,7 @@ public enum Protocol {
 	}
 	
 	interface Factory {
-		public Packet create();
+		public DefinedPacket create();
 	}
 	
 	static abstract class Do {
@@ -578,7 +578,7 @@ public enum Protocol {
 			inheritStatus(cs, v);
 	}
 	
-	void reassign(NetworkState ns, Class<? extends Packet> c, Direction dir, int newId) {
+	void reassign(NetworkState ns, Class<? extends DefinedPacket> c, Direction dir, int newId) {
 		PacketMap.PacketInfo pi = packets.remove(ns, c, dir);
 		packet(pi.networkState, newId, pi.direction, pi.factory);
 	}
@@ -611,12 +611,12 @@ public enum Protocol {
 		return pi == null ? null : pi.getFactory();
 	}
 	
-	public Packet createPacket(NetworkState cs, int id, Direction d) {
+	public DefinedPacket createPacket(NetworkState cs, int id, Direction d) {
 		Factory f = packetFactory(cs, id, d);
 		return f == null ? null : f.create();
 	}
 	
-	public int idOf(NetworkState ns, Packet p, Direction dir) {
+	public int idOf(NetworkState ns, DefinedPacket p, Direction dir) {
 		return packets.getInfo(ns, p.getClass(), dir).getId();
 	}
 	

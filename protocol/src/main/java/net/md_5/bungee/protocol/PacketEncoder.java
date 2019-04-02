@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 @RequiredArgsConstructor
-public class PacketEncoder extends MessageToByteEncoder<Packet>
+public class PacketEncoder extends MessageToByteEncoder<DefinedPacket>
 {
     @Setter
     @Getter
@@ -22,7 +22,7 @@ public class PacketEncoder extends MessageToByteEncoder<Packet>
     private Protocol protocol;
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, Packet msg, ByteBuf out) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, DefinedPacket msg, ByteBuf out) throws Exception {
     	int packetID = -1;
     	try {
     		packetID = protocol.idOf(networkState, msg, direction);
@@ -32,7 +32,7 @@ public class PacketEncoder extends MessageToByteEncoder<Packet>
         //System.out.println("ENC, id: " + packetID + ", dir: " + direction.name());
         
         if(!protocol.isLegacy())
-        	Packet.writeVarInt( packetID, out );
+        	DefinedPacket.writeVarInt( packetID, out );
         else
         	out.writeByte(packetID);
         

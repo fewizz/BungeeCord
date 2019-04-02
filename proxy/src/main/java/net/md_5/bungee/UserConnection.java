@@ -48,7 +48,7 @@ import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.NettyUtil;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.ClientSettings;
@@ -141,7 +141,7 @@ public final class UserConnection implements ProxiedPlayer {
 	ServerConnector connector;
 	private final Unsafe unsafe = new Unsafe() {
 		@Override
-		public void sendPacket(Packet packet) {
+		public void sendPacket(DefinedPacket packet) {
 			ch.write(packet);
 		}
 	};
@@ -404,7 +404,7 @@ public final class UserConnection implements ProxiedPlayer {
 		else if (pendingConnection.getProtocol().newerThan(Protocol.MC_1_5_2))
 			sendMessage(position, ComponentSerializer.toString(message));
 		else
-			sendMessage(position, BaseComponent.toPlainText(message));
+			sendMessage(position, BaseComponent.toLegacyText(message));
 	}
 
 	@Override
@@ -418,7 +418,7 @@ public final class UserConnection implements ProxiedPlayer {
 		else if (pendingConnection.getProtocol().newerThan(Protocol.MC_1_5_2))
 			sendMessage(position, ComponentSerializer.toString(message));
 		else
-			sendMessage(position, BaseComponent.toPlainText(message));
+			sendMessage(position, BaseComponent.toLegacyText(message));
 	}
 
 	@Override

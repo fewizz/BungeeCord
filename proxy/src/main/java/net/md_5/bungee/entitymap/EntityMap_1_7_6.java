@@ -5,7 +5,7 @@ import io.netty.buffer.ByteBuf;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.connection.LoginResult;
-import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Protocol;
 
 class EntityMap_1_7_6 extends EntityMap_1_7_2
@@ -20,15 +20,15 @@ class EntityMap_1_7_6 extends EntityMap_1_7_2
         super.rewriteClientbound( packet, oldId, newId, pv );
 
         int readerIndex = packet.readerIndex();
-        int packetId = Packet.readVarInt( packet );
+        int packetId = DefinedPacket.readVarInt( packet );
         int packetIdLength = packet.readerIndex() - readerIndex;
         if ( packetId == 0x0C /* Spawn Player */ )
         {
-            Packet.readVarInt( packet );
+            DefinedPacket.readVarInt( packet );
             int idLength = packet.readerIndex() - readerIndex - packetIdLength;
-            String uuid = Packet.readString( packet );
-            String username = Packet.readString( packet );
-            int props = Packet.readVarInt( packet );
+            String uuid = DefinedPacket.readString( packet );
+            String username = DefinedPacket.readString( packet );
+            int props = DefinedPacket.readVarInt( packet );
             if ( props == 0 )
             {
                 UserConnection player = (UserConnection) BungeeCord.getInstance().getPlayer( username );
@@ -41,14 +41,14 @@ class EntityMap_1_7_6 extends EntityMap_1_7_2
                         ByteBuf rest = packet.copy();
                         packet.readerIndex( readerIndex );
                         packet.writerIndex( readerIndex + packetIdLength + idLength );
-                        Packet.writeString( player.getUniqueId().toString(), packet );
-                        Packet.writeString( username, packet );
-                        Packet.writeVarInt( profile.getProperties().length, packet );
+                        DefinedPacket.writeString( player.getUniqueId().toString(), packet );
+                        DefinedPacket.writeString( username, packet );
+                        DefinedPacket.writeVarInt( profile.getProperties().length, packet );
                         for ( LoginResult.Property property : profile.getProperties() )
                         {
-                            Packet.writeString( property.getName(), packet );
-                            Packet.writeString( property.getValue(), packet );
-                            Packet.writeString( property.getSignature(), packet );
+                            DefinedPacket.writeString( property.getName(), packet );
+                            DefinedPacket.writeString( property.getValue(), packet );
+                            DefinedPacket.writeString( property.getSignature(), packet );
                         }
                         packet.writeBytes( rest );
                         rest.release();

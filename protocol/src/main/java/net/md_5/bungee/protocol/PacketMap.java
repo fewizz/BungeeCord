@@ -21,11 +21,11 @@ public class PacketMap {
 		final int id;
 		final Direction direction;
 		final Factory factory;
-		final Class<? extends Packet> clazz;
+		final Class<? extends DefinedPacket> clazz;
 	}
 	
 	private final Map<NetworkState, TIntObjectMap<EnumMap<Direction, PacketInfo>>> byNSIDD = new HashMap<>();
-	private final Map<NetworkState, Map<Class<? extends Packet>, EnumMap<Direction, PacketInfo>>> byNSCD = new HashMap<>();
+	private final Map<NetworkState, Map<Class<? extends DefinedPacket>, EnumMap<Direction, PacketInfo>>> byNSCD = new HashMap<>();
 	
 	public void add(NetworkState ns, int id, Direction dir, Factory factory) {
 		add(new PacketInfo(ns, id, dir, factory, factory.create().getClass()));
@@ -57,7 +57,7 @@ public class PacketMap {
 		});
 	}
 	
-	public PacketInfo getInfo(NetworkState ns, Class<? extends Packet> clazz, Direction dir) {
+	public PacketInfo getInfo(NetworkState ns, Class<? extends DefinedPacket> clazz, Direction dir) {
 		val v0 = byNSCD.get(ns);
 		if(v0 == null) return null;
 		val v1 = v0.get(clazz);
@@ -79,7 +79,7 @@ public class PacketMap {
 		return i;
 	}
 	
-	public PacketInfo remove(NetworkState ns, Class<? extends Packet> c, Direction dir) {
+	public PacketInfo remove(NetworkState ns, Class<? extends DefinedPacket> c, Direction dir) {
 		return remove(getInfo(ns, c, dir));
 	}
 	

@@ -5,14 +5,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
-import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.Protocol;
 
 @Data
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class EncryptionResponse extends Packet
+public class EncryptionResponse extends DefinedPacket
 {
 
     private byte[] sharedSecret;

@@ -1,6 +1,6 @@
 package net.md_5.bungee.protocol.packet;
 
-import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.DefinedPacket;
 import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,7 +13,7 @@ import net.md_5.bungee.protocol.OverflowPacketException;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class LoginPayloadResponse extends Packet
+public class LoginPayloadResponse extends DefinedPacket
 {
 
     private int id;

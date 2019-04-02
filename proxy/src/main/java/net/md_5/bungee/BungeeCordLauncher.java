@@ -1,12 +1,16 @@
 package net.md_5.bungee;
 
 
+import java.io.BufferedInputStream;
+import java.io.Console;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.Security;
 import java.util.Arrays;
+import java.util.NoSuchElementException;
+import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 import com.google.gson.JsonIOException;
@@ -58,8 +62,8 @@ public class BungeeCordLauncher
                 System.err.println( "*** You are using a self compiled version ***" );
                 System.err.println( "*** Please make sure your server is up to date ***" );
                 System.err.println( "*** Using current version without warranty ***" );
-                System.err.println( "*** Server will start in 2 seconds ***" );
-                Thread.sleep( TimeUnit.SECONDS.toMillis( 2 ) );
+                //System.err.println( "*** Server will start in 2 seconds ***" );
+                //Thread.sleep( TimeUnit.SECONDS.toMillis( 2 ) );
             } else
             {
                 int currentVersion = Integer.parseInt( version );
@@ -120,14 +124,23 @@ public class BungeeCordLauncher
 
         if ( !options.has( "noconsole" ) )
         {
-            String line;
-            while ( bungee.isRunning && ( line = bungee.getConsoleReader().readLine( ">" ) ) != null )
+            String line = null;
+            
+            Scanner s = new Scanner(System.in);
+            while ( bungee.isRunning)
             {
+            	try {
+            		line = s.nextLine();
+            	} catch(NoSuchElementException e) {}
+            	
+            	if(line == null) continue;
+            	
                 if ( !bungee.getPluginManager().dispatchCommand(ConsoleCommandSender.getInstance(), line ) )
                 {
                     bungee.getConsole().sendMessage( new ComponentBuilder( "Command not found" ).color( ChatColor.RED ).create() );
                 }
             }
+            s.close();
         }
     }
 }

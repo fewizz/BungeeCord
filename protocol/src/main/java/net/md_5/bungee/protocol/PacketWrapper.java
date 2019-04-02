@@ -5,10 +5,12 @@ import io.netty.buffer.DefaultByteBufHolder;
 
 public class PacketWrapper extends DefaultByteBufHolder {
 
-	public final Packet packet;
+	public final DefinedPacket packet;
 	
-	public PacketWrapper(Packet p, ByteBuf buf) {
+	public PacketWrapper(DefinedPacket p, ByteBuf buf) {
 		super(buf);
 		packet = p;
 	}
+	
+	public void trySingleRelease() {} // old stuff
 }

@@ -6,7 +6,7 @@ import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode(callSuper=false)
 @Data
-public class SkipPacket extends Packet {
+public class SkipPacket extends DefinedPacket {
 	/*@FunctionalInterface
 	interface Skipper {
 		void skip(ByteBuf buf);

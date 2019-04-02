@@ -28,6 +28,7 @@ import net.md_5.bungee.ServerConnection;
 import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.Util;
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -45,7 +46,7 @@ import net.md_5.bungee.api.score.Team;
 import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PacketHandler;
-import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.BossBar;
@@ -253,14 +254,14 @@ public class DownstreamBridge extends PacketHandler
             if (con.getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_8_0))
             {
                 ByteBuf brand = Unpooled.wrappedBuffer(pluginMessage.getData());
-                String serverBrand = Packet.readString(brand);
+                String serverBrand = DefinedPacket.readString(brand);
                 brand.release();
 
                 Preconditions.checkState( !serverBrand.contains( bungee.getName() ), "Cannot connect proxy to itself!" );
 
                 brand = ByteBufAllocator.DEFAULT.heapBuffer();
-                Packet.writeString(bungee.getName() + " (" + bungee.getVersion() + ")" + " <- " + serverBrand, brand);
-                pluginMessage.setData(Packet.readArray( brand ));
+                DefinedPacket.writeString(bungee.getName() + " (" + bungee.getVersion() + ")" + " <- " + serverBrand, brand);
+                pluginMessage.setData(DefinedPacket.readArray( brand ));
                 brand.release();
             }
             else
@@ -492,7 +493,15 @@ public class DownstreamBridge extends PacketHandler
     public void handle(Kick kick) throws Exception
     {
         ServerInfo def = con.updateAndGetNextServer( server.getInfo() );
-        ServerKickEvent event = bungee.getPluginManager().callEvent( new ServerKickEvent( con, server.getInfo(), ComponentSerializer.parse( kick.getMessage() ), def, ServerKickEvent.State.CONNECTED ) );
+        
+        BaseComponent[] cs = null;
+        if(con.getPendingConnection().getProtocol().olderOrEqual(Protocol.MC_1_5_2))
+        	cs = TextComponent.fromLegacyText(kick.getMessage());
+        else
+        	cs = ComponentSerializer.parse( kick.getMessage() );
+        
+        ServerKickEvent event = bungee.getPluginManager().callEvent( new ServerKickEvent( con, server.getInfo(), cs, def, ServerKickEvent.State.CONNECTED ) );
+        
         if ( event.isCancelled() && event.getCancelServer() != null )
         {
             con.connectNow( event.getCancelServer(), ServerConnectEvent.Reason.KICK_REDIRECT );

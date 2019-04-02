@@ -4,7 +4,7 @@ import net.md_5.bungee.api.Title;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.chat.ComponentSerializer;
-import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.Title.Action;
 
@@ -141,7 +141,7 @@ public class BungeeTitle implements Title
         return this;
     }
 
-    private static void sendPacket(ProxiedPlayer player, Packet packet)
+    private static void sendPacket(ProxiedPlayer player, DefinedPacket packet)
     {
         if ( packet != null )
         {

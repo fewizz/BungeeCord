@@ -13,7 +13,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Protocol;
 
 /**
@@ -116,14 +116,14 @@ public abstract class EntityMap
     protected static void rewriteVarInt(ByteBuf packet, int oldId, int newId, int offset)
     {
         // Need to rewrite the packet because VarInts are variable length
-        int readId = Packet.readVarInt( packet );
+        int readId = DefinedPacket.readVarInt( packet );
         int readIdLength = packet.readerIndex() - offset;
         if ( readId == oldId || readId == newId )
         {
             ByteBuf data = packet.copy();
             packet.readerIndex( offset );
             packet.writerIndex( offset );
-            Packet.writeVarInt( readId == oldId ? newId : oldId, packet );
+            DefinedPacket.writeVarInt( readId == oldId ? newId : oldId, packet );
             packet.writeBytes( data );
             data.release();
         }
@@ -141,7 +141,7 @@ public abstract class EntityMap
         short index;
         while ( ( index = packet.readUnsignedByte() ) != 0xFF )
         {
-            int type = Packet.readVarInt( packet );
+            int type = DefinedPacket.readVarInt( packet );
             if ( protocolVersion != null && protocolVersion.newerOrEqual(MC_1_13_0) )
             {
                 switch ( type )
@@ -149,16 +149,16 @@ public abstract class EntityMap
                     case 5: // optional chat
                         if ( packet.readBoolean() )
                         {
-                            Packet.readString( packet );
+                            DefinedPacket.readString( packet );
                         }
                         continue;
                     case 15: // particle
-                        int particleId = Packet.readVarInt( packet );
+                        int particleId = DefinedPacket.readVarInt( packet );
                         switch ( particleId )
                         {
                             case 3:
                             case 20:
-                                Packet.readVarInt( packet ); // block state
+                                DefinedPacket.readVarInt( packet ); // block state
                                 break;
                             case 11: // dust
                                 packet.skipBytes( 16 ); // float, float, float, flat
@@ -189,14 +189,14 @@ public abstract class EntityMap
                         rewriteVarInt( packet, oldId, newId, position );
                         packet.readerIndex( position );
                     }
-                    Packet.readVarInt( packet );
+                    DefinedPacket.readVarInt( packet );
                     break;
                 case 2:
                     packet.skipBytes( 4 ); // float
                     break;
                 case 3:
                 case 4:
-                    Packet.readString( packet );
+                    DefinedPacket.readString( packet );
                     break;
                 case 5:
                     readSkipSlot( packet, protocolVersion );
@@ -217,7 +217,7 @@ public abstract class EntityMap
                     }
                     break;
                 case 10:
-                    Packet.readVarInt( packet );
+                    DefinedPacket.readVarInt( packet );
                     break;
                 case 11:
                     if ( packet.readBoolean() )
@@ -226,7 +226,7 @@ public abstract class EntityMap
                     }
                     break;
                 case 12:
-                    Packet.readVarInt( packet );
+                    DefinedPacket.readVarInt( packet );
                     break;
                 case 13:
                     try
@@ -251,7 +251,7 @@ public abstract class EntityMap
         {
             if ( protocolVersion.newerOrEqual(MC_1_13_2) )
             {
-                Packet.readVarInt( packet );
+                DefinedPacket.readVarInt( packet );
             }
             packet.skipBytes( ( protocolVersion.newerOrEqual(MC_1_13_0) ) ? 1 : 3 ); // byte vs byte, short
 
@@ -275,7 +275,7 @@ public abstract class EntityMap
     private static void rewrite(ByteBuf packet, int oldId, int newId, boolean[] ints, boolean[] varints, Protocol pv)
     {
         int readerIndex = packet.readerIndex();
-        int packetId = pv.newerThan(MC_1_6_4) ? Packet.readVarInt( packet ) : packet.readUnsignedByte();
+        int packetId = pv.newerThan(MC_1_6_4) ? DefinedPacket.readVarInt( packet ) : packet.readUnsignedByte();
         int packetIdLength = packet.readerIndex() - readerIndex;
 
         if(packetId>=0) {

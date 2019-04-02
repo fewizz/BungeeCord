@@ -50,7 +50,6 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.AttributeKey;
 import io.netty.util.ResourceLeakDetector;
-import jline.console.ConsoleReader;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.Synchronized;
@@ -83,7 +82,6 @@ import net.md_5.bungee.command.CommandEnd;
 import net.md_5.bungee.command.CommandIP;
 import net.md_5.bungee.command.CommandPerms;
 import net.md_5.bungee.command.CommandReload;
-import net.md_5.bungee.command.ConsoleCommandCompleter;
 import net.md_5.bungee.command.ConsoleCommandSender;
 import net.md_5.bungee.compress.CompressFactory;
 import net.md_5.bungee.conf.Configuration;
@@ -95,9 +93,9 @@ import net.md_5.bungee.log.LoggingOutputStream;
 import net.md_5.bungee.module.ModuleManager;
 import net.md_5.bungee.netty.NettyUtil;
 import net.md_5.bungee.netty.PipelineUtil;
+import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.GenerationIdentifier;
-import net.md_5.bungee.protocol.Packet;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.packet.Chat;
@@ -160,8 +158,8 @@ public class BungeeCord extends ProxyServer
     private final File pluginsFolder = new File( "plugins" );
     @Getter
     private final BungeeScheduler scheduler = new BungeeScheduler();
-    @Getter
-    private final ConsoleReader consoleReader;
+    //@Getter
+    //private final ConsoleReader consoleReader;
     @Getter
     private final Logger logger;
     public final Gson gson = new GsonBuilder()
@@ -223,11 +221,8 @@ public class BungeeCord extends ProxyServer
         System.setProperty( "library.jansi.version", "BungeeCord" );
 
         AnsiConsole.systemInstall();
-        consoleReader = new ConsoleReader();
-        consoleReader.setExpandEvents( false );
-        consoleReader.addCompleter( new ConsoleCommandCompleter( this ) );
 
-        logger = new BungeeLogger( "BungeeCord", "proxy.log", consoleReader );
+        logger = new BungeeLogger( "BungeeCord", "proxy.log" );
         System.setErr( new PrintStream( new LoggingOutputStream( logger, Level.SEVERE ), true ) );
         System.setOut( new PrintStream( new LoggingOutputStream( logger, Level.INFO ), true ) );
 
@@ -474,7 +469,7 @@ public class BungeeCord extends ProxyServer
      *
      * @param packet the packet to send
      */
-    public void broadcast(Packet packet)
+    public void broadcast(DefinedPacket packet)
     {
         connectionLock.readLock().lock();
         try

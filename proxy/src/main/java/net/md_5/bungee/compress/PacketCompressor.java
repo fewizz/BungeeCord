@@ -6,7 +6,7 @@ import io.netty.handler.codec.MessageToByteEncoder;
 import java.util.zip.Deflater;
 import lombok.Setter;
 import net.md_5.bungee.jni.zlib.BungeeZlib;
-import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.DefinedPacket;
 
 public class PacketCompressor extends MessageToByteEncoder<ByteBuf>
 {
@@ -33,11 +33,11 @@ public class PacketCompressor extends MessageToByteEncoder<ByteBuf>
         int origSize = msg.readableBytes();
         if ( origSize < threshold )
         {
-            Packet.writeVarInt( 0, out );
+            DefinedPacket.writeVarInt( 0, out );
             out.writeBytes( msg );
         } else
         {
-            Packet.writeVarInt( origSize, out );
+            DefinedPacket.writeVarInt( origSize, out );
 
             zlib.process( msg, out );
         }

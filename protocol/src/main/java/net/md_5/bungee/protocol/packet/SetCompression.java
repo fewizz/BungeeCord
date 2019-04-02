@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
-import net.md_5.bungee.protocol.Packet;
+import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.Protocol;
 
@@ -14,7 +14,7 @@ import net.md_5.bungee.protocol.Protocol;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class SetCompression extends Packet
+public class SetCompression extends DefinedPacket
 {
 
     private int threshold;
@@ -22,13 +22,13 @@ public class SetCompression extends Packet
     @Override
     public void read(ByteBuf buf)
     {
-        threshold = Packet.readVarInt( buf );
+        threshold = DefinedPacket.readVarInt( buf );
     }
 
     @Override
     public void write(ByteBuf buf)
     {
-        Packet.writeVarInt( threshold, buf );
+        DefinedPacket.writeVarInt( threshold, buf );
     }
 
     @Override

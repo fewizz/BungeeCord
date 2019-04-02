@@ -25,7 +25,7 @@ public interface PendingConnection extends Connection
      */
     @Deprecated
     default int getVersion() {
-    	return getProtocol().version;
+    	return isLegacy() ? -1 : getProtocol().version;
     }
     
     /**
