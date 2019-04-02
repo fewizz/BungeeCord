@@ -13,7 +13,7 @@ import lombok.Setter;
 public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketDecoder {
 	@Setter
 	@Getter
-	private NetworkState connectionState = NetworkState.LEGACY;
+	private NetworkState networkState = NetworkState.LEGACY;
 	@Getter
 	private final Direction direction;
 	@Setter
@@ -26,7 +26,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 	}
 	
 	public LegacyPacketDecoder(LegacyPacketDecoder lpd) {
-		this.connectionState = lpd.connectionState;
+		this.networkState = lpd.networkState;
 		this.direction = lpd.direction;
 		this.protocol = lpd.protocol;
 	}
@@ -38,7 +38,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 		try {
 			int packetId = in.readUnsignedByte();
 
-			Packet packet = protocol.createPacket(connectionState, packetId, direction);
+			Packet packet = protocol.createPacket(networkState, packetId, direction);
 
 			if (packet == null)
 				throw new RuntimeException("Don't know that packet" + 

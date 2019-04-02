@@ -225,12 +225,13 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 				handshake.setHost(handshake.getHost().substring(0, handshake.getHost().length() - 1));
 		}
 		
-		if(getProtocol().olderOrEqual(Protocol.MC_1_5_2)) {
-			handshake.setHost(listener.getHost().getHostString());
-			handshake.setPort(listener.getHost().getPort());
-		}
+		//if(getProtocol().olderOrEqual(Protocol.MC_1_5_2)) {
+		//	handshake.setHost(listener.getHost().getHostString());
+		//	handshake.setPort(listener.getHost().getPort());
+		//}
 		
-		this.virtualHost = InetSocketAddress.createUnresolved(handshake.getHost(), handshake.getPort());
+		if(handshake.getHost() != null) // 1.5.2 pinging?
+			this.virtualHost = InetSocketAddress.createUnresolved(handshake.getHost(), handshake.getPort());
 			
 		if (bungee.getConfig().isLogPings())
 			bungee.getLogger().log(Level.INFO, "{0} has connected", this);
@@ -243,7 +244,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 			// Ping
 			thisState = State.STATUS;
 			if(!isLegacy())
-				ch.setConnectionState(NetworkState.STATUS);
+				ch.setNetworkState(NetworkState.STATUS);
 			break;
 		case LOGIN:
 			// Login
@@ -252,7 +253,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 			}
 			thisState = State.USERNAME;
 			if(!isLegacy())
-				ch.setConnectionState(NetworkState.LOGIN);
+				ch.setNetworkState(NetworkState.LOGIN);
 			
 			//if (handshake.getProtocol().newerThan(bungee.getProtocolVersion()))
 			//	disconnect(bungee.getTranslation("outdated_server", bungee.getGameVersion()));
@@ -434,7 +435,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 						unsafe.sendPacket(new LoginSuccess(getUUID(), getName())); // Without dashes, for older clients.
 
 					if (!isLegacy())
-						ch.setConnectionState(NetworkState.GAME);
+						ch.setNetworkState(NetworkState.GAME);
 
 					ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new UpstreamBridge(bungee, userCon));
 					bungee.getPluginManager().callEvent(new PostLoginEvent(userCon));
@@ -535,15 +536,13 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 	public void handle(final LegacyStatusRequest request) throws Exception {
 		Handshake handshake = new Handshake();
 		if(!request.isOlderOrEqual_1_5()) {
-			handshake.setHost(request.getIp());
+			handshake.setHost(request.getHost());
 			handshake.setPort(request.getPort());
 			Protocol p = Protocol.byNumber(request.getProtocolVersion(), ProtocolGen.PRE_NETTY);
 			handshake.setProtocol(p == null ? Protocol.MC_1_6_4 : p);
 		}
 		else {
 			handshake.setProtocol(Protocol.MC_1_5_2);
-			//handshake.setHost("0.0.0.0");
-			//handshake.setPort(0);
 		}
 		handshake.setRequestedNetworkState(NetworkState.STATUS);
 		handle(handshake);

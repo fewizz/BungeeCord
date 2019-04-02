@@ -105,5 +105,6 @@ public interface ServerInfo
      */
     void ping(Callback<ServerPing> callback);
     
-    default Boolean getIpForward() { return null; };
+    default Boolean getIpForward() { return null; }
+    default Boolean getForgeSupport() {return null;}
 }

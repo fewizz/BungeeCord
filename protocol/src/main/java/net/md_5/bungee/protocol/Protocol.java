@@ -407,7 +407,7 @@ public enum Protocol {
 	}},
 	MC_1_9_4(110, ProtocolGen.POST_NETTY) { void postInit() {
 		inherit(MC_1_9_0);
-		reassign(PlayerListHeaderFooter.class, Direction.TO_CLIENT, 0x47);
+		reassign(NetworkState.GAME, PlayerListHeaderFooter.class, Direction.TO_CLIENT, 0x47);
 	}},
 	MC_1_10_0(210, ProtocolGen.POST_NETTY) { void postInit() {
 		inherit(MC_1_9_4);
@@ -578,8 +578,8 @@ public enum Protocol {
 			inheritStatus(cs, v);
 	}
 	
-	void reassign(Class<? extends Packet> c, Direction dir, int newId) {
-		PacketMap.PacketInfo pi = packets.remove(c, dir);
+	void reassign(NetworkState ns, Class<? extends Packet> c, Direction dir, int newId) {
+		PacketMap.PacketInfo pi = packets.remove(ns, c, dir);
 		packet(pi.networkState, newId, pi.direction, pi.factory);
 	}
 	
@@ -616,8 +616,8 @@ public enum Protocol {
 		return f == null ? null : f.create();
 	}
 	
-	public int idOf(Packet p, Direction dir) {
-		return packets.getInfo(p.getClass(), dir).getId();
+	public int idOf(NetworkState ns, Packet p, Direction dir) {
+		return packets.getInfo(ns, p.getClass(), dir).getId();
 	}
 	
 	private PacketMap packets;

@@ -1,88 +1,89 @@
 package net.md_5.bungee.protocol;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
 
-import com.google.common.base.Preconditions;
-
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.RequiredArgsConstructor;
+import lombok.val;
 import net.md_5.bungee.protocol.Protocol.Factory;
 
 public class PacketMap {
-	@Data @RequiredArgsConstructor
-	private static class NSIDD { final NetworkState networkState; final int id; final Direction direction;}
-	
-	@Data @RequiredArgsConstructor
-	private static class CD { final Class<? extends Packet> clazz; final Direction direction;}
 	
 	@Data
-	@EqualsAndHashCode(callSuper=false)
-	public class PacketInfo extends NSIDD {
-		public PacketInfo(NetworkState ns, int id, Direction d, Factory f) {
-			super(ns, id, d);
-			this.factory = f;
-			this.clazz = f.create().getClass();
-		}
-		
+	@EqualsAndHashCode
+	public class PacketInfo {
+		final NetworkState networkState;
+		final int id;
+		final Direction direction;
 		final Factory factory;
 		final Class<? extends Packet> clazz;
 	}
 	
-	private final Map<NSIDD, PacketInfo> byNSIDD = new HashMap<>();
-	private final Map<CD, PacketInfo> byCD = new HashMap<>();
-	
-	public void add(PacketInfo pi) {
-		add(pi, pi.factory);
-	}
-	
-	public void add(NSIDD nsidd, Factory factory) {
-		add(nsidd.networkState, nsidd.id, nsidd.direction, factory);
-	}
+	private final Map<NetworkState, TIntObjectMap<EnumMap<Direction, PacketInfo>>> byNSIDD = new HashMap<>();
+	private final Map<NetworkState, Map<Class<? extends Packet>, EnumMap<Direction, PacketInfo>>> byNSCD = new HashMap<>();
 	
 	public void add(NetworkState ns, int id, Direction dir, Factory factory) {
-		PacketInfo pi = new PacketInfo(ns, id, dir, factory);
-		Class<? extends Packet> clazz = factory.create().getClass();
+		add(new PacketInfo(ns, id, dir, factory, factory.create().getClass()));
+	}
+	
+	public void add(PacketInfo pi) {
+		if(getInfo(pi.networkState, pi.id, pi.direction) != null)
+			throw new RuntimeException("Packet with class " + pi.clazz + " is already registered");
 		
-		if(byNSIDD.containsKey(new NSIDD(ns, id, dir)))
-			throw new RuntimeException("Packet with class " + clazz + " is already registered");
-		byCD.put(new CD(clazz, dir), pi);
-		byNSIDD.put(new NSIDD(ns, id, dir), pi);
+		byNSCD.computeIfAbsent(pi.networkState, (ns) -> new HashMap<>())
+			.computeIfAbsent(pi.clazz, c -> new EnumMap<Direction, PacketInfo>(Direction.class))
+			.put(pi.direction, pi);
+		
+		byNSIDD.computeIfAbsent(pi.networkState, ns -> new TIntObjectHashMap<>())
+			.putIfAbsent(pi.id, new EnumMap<>(Direction.class));
+		byNSIDD.get(pi.networkState).get(pi.id).put(pi.direction, pi);
 	}
 	
 	public void addFrom(PacketMap pm, Predicate<PacketInfo> p) {
-		pm.byNSIDD.forEach((k, v) -> {
-			if(!p.test(v))
-				return;
-			byNSIDD.put(k, v);
-			byCD.put(new CD(v.clazz, v.direction), v);
+		pm.byNSIDD.forEach((ns, map0) -> {
+			map0.forEachEntry((id, map1) -> {
+				map1.forEach((dir, pi) -> {
+					if(!p.test(pi))
+						return;
+					add(pi);
+				});
+				return true;
+			});
 		});
 	}
 	
-	public PacketInfo getInfo(Class<? extends Packet> c, Direction dir) {
-		return byCD.get(new CD(c, dir));
+	public PacketInfo getInfo(NetworkState ns, Class<? extends Packet> clazz, Direction dir) {
+		val v0 = byNSCD.get(ns);
+		if(v0 == null) return null;
+		val v1 = v0.get(clazz);
+		if(v1 == null) return null;
+		return v1.get(dir);
 	}
 	
 	public PacketInfo getInfo(NetworkState ns, int id, Direction dir) {
-		return byNSIDD.get(new NSIDD(ns, id, dir));
+		val v0 = byNSIDD.get(ns);
+		if(v0 == null) return null;
+		val v1 = v0.get(id);
+		if(v1 == null) return null;
+		return v1.get(dir);
 	}
 	
-	public PacketInfo remove(Class<? extends Packet> c, Direction dir) {
-		PacketInfo i = getInfo(c, dir);
-		Preconditions.checkNotNull(i);
-		
-		byNSIDD.remove(new NSIDD(i.networkState, i.id, dir));
-		byCD.remove(new CD(c, dir));
+	public PacketInfo remove(PacketInfo i) {
+		byNSIDD.get(i.networkState).get(i.id).remove(i.direction);
+		byNSCD.get(i.networkState).get(i.clazz).remove(i.direction);
 		return i;
+	}
+	
+	public PacketInfo remove(NetworkState ns, Class<? extends Packet> c, Direction dir) {
+		return remove(getInfo(ns, c, dir));
 	}
 	
 	public PacketInfo remove(NetworkState ns, int id, Direction dir) {
-		PacketInfo i = getInfo(ns, id, dir);
-		
-		byNSIDD.remove(new NSIDD(ns, id, dir));
-		byCD.remove(new CD(i.getClazz(), dir));
-		return i;
+		return remove(getInfo(ns, id, dir));
 	}
 }

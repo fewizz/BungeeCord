@@ -16,7 +16,7 @@ public class LegacyStatusRequest extends Packet {
 	int payloadID = -1;
 	String branding;
 	int protocolVersion = -1;
-	String ip;
+	String host;
 	int port;
 	
 	boolean olderOrEqual_1_5 = false;
@@ -32,7 +32,7 @@ public class LegacyStatusRequest extends Packet {
 		branding = readLegacyString(buf, 255);
 		buf.skipBytes(2); //len
 		protocolVersion = buf.readUnsignedByte();
-		ip = readLegacyString(buf, 255);
+		host = readLegacyString(buf, 255);
 		port = buf.readInt();
 	}
 	
@@ -45,7 +45,7 @@ public class LegacyStatusRequest extends Packet {
 		writeLegacyString(branding, buf);
 		buf.writeShort(-1);
 		buf.writeByte(protocolVersion);
-		writeLegacyString(ip, buf);
+		writeLegacyString(host, buf);
 		buf.writeInt(port);
 	}
 	

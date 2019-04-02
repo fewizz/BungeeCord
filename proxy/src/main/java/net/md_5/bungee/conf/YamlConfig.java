@@ -221,8 +221,9 @@ public class YamlConfig implements ConfigurationAdapter
             String motd = ChatColor.translateAlternateColorCodes( '&', get( "motd", "&1Just another BungeeCord - Forced Host", val ) );
             boolean restricted = get( "restricted", false, val );
             Boolean ipForward = get( "ip_forward", null, val, false );
+            Boolean forgeSupport = get( "forge_support", null, val, false );
             InetSocketAddress address = Util.getAddr( addr );
-            ServerInfo info = ProxyServer.getInstance().constructServerInfo( name, address, motd, restricted, ipForward );
+            ServerInfo info = ProxyServer.getInstance().constructServerInfo( name, address, motd, restricted, ipForward, forgeSupport );
             ret.put( name, info );
         }
 

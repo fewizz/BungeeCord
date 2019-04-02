@@ -14,7 +14,7 @@ public class PacketEncoder extends MessageToByteEncoder<Packet>
     @Setter
     @Getter
     @NonNull
-    private NetworkState connectionState;
+    private NetworkState networkState;
     private final Direction direction;
     @Setter
     @Getter
@@ -25,7 +25,7 @@ public class PacketEncoder extends MessageToByteEncoder<Packet>
     protected void encode(ChannelHandlerContext ctx, Packet msg, ByteBuf out) throws Exception {
     	int packetID = -1;
     	try {
-    		packetID = protocol.idOf(msg, direction);
+    		packetID = protocol.idOf(networkState, msg, direction);
     	} catch(Exception e) {
     		throw new RuntimeException("Can't find id of packet " + msg.getClass().getName());
     	}

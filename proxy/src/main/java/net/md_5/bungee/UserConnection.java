@@ -401,10 +401,10 @@ public final class UserConnection implements ProxiedPlayer {
 		// using this for now
 		if (position == ChatMessageType.ACTION_BAR && pendingConnection.getProtocol().newerOrEqual(Protocol.MC_1_8_0))
 			sendMessage(position, ComponentSerializer.toString(new TextComponent(BaseComponent.toLegacyText(message))));
-		else// if (!pendingConnection.getVersion().isLegacy())
+		else if (pendingConnection.getProtocol().newerThan(Protocol.MC_1_5_2))
 			sendMessage(position, ComponentSerializer.toString(message));
-		//else
-			//sendMessage(position, BaseComponent.toPlainText(message));
+		else
+			sendMessage(position, BaseComponent.toPlainText(message));
 	}
 
 	@Override
@@ -415,10 +415,10 @@ public final class UserConnection implements ProxiedPlayer {
 		// using this for now
 		if (position == ChatMessageType.ACTION_BAR && pendingConnection.getProtocol().newerOrEqual(Protocol.MC_1_8_0))
 			sendMessage(position, ComponentSerializer.toString(new TextComponent(BaseComponent.toLegacyText(message))));
-		else// if (!pendingConnection.getVersion().isLegacy())
+		else if (pendingConnection.getProtocol().newerThan(Protocol.MC_1_5_2))
 			sendMessage(position, ComponentSerializer.toString(message));
-		//else
-			//sendMessage(position, BaseComponent.toPlainText(message));
+		else
+			sendMessage(position, BaseComponent.toPlainText(message));
 	}
 
 	@Override

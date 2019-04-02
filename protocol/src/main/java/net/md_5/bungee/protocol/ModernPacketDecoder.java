@@ -11,7 +11,7 @@ import lombok.Setter;
 public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implements PacketDecoder {
 	@Setter
 	@Getter
-	private NetworkState connectionState = NetworkState.HANDSHAKE;
+	private NetworkState networkState = NetworkState.HANDSHAKE;
 	private final Direction direction;
 	@Setter
 	@Getter
@@ -27,7 +27,7 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 		int begin = in.readerIndex();
 		int packetId = Packet.readVarInt(in);
 
-		Packet packet = protocol.createPacket(connectionState, packetId, direction);
+		Packet packet = protocol.createPacket(networkState, packetId, direction);
 
 		if (packet == null)
 			in.skipBytes(in.readableBytes());
@@ -37,7 +37,7 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 		ctx.fireChannelRead(new PacketWrapper(packet, in.slice(begin, in.readerIndex() - begin)));
 
 		if (in.isReadable())
-			throw new BadPacketException("Did not read all bytes from packet " + packet.getClass() + " " + packetId + " cs " + connectionState + " Direction " + direction);
+			throw new BadPacketException("Did not read all bytes from packet " + packet.getClass() + " " + packetId + " cs " + networkState + " Direction " + direction);
 
 	}
 }

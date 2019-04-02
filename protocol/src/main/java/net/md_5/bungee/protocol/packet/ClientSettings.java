@@ -61,7 +61,7 @@ public class ClientSettings extends Packet
     @Override
     public void write(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
-        writeString( locale, buf );
+        writeString( locale, buf, protocolVersion );
         buf.writeByte( viewDistance );
         if(protocolVersion.isLegacy()) 
         	buf.writeByte(chatFlags | ((chatColours ? 1 : 0) << 3));

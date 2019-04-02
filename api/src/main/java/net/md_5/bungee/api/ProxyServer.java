@@ -203,7 +203,7 @@ public abstract class ProxyServer
      * @param restricted whether the server info restricted property will be set
      * @return the constructed instance
      */
-    public abstract ServerInfo constructServerInfo(String name, InetSocketAddress address, String motd, boolean restricted, Boolean ipForward);
+    public abstract ServerInfo constructServerInfo(String name, InetSocketAddress address, String motd, boolean restricted, Boolean ipForward, Boolean forgeSupport);
 
     /**
      * Returns the console overlord for this proxy. Being the console, this

@@ -34,13 +34,13 @@ public class PingHandler extends PacketHandler {
 		this.channel = channel;
 
 		if (!protocol.isLegacy()) {
-			channel.setConnectionState(NetworkState.STATUS);
+			channel.setNetworkState(NetworkState.STATUS);
 			channel.write(new StatusRequest());
 		} 
 		else {
 			LegacyStatusRequest lsr = new LegacyStatusRequest();
 			lsr.setBranding("MC");
-			lsr.setIp("");
+			lsr.setHost("");
 			lsr.setOlderOrEqual_1_5(protocol.olderOrEqual(Protocol.MC_1_5_2));
 			lsr.setProtocolVersion(protocol.version);
 			channel.write(lsr);

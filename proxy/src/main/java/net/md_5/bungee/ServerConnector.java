@@ -74,12 +74,17 @@ public class ServerConnector extends PacketHandler {
 	private ChannelWrapper ch;
 	private ServerConnection server;
 	private final UserConnection user;
+	@Getter
 	private final BungeeServerInfo target;
 	private State thisState = State.UNDEF;
 	@Getter
 	private ForgeServerHandler handshakeHandler;
 	private boolean obsolete;
 
+	private boolean forgeSupport() {
+		return getTarget().getForgeSupport() != null ? getTarget().getForgeSupport() : BungeeCord.getInstance().config.isForgeSupport();
+	}
+	
 	private SecretKey secret;
 
 	private enum State {
@@ -147,11 +152,11 @@ public class ServerConnector extends PacketHandler {
 
 		if (!originalHandshake.getProtocol().isLegacy()) {
 			channel.write(copiedHandshake);
-			channel.setConnectionState(NetworkState.LOGIN);
+			channel.setNetworkState(NetworkState.LOGIN);
 			thisState = State.LOGIN_SUCCESS;
 			channel.write(new LoginRequest(user.getName()));
 		} else {
-			if(BungeeCord.getInstance().config.isForgeSupport()) {
+			if(forgeSupport()) {
 				LegacyPacketDecoder lpd = (LegacyPacketDecoder) ch.getHandle().pipeline().get(PipelineUtil.PACKET_DEC);
 				ch.getHandle().pipeline().replace(
 					PipelineUtil.PACKET_DEC,
@@ -163,7 +168,8 @@ public class ServerConnector extends PacketHandler {
 								((Login) p).setLegacyForgeVanillaComp(handshakeHandler.getLegacyForgeCompLevel() == 0);
 							super.read0(buf, p);
 						}
-					});
+					}
+				);
 			}
 			
 			LegacyLoginRequest lr = new LegacyLoginRequest();
@@ -174,15 +180,11 @@ public class ServerConnector extends PacketHandler {
 			thisState = State.LOGIN_REQUEST;
 			channel.write(lr);
 			
-			if(BungeeCord.getInstance().config.isForgeSupport() && user.isForgeUser()) {
+			if(forgeSupport() && user.isForgeUser())
 				ch.write(user.getPendingConnection().getForgeLogin());
-			}
 		}
 		
 		server = new ServerConnection(ch, target);
-		//ServerConnectedEvent event = new ServerConnectedEvent(user, server);
-		//bungee.getPluginManager().callEvent(event);
-		//user.setServer(server);
 	}
 	
 	@Override
@@ -201,7 +203,7 @@ public class ServerConnector extends PacketHandler {
 	@Override
 	public void handle(LoginSuccess loginSuccess) throws Exception {
 		Preconditions.checkState(thisState == State.LOGIN_SUCCESS, "Not expecting LOGIN_SUCCESS");
-		ch.setConnectionState(NetworkState.GAME);
+		ch.setNetworkState(NetworkState.GAME);
 		thisState = State.LOGIN;
 
 		// Only reset the Forge client when:
@@ -417,7 +419,7 @@ public class ServerConnector extends PacketHandler {
 	public void handle(PluginMessage pluginMessage) throws Exception {
 		//System.out.println("SC PM: " + pluginMessage.getTag());
 		
-		if (BungeeCord.getInstance().config.isForgeSupport()) {
+		if (forgeSupport()) {
 			if (pluginMessage.getTag().equals(ForgeConstants.FML_TAG)) {
 				handshakeHandler.setServerAsForgeServer();
 				user.setForgeServerHandler(handshakeHandler);
