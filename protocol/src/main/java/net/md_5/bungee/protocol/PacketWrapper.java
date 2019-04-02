@@ -12,5 +12,5 @@ public class PacketWrapper extends DefaultByteBufHolder {
 		packet = p;
 	}
 	
-	public void trySingleRelease() {} // old stuff
+	public void trySingleRelease() { } // old stuff
 }

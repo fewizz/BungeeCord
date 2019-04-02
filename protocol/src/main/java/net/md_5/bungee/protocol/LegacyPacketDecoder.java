@@ -3,6 +3,7 @@ package net.md_5.bungee.protocol;
 import java.util.List;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.SlicedByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import lombok.AllArgsConstructor;
@@ -51,13 +52,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 			
 			// Do it manually, because when in becomes !in.isReadable, 
 			// super BTMD not sends last message immediately, so it releases bytebuf
-			ByteBuf sliced = in.slice(begin, in.readerIndex() - begin);
-			int was = sliced.refCnt();
-			sliced.retain(100);
-			
-			ctx.fireChannelRead(new PacketWrapper(packet, sliced));
-			
-			sliced.release(sliced.refCnt() - was);
+			firePacket(packet, in.slice(begin, in.readerIndex() - begin), ctx);
 		} catch (Exception e) {// Temp. solution. //TODO
 			in.readerIndex(begin);
 			if (!(e instanceof IndexOutOfBoundsException))
