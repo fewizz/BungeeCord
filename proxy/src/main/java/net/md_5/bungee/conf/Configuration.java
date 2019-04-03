@@ -66,6 +66,7 @@ public class Configuration implements ProxyConfig
     private boolean alwaysHandlePackets = false;
     private boolean preventProxyConnections;
     private boolean forgeSupport;
+    private boolean metrics = false;
 
     public void load()
     {
@@ -97,6 +98,7 @@ public class Configuration implements ProxyConfig
         alwaysHandlePackets = adapter.getBoolean( "always_handle_packets", false );
         preventProxyConnections = adapter.getBoolean( "prevent_proxy_connections", preventProxyConnections );
         forgeSupport = adapter.getBoolean( "forge_support", forgeSupport );
+        metrics = adapter.getBoolean( "metrics", metrics );
 
         disabledCommands = new CaseInsensitiveSet( (Collection<String>) adapter.getList( "disabled_commands", Arrays.asList( "disabledcommandhere" ) ) );
 

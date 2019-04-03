@@ -495,7 +495,7 @@ public class DownstreamBridge extends PacketHandler
         ServerInfo def = con.updateAndGetNextServer( server.getInfo() );
         
         BaseComponent[] cs = null;
-        if(con.getPendingConnection().getProtocol().olderOrEqual(Protocol.MC_1_5_2))
+        if(con.getPendingConnection().getProtocol().olderOrEqual(Protocol.MC_1_6_4))
         	cs = TextComponent.fromLegacyText(kick.getMessage());
         else
         	cs = ComponentSerializer.parse( kick.getMessage() );
