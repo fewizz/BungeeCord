@@ -250,7 +250,7 @@ public enum Protocol {
 				buf.skipBytes(Integer.BYTES*2 + Short.BYTES);
 				for(int i = 0; i < 4; i++) skipLegacyString(buf, 15);
 			};});
-			clientboundPacket(131, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			packet(131, ()-> new SkipPacket() { void skip(ByteBuf buf) {
 				buf.skipBytes(Short.BYTES*2);
 				buf.skipBytes(buf.readUnsignedShort());
 			};});

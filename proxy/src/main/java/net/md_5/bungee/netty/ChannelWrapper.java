@@ -50,11 +50,19 @@ public class ChannelWrapper
 
     public void setProtocol(Protocol protocol)
     {
+    	Preconditions.checkNotNull(protocol, "arg is null");
+    	
     	PacketDecoder dec = (PacketDecoder) ch.pipeline().get(PipelineUtil.PACKET_DEC);
+    	
+    	Preconditions.checkNotNull(dec, "decoder is null");
+    	
     	if(dec.getProtocol().generation != protocol.generation)
     		throw new RuntimeException( "Incompatible decoder generation" );
     	
     	PacketEncoder enc = (PacketEncoder) ch.pipeline().get(PipelineUtil.PACKET_ENC);
+    	
+    	Preconditions.checkNotNull(dec, "encoder is null");
+    	
     	if(enc.getProtocol().generation != protocol.generation)
     		throw new RuntimeException( "Incompatible encoder generation" );
     	

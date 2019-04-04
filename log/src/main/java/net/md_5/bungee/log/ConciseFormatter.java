@@ -12,34 +12,36 @@ import org.fusesource.jansi.Ansi;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class ConciseFormatter extends Formatter
-{
+public class ConciseFormatter extends Formatter {
 
-    private final DateFormat date = new SimpleDateFormat( System.getProperty( "net.md_5.bungee.log-date-format", "HH:mm:ss" ) );
-    final boolean ansi;
-    
-    @Override
-    public String format(LogRecord record)
-    {
-        StringBuilder formatted = new StringBuilder();
+	private final DateFormat date = new SimpleDateFormat(System.getProperty("net.md_5.bungee.log-date-format", "HH:mm:ss"));
+	final boolean ansi;
 
-        if(ansi)formatted.append(Ansi.ansi().reset());
-        formatted.append( date.format( record.getMillis() ) );
-        formatted.append( " [" );
-        if(ansi)formatted.append( Ansi.ansi().fgBlue());
-        formatted.append( record.getLevel().getLocalizedName());
-        if(ansi)formatted.append( Ansi.ansi().reset() );
-        formatted.append( "] " );
-        formatted.append( formatMessage( record ) );
-        formatted.append( '\n' );
+	@Override
+	public String format(LogRecord record) {
+		StringBuilder formatted = new StringBuilder();
 
-        if ( record.getThrown() != null )
-        {
-            StringWriter writer = new StringWriter();
-            record.getThrown().printStackTrace( new PrintWriter( writer ) );
-            formatted.append( writer );
-        }
+		if (ansi)
+			formatted.append(Ansi.ansi().reset());
+		formatted.append(date.format(record.getMillis()));
+		formatted.append(" [");
+		if (ansi)
+			formatted.append(Ansi.ansi().fgBlue());
+		formatted.append(record.getLevel().getLocalizedName());
+		if (ansi)
+			formatted.append(Ansi.ansi().reset());
+		formatted.append("] ");
+		formatted.append(formatMessage(record));
+		formatted.append('\n');
+		if (ansi)
+			formatted.append(Ansi.ansi().reset());
 
-        return formatted.toString();
-    }
+		if (record.getThrown() != null) {
+			StringWriter writer = new StringWriter();
+			record.getThrown().printStackTrace(new PrintWriter(writer));
+			formatted.append(writer);
+		}
+
+		return formatted.toString();
+	}
 }

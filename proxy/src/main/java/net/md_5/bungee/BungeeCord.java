@@ -158,8 +158,6 @@ public class BungeeCord extends ProxyServer
     private final File pluginsFolder = new File( "plugins" );
     @Getter
     private final BungeeScheduler scheduler = new BungeeScheduler();
-    //@Getter
-    //private final ConsoleReader consoleReader;
     @Getter
     private final Logger logger;
     public final Gson gson = new GsonBuilder()
@@ -633,7 +631,6 @@ public class BungeeCord extends ProxyServer
     @Override
     public Protocol getProtocolVersion()
     {
-        //return ProtocolConstants.SUPPORTED_VERSION_IDS.get( ProtocolConstants.SUPPORTED_VERSION_IDS.size() - 1 );
     	return Protocol.values()[Protocol.values().length-1];
     }
 

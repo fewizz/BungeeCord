@@ -20,7 +20,6 @@ import java.util.HashSet;
 
 public class ComponentSerializer implements JsonDeserializer<BaseComponent>
 {
-
     private final static JsonParser JSON_PARSER = new JsonParser();
     private final static Gson gson = new GsonBuilder().
             registerTypeAdapter( BaseComponent.class, new ComponentSerializer() ).
