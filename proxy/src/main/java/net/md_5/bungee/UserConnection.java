@@ -137,8 +137,6 @@ public final class UserConnection implements ProxiedPlayer {
 	@Setter
 	private ForgeServerHandler forgeServerHandler;
 	/* ======================================================================== */
-	@Getter
-	ServerConnector connector;
 	private final Unsafe unsafe = new Unsafe() {
 		@Override
 		public void sendPacket(DefinedPacket packet) {
@@ -294,7 +292,7 @@ public final class UserConnection implements ProxiedPlayer {
 			.handler(new ChannelInitializer<Channel>() {
 				@Override
 				protected void initChannel(Channel ch) throws Exception {
-					connector = new ServerConnector(bungee, UserConnection.this, target);
+					ServerConnector connector = new ServerConnector(bungee, UserConnection.this, target);
 					PipelineUtil.addHandlers(ch, pendingConnection.getProtocol(), Direction.TO_SERVER, connector);
 				}
 			});

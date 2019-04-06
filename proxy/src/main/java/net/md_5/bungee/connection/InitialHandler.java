@@ -74,7 +74,6 @@ import net.md_5.bungee.util.QuietException;
 
 @RequiredArgsConstructor
 public class InitialHandler extends PacketHandler implements PendingConnection {
-
 	private final BungeeCord bungee;
 	private ChannelWrapper ch;
 	@Getter
@@ -223,15 +222,9 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 			// SRV records can end with a . depending on DNS / client.
 			if (handshake.getHost().endsWith("."))
 				handshake.setHost(handshake.getHost().substring(0, handshake.getHost().length() - 1));
-		}
-		
-		//if(getProtocol().olderOrEqual(Protocol.MC_1_5_2)) {
-		//	handshake.setHost(listener.getHost().getHostString());
-		//	handshake.setPort(listener.getHost().getPort());
-		//}
-		
-		if(handshake.getHost() != null) // 1.5.2 pinging?
+			
 			this.virtualHost = InetSocketAddress.createUnresolved(handshake.getHost(), handshake.getPort());
+		}
 			
 		if (bungee.getConfig().isLogPings())
 			bungee.getLogger().log(Level.INFO, "{0} has connected", this);

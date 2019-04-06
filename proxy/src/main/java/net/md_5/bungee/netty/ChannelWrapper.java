@@ -11,12 +11,12 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.Getter;
 import lombok.Setter;
+import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.compress.PacketCompressor;
 import net.md_5.bungee.compress.PacketDecompressor;
 import net.md_5.bungee.protocol.NetworkState;
 import net.md_5.bungee.protocol.PacketDecoder;
 import net.md_5.bungee.protocol.PacketEncoder;
-import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.Kick;
 
@@ -50,24 +50,23 @@ public class ChannelWrapper
 
     public void setProtocol(Protocol protocol)
     {
-    	Preconditions.checkNotNull(protocol, "arg is null");
+    	Protocol was = getProtocol();
     	
+    	Preconditions.checkNotNull(protocol, "arg is null");
     	PacketDecoder dec = (PacketDecoder) ch.pipeline().get(PipelineUtil.PACKET_DEC);
     	
     	Preconditions.checkNotNull(dec, "decoder is null");
     	
-    	if(dec.getProtocol().generation != protocol.generation)
-    		throw new RuntimeException( "Incompatible decoder generation" );
+    	if(was.generation != protocol.generation)
+    		throw new RuntimeException( "Incompatible generation" );
     	
     	PacketEncoder enc = (PacketEncoder) ch.pipeline().get(PipelineUtil.PACKET_ENC);
     	
     	Preconditions.checkNotNull(dec, "encoder is null");
     	
-    	if(enc.getProtocol().generation != protocol.generation)
-    		throw new RuntimeException( "Incompatible encoder generation" );
-    	
         dec.setProtocol(protocol);
         enc.setProtocol(protocol);
+        BungeeCord.getInstance().getLogger().info("Done changing protocol of cw, from: " + was.name() + ", to: " + protocol.name());
     }
     
     public Protocol getProtocol() {

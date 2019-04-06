@@ -3,7 +3,6 @@ package net.md_5.bungee.protocol;
 import java.util.List;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.SlicedByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import lombok.AllArgsConstructor;

@@ -122,25 +122,23 @@ public class BungeeCordLauncher
         bungee.getLogger().info( "Enabled BungeeCord version " + bungee.getVersion() );
         bungee.start();
 
-        if ( !options.has( "noconsole" ) )
+        if (options.has( "noconsole" ))
+        	return;
+        
+        String line = null;    
+        
+        try(Scanner s = new Scanner(System.in)) { while (true)
         {
-            String line = null;
+        	try {
+        		line = s.nextLine();
+        	} catch(NoSuchElementException e) {}
+            	
+        	if(line == null) continue;
             
-            Scanner s = new Scanner(System.in);
-            while ( bungee.isRunning)
+            if ( !bungee.getPluginManager().dispatchCommand(ConsoleCommandSender.getInstance(), line ) )
             {
-            	try {
-            		line = s.nextLine();
-            	} catch(NoSuchElementException e) {}
-            	
-            	if(line == null) continue;
-            	
-                if ( !bungee.getPluginManager().dispatchCommand(ConsoleCommandSender.getInstance(), line ) )
-                {
-                    bungee.getConsole().sendMessage( new ComponentBuilder( "Command not found" ).color( ChatColor.RED ).create() );
-                }
+                bungee.getConsole().sendMessage( new ComponentBuilder( "Command not found" ).color( ChatColor.RED ).create() );
             }
-            s.close();
-        }
+        }}
     }
 }

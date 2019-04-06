@@ -624,6 +624,11 @@ public enum Protocol {
 	public final int version;
 	public final ProtocolGen generation;
 	
+	@Override
+	public String toString() {
+		return "version: " + version + ", generation: " + generation.name();
+	}
+	
 	public boolean newerThan(Protocol ver) {return ordinal() > ver.ordinal();}
 	public boolean newerOrEqual(Protocol ver) {return ordinal() >= ver.ordinal();}
 	public boolean olderThan(Protocol ver) {return ordinal() < ver.ordinal();}

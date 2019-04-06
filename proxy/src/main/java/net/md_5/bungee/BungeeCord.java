@@ -17,7 +17,6 @@ import java.util.MissingResourceException;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 import java.util.Timer;
-import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -91,6 +90,7 @@ import net.md_5.bungee.forge.ForgeConstants;
 import net.md_5.bungee.log.BungeeLogger;
 import net.md_5.bungee.log.LoggingOutputStream;
 import net.md_5.bungee.module.ModuleManager;
+import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.NettyUtil;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.DefinedPacket;
@@ -98,6 +98,7 @@ import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.GenerationIdentifier;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolGen;
+import net.md_5.bungee.protocol.packet.BossBar;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 import net.md_5.bungee.query.RemoteQuery;
@@ -128,7 +129,7 @@ public class BungeeCord extends ProxyServer
     /**
      * locations.yml save thread.
      */
-    private final Timer saveThread = new Timer( "Reconnect Saver" );
+    //private final Timer saveThread = new Timer( "Reconnect Saver" );
     private Timer metricsThread;
     /**
      * Server socket listener.
@@ -285,13 +286,13 @@ public class BungeeCord extends ProxyServer
         
         startListeners();
 
-        saveThread.scheduleAtFixedRate( new TimerTask() {
+        /*saveThread.scheduleAtFixedRate( new TimerTask() {
             @Override
             public void run() {
                 if ( getReconnectHandler() != null )
                     getReconnectHandler().save();
             }
-        }, 0, TimeUnit.MINUTES.toMillis( 5 ) );
+        }, 0, TimeUnit.MINUTES.toMillis( 5 ) );*/
         
         if(config.isMetrics()) {
         	metricsThread = new Timer( "Metrics Thread" );
@@ -327,6 +328,7 @@ public class BungeeCord extends ProxyServer
 						@Override
 						public void onIdentified(ProtocolGen gen, ChannelHandlerContext ctx) {
 							Protocol pv = gen == ProtocolGen.POST_NETTY ? getProtocolVersion() : Protocol.MC_1_6_4;
+							getLogger().info("For now, new connection identified as: " + pv);
 							PipelineUtil.packetHandlers(ch, pv, Direction.TO_CLIENT);
 						}
 					});
@@ -388,83 +390,73 @@ public class BungeeCord extends ProxyServer
             return;
         isRunning = false;
 
-        new Thread( "Shutdown Thread" )
-        {
-            @Override
-            @SuppressFBWarnings("DM_EXIT")
-            @SuppressWarnings("TooBroadCatch")
-            public void run()
+        new Thread(() -> {
+            stopListeners();
+            getLogger().info( "Closing pending connections" );
+
+            connectionLock.readLock().lock();
+            try
             {
-                stopListeners();
-                getLogger().info( "Closing pending connections" );
-
-                connectionLock.readLock().lock();
-                try
+                getLogger().log( Level.INFO, "Disconnecting {0} connections", connections.size() );
+                for ( UserConnection user : connections.values() )
                 {
-                    getLogger().log( Level.INFO, "Disconnecting {0} connections", connections.size() );
-                    for ( UserConnection user : connections.values() )
-                    {
-                        user.disconnect( reason );
-                    }
-                } finally
-                {
-                    connectionLock.readLock().unlock();
+                    user.disconnect( reason );
                 }
-
-                try
-                {
-                    Thread.sleep( 500 );
-                } catch ( InterruptedException ex )
-                {
-                }
-
-                if ( reconnectHandler != null )
-                {
-                    getLogger().info( "Saving reconnect locations" );
-                    reconnectHandler.save();
-                    reconnectHandler.close();
-                }
-                saveThread.cancel();
-                if(metricsThread != null)
-                	metricsThread.cancel();
-
-                // TODO: Fix this shit
-                getLogger().info( "Disabling plugins" );
-                for ( Plugin plugin : Lists.reverse( new ArrayList<>( pluginManager.getPlugins() ) ) )
-                {
-                    try
-                    {
-                        plugin.onDisable();
-                        for ( Handler handler : plugin.getLogger().getHandlers() )
-                        {
-                            handler.close();
-                        }
-                    } catch ( Throwable t )
-                    {
-                        getLogger().log( Level.SEVERE, "Exception disabling plugin " + plugin.getDescription().getName(), t );
-                    }
-                    getScheduler().cancel( plugin );
-                    plugin.getExecutorService().shutdownNow();
-                }
-
-                getLogger().info( "Closing IO threads" );
-                eventLoops.shutdownGracefully();
-                try
-                {
-                    eventLoops.awaitTermination( Long.MAX_VALUE, TimeUnit.NANOSECONDS );
-                } catch ( InterruptedException ex )
-                {
-                }
-
-                getLogger().info( "Thank you and goodbye" );
-                // Need to close loggers after last message!
-                for ( Handler handler : getLogger().getHandlers() )
-                {
-                    handler.close();
-                }
-                System.exit( 0 );
+            } finally
+            {
+                connectionLock.readLock().unlock();
             }
-        }.start();
+
+            try
+            {
+                Thread.sleep( 500 );
+            } catch ( InterruptedException ex )
+            {
+            }
+
+            if ( reconnectHandler != null )
+            {
+                getLogger().info( "Saving reconnect locations" );
+                reconnectHandler.save();
+                reconnectHandler.close();
+            }
+            //saveThread.cancel();
+            if(metricsThread != null)
+            	metricsThread.cancel();
+
+            // TODO: Fix this shit
+            getLogger().info( "Disabling plugins" );
+            for ( Plugin plugin : Lists.reverse( new ArrayList<>( pluginManager.getPlugins() ) ) )
+            {
+                try
+                {
+                    plugin.onDisable();
+                    for ( Handler handler : plugin.getLogger().getHandlers() )
+                    {
+                        handler.close();
+                    }
+                } catch ( Throwable t )
+                {
+                    getLogger().log( Level.SEVERE, "Exception disabling plugin " + plugin.getDescription().getName(), t );
+                }
+                getScheduler().cancel( plugin );
+                plugin.getExecutorService().shutdownNow();
+            }
+
+            getLogger().info( "Closing IO threads" );
+            
+            try
+            {
+            	eventLoops.shutdownGracefully().await();
+            } catch ( InterruptedException ex ) {}
+
+            getLogger().info( "Thank you and goodbye" );
+            // Need to close loggers after last message!
+            for ( Handler handler : getLogger().getHandlers() )
+                handler.close();
+            
+            System.exit( 0 );
+        }, "Shutdown Thread").start();
     }
 
     /**

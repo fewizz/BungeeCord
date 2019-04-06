@@ -222,11 +222,8 @@ public class UpstreamBridge extends PacketHandler
         if ( BungeeCord.getInstance().config.isForgeSupport() )
         {
             // Hack around Forge race conditions
-            if (pluginMessage.getTag().equals( "FML" ) && pluginMessage.getStream().readUnsignedByte() == 1 )
-            {
-            	if(con.getPendingConnection().isLegacy())
-            		con.getConnector().getCh().write(pluginMessage);
-            	
+            if (pluginMessage.getTag().equals( "FML" ) && pluginMessage.getData()[0] == 1 )
+            {	
         		throw CancelSendSignal.INSTANCE;
            	}
 

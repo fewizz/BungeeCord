@@ -26,7 +26,6 @@ public class BungeeScheduler implements TaskScheduler
     //
     private final Unsafe unsafe = new Unsafe()
     {
-
         @Override
         public ExecutorService getExecutorService(Plugin plugin)
         {

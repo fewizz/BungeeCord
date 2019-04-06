@@ -35,7 +35,7 @@ public class ForgeClientHandler {
 	@Setter(AccessLevel.PACKAGE)
 	private ForgeClientHandshakeState state = ForgeClientHandshakeState.HELLO;
 
-	private PluginMessage serverModList = null;
+	//private PluginMessage serverModList = null;
 	private PluginMessage serverIdList = null;
 
 	/**
@@ -97,12 +97,12 @@ public class ForgeClientHandler {
 	 * @throws IllegalArgumentException Thrown if the {@link PluginMessage} was not
 	 *                                  as expected.
 	 */
-	public void setServerModList(PluginMessage modList) throws IllegalArgumentException {
+	/*public void setServerModList(PluginMessage modList) throws IllegalArgumentException {
 		if (!modList.getTag().equalsIgnoreCase(ForgeConstants.FML_HANDSHAKE_TAG) || modList.getData()[0] != 2)
 			throw new IllegalArgumentException("modList");
 
 		this.serverModList = modList;
-	}
+	}*/
 
 	/**
 	 * Sends the server ID list to the client, or stores it for sending later.

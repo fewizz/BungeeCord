@@ -10,11 +10,12 @@ public abstract class GenerationIdentifier extends ChannelInboundHandlerAdapter
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		ByteBuf in = (ByteBuf) msg;
-        if ( !in.isReadable() )
+        if (!in.isReadable() )
             return;
 
         short packetID = in.getUnsignedByte(in.readerIndex());
 
+        // modern's handshake size is not eq. to these numbers, so that's ok
         onIdentified(packetID == 0xFE || packetID == 0x02 ? ProtocolGen.PRE_NETTY : ProtocolGen.POST_NETTY, ctx);
         
         ctx.pipeline().remove(this);

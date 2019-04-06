@@ -15,6 +15,10 @@ import com.google.common.base.Preconditions;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandler;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.api.ChatColor;
@@ -80,6 +84,7 @@ public class ServerConnector extends PacketHandler {
 	@Getter
 	private ForgeServerHandler handshakeHandler;
 	private boolean obsolete;
+	private ChannelInboundHandler legacyFMLModlistCatcher = null;
 
 	private boolean forgeSupport() {
 		return getTarget().getForgeSupport() != null ? getTarget().getForgeSupport() : BungeeCord.getInstance().config.isForgeSupport();
@@ -174,6 +179,26 @@ public class ServerConnector extends PacketHandler {
 						}
 					}
 				);
+				
+				ChannelPipeline p = user.getCh().getHandle().pipeline();
+				
+				legacyFMLModlistCatcher = new SimpleChannelInboundHandler<PacketWrapper>(PacketWrapper.class) {
+
+					@Override
+					protected void channelRead0(ChannelHandlerContext ctx, PacketWrapper msg) throws Exception {		
+						if(msg.packet instanceof PluginMessage) {
+							PluginMessage pm = (PluginMessage) msg.packet;
+							if(pm.getTag().equals("FML") && pm.getData()[0] == 1) {// client packet response
+								ch.write(pm);
+								return;
+							}
+						}
+						
+						ctx.fireChannelRead(msg);
+					}
+					
+				};
+				p.addBefore(PipelineUtil.BOSS, "legacy_fml_modlist_catcher", legacyFMLModlistCatcher);
 			}
 			
 			LegacyLoginRequest lr = new LegacyLoginRequest();
@@ -239,7 +264,11 @@ public class ServerConnector extends PacketHandler {
 	public void handle(Login login) throws Exception {
 		if(user.getPendingConnection().getProtocol().isLegacy() && thisState != State.LOGIN)
 			thisState = State.LOGIN;
+		
 		Preconditions.checkState(thisState == State.LOGIN, "Not expecting " + thisState.name());
+		
+		if(legacyFMLModlistCatcher != null)
+			user.getCh().getHandle().pipeline().remove(legacyFMLModlistCatcher);
 		
 		ServerConnectedEvent event = new ServerConnectedEvent(user, server);
 		bungee.getPluginManager().callEvent(event);
@@ -421,7 +450,6 @@ public class ServerConnector extends PacketHandler {
 
 	@Override
 	public void handle(PluginMessage pluginMessage) throws Exception {
-		//System.out.println("SC PM: " + pluginMessage.getTag());
 		
 		if (forgeSupport()) {
 			if (pluginMessage.getTag().equals(ForgeConstants.FML_TAG)) {
@@ -430,15 +458,12 @@ public class ServerConnector extends PacketHandler {
 				
 				DataInput i = pluginMessage.getStream();
 				int type = i.readUnsignedByte();
-				//System.out.println("FML packet type: " + type);
 				
 				if(type == 0) {
 					int count = i.readInt();
-					//System.out.println("Mod count: " + count);
 					for(int x = 0; x < count; x++ )
 						i.readUTF();
 					int compLevel = i.readByte();
-					//System.out.println("Comp. level: " + compLevel);
 					handshakeHandler.setLegacyForgeCompLevel(compLevel);
 				}
 			}
