@@ -72,7 +72,7 @@ public class ServerUnique extends TabList
             item.setDisplayName( username );
         }
         packet.setItems( items );
-        if ( player.getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_8_0 ))
+        if ( player.getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_8 ))
         {
             player.unsafe().sendPacket( packet );
         } else

@@ -201,7 +201,22 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 	public void handle(Handshake handshake) throws Exception {
 		Preconditions.checkState(thisState == State.HANDSHAKE, "Not expecting HANDSHAKE");
 		this.handshake = handshake;
-		ch.setProtocol(handshake.getProtocol());
+		
+		boolean undefinedProtocol = handshake.getProtocol() == null;
+		
+		if(bungee.getConfig().isHandshake()) {
+			String str = undefinedProtocol ? 
+					"Undefined protocol, version : " + handshake.getVersion()
+					: 
+					"Protocol: " + handshake.getProtocol().name();
+			str = "[" + ch.getRemoteAddress() + "] " + str;
+			bungee.getLogger().info(str);
+		}
+		
+		if(undefinedProtocol)
+			handshake.setProtocol(ch.getProtocol());
+		else
+			ch.setProtocol(handshake.getProtocol());
 
 		// Starting with FML 1.8, a "\0FML\0" token is appended to the handshake. This
 		// interferes
@@ -248,10 +263,8 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 			if(!isLegacy())
 				ch.setNetworkState(NetworkState.LOGIN);
 			
-			//if (handshake.getProtocol().newerThan(bungee.getProtocolVersion()))
-			//	disconnect(bungee.getTranslation("outdated_server", bungee.getGameVersion()));
-			//else if(handshake.getProtocol().olderThan(bungee.getProtocolVersion()))
-			//	disconnect(bungee.getTranslation("outdated_client", bungee.getGameVersion()));
+			if (undefinedProtocol)
+				disconnect(bungee.getTranslation("unsupported_client"));
 			
 			break;
 		default:

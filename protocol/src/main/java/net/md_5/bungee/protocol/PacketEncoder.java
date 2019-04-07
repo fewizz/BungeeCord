@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 @RequiredArgsConstructor
-public class PacketEncoder extends MessageToByteEncoder<DefinedPacket>
+public class PacketEncoder extends MessageToByteEncoder<Packet>
 {
     @Setter
     @Getter
@@ -22,10 +22,10 @@ public class PacketEncoder extends MessageToByteEncoder<DefinedPacket>
     private Protocol protocol;
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, DefinedPacket msg, ByteBuf out) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, Packet msg, ByteBuf out) throws Exception {
     	int packetID = -1;
     	try {
-    		packetID = protocol.idOf(networkState, msg, direction);
+    		packetID = protocol.getClassToIdUnmodifiableMap(networkState, direction).get(msg.getClass());
     	} catch(Exception e) {
     		throw new RuntimeException("Can't find id of packet " + msg.getClass().getName());
     	}

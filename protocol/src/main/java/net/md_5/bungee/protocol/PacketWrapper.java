@@ -5,9 +5,9 @@ import io.netty.buffer.DefaultByteBufHolder;
 
 public class PacketWrapper extends DefaultByteBufHolder {
 
-	public final DefinedPacket packet;
+	public final Packet packet;
 	
-	public PacketWrapper(DefinedPacket p, ByteBuf buf) {
+	public PacketWrapper(Packet p, ByteBuf buf) {
 		super(buf);
 		packet = p;
 	}

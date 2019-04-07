@@ -1,32 +1,23 @@
 package net.md_5.bungee.protocol;
 
 import io.netty.buffer.ByteBuf;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 
-@EqualsAndHashCode(callSuper=false)
-@Data
-public class SkipPacket extends DefinedPacket {
-	/*@FunctionalInterface
-	interface Skipper {
-		void skip(ByteBuf buf);
-	}
-	Skipper s;*/
+@FunctionalInterface
+public interface SkipPacket extends Packet {
 	
-	void skip(ByteBuf buf) {
-		//if(s != null)
-		//	s.skip(buf);
-		//else
-		throw new UnsupportedOperationException( "Packet must implement skip method" );
-	}
+	public void skip(ByteBuf buf);
 	
 	@Override
-	public final void read(ByteBuf buf) {
+	default void read(ByteBuf buf, Direction direction, Protocol protocolVersion) {
 		skip(buf);
 	}
 	
 	@Override
-	public final void handle(AbstractPacketHandler handler) throws Exception {
+	default void write(ByteBuf buf, Direction direction, Protocol protocolVersion) {
+	}
+	
+	@Override
+	default void handle(AbstractPacketHandler ph) throws Exception {	
 	}
 
 }

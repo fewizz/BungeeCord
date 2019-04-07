@@ -82,7 +82,7 @@ public class UpstreamBridge extends PacketHandler
             } );
             for ( ProxiedPlayer player : con.getServer().getInfo().getPlayers() )
             {
-                if ( player.getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_8_0) )
+                if ( player.getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_8) )
                 {
                     player.unsafe().sendPacket( packet );
                 }
@@ -141,7 +141,7 @@ public class UpstreamBridge extends PacketHandler
     @Override
     public void handle(Chat chat) throws Exception
     {
-        int maxLength = ( con.getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_11_0 )) ? 256 : 100;
+        int maxLength = ( con.getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_11 )) ? 256 : 100;
         Preconditions.checkArgument( chat.getMessage().length() <= maxLength, "Chat message too long" ); // Mojang limit, check on updates
 
         ChatEvent chatEvent = new ChatEvent( con, con.getServer(), chat.getMessage() );
@@ -179,7 +179,7 @@ public class UpstreamBridge extends PacketHandler
         {
             // Unclear how to handle 1.13 commands at this point. Because we don't inject into the command packets we are unlikely to get this far unless
             // Bungee plugins are adding results for commands they don't own anyway
-            if ( con.getPendingConnection().getProtocol().olderThan(Protocol.MC_1_13_0 ))
+            if ( con.getPendingConnection().getProtocol().olderThan(Protocol.MC_1_13 ))
             {
                 con.unsafe().sendPacket( new TabCompleteResponse( results ) );
             } else

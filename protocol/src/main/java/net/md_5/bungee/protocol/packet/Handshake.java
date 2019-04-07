@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.ProtocolGen;
@@ -15,18 +17,27 @@ import net.md_5.bungee.protocol.NetworkState;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@RequiredArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class Handshake extends DefinedPacket {
 
+	@NonNull
 	private Protocol protocol;
+	@NonNull
 	private String host;
+	@NonNull
 	private int port;
 	@Setter
+	@NonNull
 	private NetworkState requestedNetworkState;
 
+	private int version = 0;
+	
 	@Override
 	public void read(ByteBuf buf) {
-		protocol = Protocol.byNumber(readVarInt(buf), ProtocolGen.POST_NETTY);
+		version = readVarInt(buf);
+		
+		protocol = Protocol.byNumber(version, ProtocolGen.POST_NETTY);
 		host = readString(buf);
 		port = buf.readUnsignedShort();
 		requestedNetworkState = NetworkState.byID(readVarInt(buf));

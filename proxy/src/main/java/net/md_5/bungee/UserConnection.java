@@ -12,6 +12,8 @@ import java.util.Queue;
 import java.util.UUID;
 import java.util.logging.Level;
 
+import javax.jws.soap.SOAPBinding.Use;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 
@@ -265,7 +267,10 @@ public final class UserConnection implements ProxiedPlayer {
 		}
 
 		final BungeeServerInfo target = (BungeeServerInfo) event.getTarget(); // Update in case the event changed target
-
+		
+		if(BungeeCord.getInstance().config.isServerChange())
+			bungee.getLogger().info("[" + ch.getRemoteAddress() + "] Connecting to " + target);
+		
 		if (getServer() != null && Objects.equals(getServer().getInfo(), target)) {
 			if (callback != null)
 				callback.done(ServerConnectRequest.Result.ALREADY_CONNECTED, null);
@@ -309,6 +314,9 @@ public final class UserConnection implements ProxiedPlayer {
 			if (!future.isSuccess()) {
 				future.channel().close();
 				pendingConnects.remove(target);
+				
+				if(BungeeCord.getInstance().config.isServerChange())
+					bungee.getLogger().info("[" + ch.getRemoteAddress() + "] Disconnected from " + target);
 
 				ServerInfo def = updateAndGetNextServer(target);
 				if (request.isRetry() && def != null && (getServer() == null || def != getServer().getInfo())) {
@@ -397,7 +405,7 @@ public final class UserConnection implements ProxiedPlayer {
 
 		// Action bar doesn't display the new JSON formattings, legacy works - send it
 		// using this for now
-		if (position == ChatMessageType.ACTION_BAR && pendingConnection.getProtocol().newerOrEqual(Protocol.MC_1_8_0))
+		if (position == ChatMessageType.ACTION_BAR && pendingConnection.getProtocol().newerOrEqual(Protocol.MC_1_8))
 			sendMessage(position, ComponentSerializer.toString(new TextComponent(BaseComponent.toLegacyText(message))));
 		else if (pendingConnection.getProtocol().newerThan(Protocol.MC_1_5_2))
 			sendMessage(position, ComponentSerializer.toString(message));
@@ -411,7 +419,7 @@ public final class UserConnection implements ProxiedPlayer {
 
 		// Action bar doesn't display the new JSON formattings, legacy works - send it
 		// using this for now
-		if (position == ChatMessageType.ACTION_BAR && pendingConnection.getProtocol().newerOrEqual(Protocol.MC_1_8_0))
+		if (position == ChatMessageType.ACTION_BAR && pendingConnection.getProtocol().newerOrEqual(Protocol.MC_1_8))
 			sendMessage(position, ComponentSerializer.toString(new TextComponent(BaseComponent.toLegacyText(message))));
 		else if (pendingConnection.getProtocol().newerThan(Protocol.MC_1_5_2))
 			sendMessage(position, ComponentSerializer.toString(message));
@@ -558,7 +566,7 @@ public final class UserConnection implements ProxiedPlayer {
 
 	@Override
 	public void setTabHeader(BaseComponent header, BaseComponent footer) {
-		if (pendingConnection.getProtocol().newerOrEqual(Protocol.MC_1_8_0)) {
+		if (pendingConnection.getProtocol().newerOrEqual(Protocol.MC_1_8)) {
 			header = ChatComponentTransformer.getInstance().transform(this, header)[0];
 			footer = ChatComponentTransformer.getInstance().transform(this, footer)[0];
 
@@ -568,7 +576,7 @@ public final class UserConnection implements ProxiedPlayer {
 
 	@Override
 	public void setTabHeader(BaseComponent[] header, BaseComponent[] footer) {
-		if (pendingConnection.getProtocol().newerOrEqual(Protocol.MC_1_8_0)) {
+		if (pendingConnection.getProtocol().newerOrEqual(Protocol.MC_1_8)) {
 			header = ChatComponentTransformer.getInstance().transform(this, header);
 			footer = ChatComponentTransformer.getInstance().transform(this, footer);
 
@@ -593,7 +601,7 @@ public final class UserConnection implements ProxiedPlayer {
 	}
 
 	public void setCompressionThreshold(int compressionThreshold) {
-		if (!ch.isClosing() && this.compressionThreshold == -1 && getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_8_0) && compressionThreshold >= 0) {
+		if (!ch.isClosing() && this.compressionThreshold == -1 && getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_8) && compressionThreshold >= 0) {
 			this.compressionThreshold = compressionThreshold;
 			unsafe.sendPacket(new SetCompression(compressionThreshold));
 			ch.setCompressionThreshold(compressionThreshold);

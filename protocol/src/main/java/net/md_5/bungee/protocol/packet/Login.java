@@ -41,7 +41,7 @@ public class Login extends DefinedPacket implements Cloneable {
 
 		gameMode = buf.readUnsignedByte();
 
-		if (protocolVersion.newerThan(Protocol.MC_1_9_0) || !legacyForgeVanillaComp)
+		if (protocolVersion.newerThan(Protocol.MC_1_9) || !legacyForgeVanillaComp)
 			dimension = buf.readInt();
 		else
 			dimension = buf.readByte();
@@ -69,7 +69,7 @@ public class Login extends DefinedPacket implements Cloneable {
 
 		buf.writeByte(gameMode);
 
-		if (protocolVersion.newerThan(Protocol.MC_1_9_0) || !legacyForgeVanillaComp)
+		if (protocolVersion.newerThan(Protocol.MC_1_9) || !legacyForgeVanillaComp)
 			buf.writeInt(dimension);
 		else
 			buf.writeByte(dimension);

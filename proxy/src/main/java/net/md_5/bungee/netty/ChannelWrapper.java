@@ -47,7 +47,7 @@ public class ChannelWrapper
     }
     
     public NetworkState getConnectionState() { return ch.pipeline().get(PacketEncoder.class).getNetworkState(); }
-
+    
     public void setProtocol(Protocol protocol)
     {
     	Protocol was = getProtocol();
@@ -66,7 +66,11 @@ public class ChannelWrapper
     	
         dec.setProtocol(protocol);
         enc.setProtocol(protocol);
-        BungeeCord.getInstance().getLogger().info("Done changing protocol of cw, from: " + was.name() + ", to: " + protocol.name());
+        
+        if(BungeeCord.getInstance().getConfig().isProtocolChange())
+        	BungeeCord.getInstance().getLogger().info(
+        		"[" + getRemoteAddress() + "] " +
+    			"Done changing protocol of cw, from: " + was.name() + ", to: " + protocol.name());
     }
     
     public Protocol getProtocol() {

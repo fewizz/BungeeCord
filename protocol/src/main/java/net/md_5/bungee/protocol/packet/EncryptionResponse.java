@@ -30,7 +30,7 @@ public class EncryptionResponse extends DefinedPacket
     		sharedSecret = readLegacyByteArray(buf);
     		verifyToken = readLegacyByteArray(buf);
     	}
-    	else if ( protocolVersion.olderThan(Protocol.MC_1_8_0) )
+    	else if ( protocolVersion.olderThan(Protocol.MC_1_8) )
         {
             sharedSecret = readArrayLegacy( buf );
             verifyToken = readArrayLegacy( buf );
@@ -48,7 +48,7 @@ public class EncryptionResponse extends DefinedPacket
     		writeLegacyByteArray(buf, sharedSecret);
     		writeLegacyByteArray(buf, verifyToken);
     	}
-    	else if ( protocolVersion.olderThan(Protocol.MC_1_8_0) )
+    	else if ( protocolVersion.olderThan(Protocol.MC_1_8) )
         {
             writeArrayLegacy( sharedSecret, buf, false );
             writeArrayLegacy( verifyToken, buf, false );

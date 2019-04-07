@@ -43,7 +43,7 @@ public class TabCompleteResponse extends DefinedPacket
     @Override
     public void read(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
-        if ( protocolVersion.newerOrEqual(Protocol.MC_1_13_0 ))
+        if ( protocolVersion.newerOrEqual(Protocol.MC_1_13 ))
         {
             transactionId = readVarInt( buf );
             int start = readVarInt( buf );
@@ -67,7 +67,7 @@ public class TabCompleteResponse extends DefinedPacket
         	commands = new ArrayList<>();
         	commands.add(readLegacyString(buf, Short.MAX_VALUE));
         }
-        else if ( protocolVersion.olderThan(Protocol.MC_1_13_0 ))
+        else if ( protocolVersion.olderThan(Protocol.MC_1_13 ))
         {
             commands = readStringArray( buf );
         }
@@ -76,7 +76,7 @@ public class TabCompleteResponse extends DefinedPacket
     @Override
     public void write(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
-        if ( protocolVersion.newerOrEqual(Protocol.MC_1_13_0 ))
+        if ( protocolVersion.newerOrEqual(Protocol.MC_1_13 ))
         {
             writeVarInt( transactionId, buf );
             writeVarInt( suggestions.getRange().getStart(), buf );
@@ -97,7 +97,7 @@ public class TabCompleteResponse extends DefinedPacket
         if(protocolVersion.isLegacy()) {
         	writeLegacyString(commands.get(0), buf);
         }
-        else if ( protocolVersion.olderThan(Protocol.MC_1_13_0 ))
+        else if ( protocolVersion.olderThan(Protocol.MC_1_13 ))
         {
             writeStringArray( commands, buf );
         }

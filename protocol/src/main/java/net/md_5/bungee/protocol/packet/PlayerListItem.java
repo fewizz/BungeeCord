@@ -23,7 +23,7 @@ public class PlayerListItem extends DefinedPacket
     @Override
     public void read(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
-        if ( protocolVersion.olderThan(Protocol.MC_1_8_0 ))
+        if ( protocolVersion.olderThan(Protocol.MC_1_8 ))
         {
             items = new Item[ 1 ];
             Item item = items[ 0 ] = new Item();
@@ -87,7 +87,7 @@ public class PlayerListItem extends DefinedPacket
     @Override
     public void write(ByteBuf buf, Direction direction, Protocol protocolVersion)
     {
-        if ( protocolVersion.olderThan(Protocol.MC_1_8_0) )
+        if ( protocolVersion.olderThan(Protocol.MC_1_8) )
         {
             Item item = items[0]; // Only one at a time
             writeString( item.displayName, buf, protocolVersion ); // TODO: Server unique only!

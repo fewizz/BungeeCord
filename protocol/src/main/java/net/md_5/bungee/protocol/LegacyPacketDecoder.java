@@ -2,27 +2,42 @@ package net.md_5.bungee.protocol;
 
 import java.util.List;
 
+import gnu.trove.map.TIntObjectMap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
-@AllArgsConstructor
 public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketDecoder {
-	@Setter
 	@Getter
 	private NetworkState networkState = NetworkState.LEGACY;
 	@Getter
 	private final Direction direction;
-	@Setter
 	@Getter
 	private Protocol protocol;
-
-	public LegacyPacketDecoder(Direction dir, int pv) {
-		this.direction = dir;
-		protocol = Protocol.byNumber(pv, ProtocolGen.PRE_NETTY);
+	private TIntObjectMap<Class<? extends Packet>> map;
+	
+	public LegacyPacketDecoder(Direction d, int pv) {
+		this.direction = d;
+		this.protocol = (Protocol.byNumber(pv, ProtocolGen.PRE_NETTY));
+		updateMap();
+	}
+	
+	@Override
+	public void setNetworkState(NetworkState ns) {
+		this.networkState = ns;
+		updateMap();
+	}
+	
+	@Override
+	public void setProtocol(Protocol protocol) {
+		this.protocol = protocol;
+		updateMap();
+	}
+	
+	private void updateMap() {
+		map = protocol.getIdToClassUnmodifiableMap(networkState, direction);
 	}
 	
 	public LegacyPacketDecoder(LegacyPacketDecoder lpd) {
@@ -38,7 +53,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 		try {
 			int packetId = in.readUnsignedByte();
 
-			DefinedPacket packet = protocol.createPacket(networkState, packetId, direction);
+			Packet packet = map.get(packetId).newInstance();
 
 			if (packet == null)
 				throw new RuntimeException("Don't know that packet" + 
@@ -52,14 +67,12 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 			// Do it manually, because when in becomes !in.isReadable, 
 			// super BTMD not sends last message immediately, so it releases bytebuf
 			firePacket(packet, in.slice(begin, in.readerIndex() - begin), ctx);
-		} catch (Exception e) {// Temp. solution. //TODO
+		} catch (IndexOutOfBoundsException e) {// Temp. solution. //TODO
 			in.readerIndex(begin);
-			if (!(e instanceof IndexOutOfBoundsException))
-				throw e;
 		}
 	}
 	
-	protected void read0(ByteBuf buf, DefinedPacket p) {
+	protected void read0(ByteBuf buf, Packet p) {
 		p.read( buf, direction, protocol );
 	}
 }

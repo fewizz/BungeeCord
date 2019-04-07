@@ -27,7 +27,7 @@ public class Chat extends DefinedPacket {
 	public void read(ByteBuf buf, Direction direction, Protocol protocolVersion) {
 		message = readString(buf, protocolVersion);
 
-		if (direction == Direction.TO_CLIENT && protocolVersion.newerOrEqual(Protocol.MC_1_8_0))
+		if (direction == Direction.TO_CLIENT && protocolVersion.newerOrEqual(Protocol.MC_1_8))
 			position = buf.readByte();
 	}
 
@@ -38,7 +38,7 @@ public class Chat extends DefinedPacket {
 		else
 			writeString(message, buf);
 
-		if (direction == Direction.TO_CLIENT && protocolVersion.newerOrEqual(Protocol.MC_1_8_0))
+		if (direction == Direction.TO_CLIENT && protocolVersion.newerOrEqual(Protocol.MC_1_8))
 			buf.writeByte(position);
 	}
 

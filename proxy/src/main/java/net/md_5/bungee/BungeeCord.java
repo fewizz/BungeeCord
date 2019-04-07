@@ -90,7 +90,6 @@ import net.md_5.bungee.forge.ForgeConstants;
 import net.md_5.bungee.log.BungeeLogger;
 import net.md_5.bungee.log.LoggingOutputStream;
 import net.md_5.bungee.module.ModuleManager;
-import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.NettyUtil;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.DefinedPacket;
@@ -98,7 +97,6 @@ import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.GenerationIdentifier;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolGen;
-import net.md_5.bungee.protocol.packet.BossBar;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 import net.md_5.bungee.query.RemoteQuery;
@@ -285,14 +283,6 @@ public class BungeeCord extends ProxyServer
             connectionThrottle = new ConnectionThrottle( config.getThrottle(), config.getThrottleLimit() );
         
         startListeners();
-
-        /*saveThread.scheduleAtFixedRate( new TimerTask() {
-            @Override
-            public void run() {
-                if ( getReconnectHandler() != null )
-                    getReconnectHandler().save();
-            }
-        }, 0, TimeUnit.MINUTES.toMillis( 5 ) );*/
         
         if(config.isMetrics()) {
         	metricsThread = new Timer( "Metrics Thread" );
@@ -328,7 +318,8 @@ public class BungeeCord extends ProxyServer
 						@Override
 						public void onIdentified(ProtocolGen gen, ChannelHandlerContext ctx) {
 							Protocol pv = gen == ProtocolGen.POST_NETTY ? getProtocolVersion() : Protocol.MC_1_6_4;
-							getLogger().info("For now, new connection identified as: " + pv);
+							if(config.isInitialProtocol())
+								logger.info("[" + ctx.channel().remoteAddress() + "] Connected to Bungee, identified as " + pv.name() );
 							PipelineUtil.packetHandlers(ch, pv, Direction.TO_CLIENT);
 						}
 					});
@@ -520,13 +511,12 @@ public class BungeeCord extends ProxyServer
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Collection<ProxiedPlayer> getPlayers()
     {
         connectionLock.readLock().lock();
         try
         {
-            return Collections.unmodifiableCollection( new HashSet( connections.values() ) );
+            return Collections.unmodifiableCollection( new HashSet<ProxiedPlayer>( connections.values() ) );
         } finally
         {
             connectionLock.readLock().unlock();
@@ -612,7 +602,7 @@ public class BungeeCord extends ProxyServer
 
     public PluginMessage registerChannels(Protocol protocolVersion)
     {
-        if ( protocolVersion.newerOrEqual(Protocol.MC_1_13_0) )
+        if ( protocolVersion.newerOrEqual(Protocol.MC_1_13) )
         {
             return new PluginMessage( "minecraft:register", Util.format( Iterables.transform( pluginChannels, PluginMessage.MODERNISE ), "\00" ).getBytes( Charsets.UTF_8 ), false );
         }
@@ -629,8 +619,10 @@ public class BungeeCord extends ProxyServer
     @Override
     public String getGameVersion()
     {
-        //return ProtocolConstants.SUPPORTED_VERSIONS.get( 0 ) + "-" + ProtocolConstants.SUPPORTED_VERSIONS.get( ProtocolConstants.SUPPORTED_VERSIONS.size() - 1 );
-    	return Protocol.GAME_VERSIONS.get(0) + "-" + Protocol.GAME_VERSIONS.get(Protocol.GAME_VERSIONS.size()-1);
+    	String first = Protocol.VALUES[0].versions.get(0);
+    	Protocol p = Protocol.VALUES[Protocol.VALUES.length - 1];
+    	String last = p.versions.get(p.versions.size() - 1);
+    	return first + " - " + last;
     }
 
     @Override

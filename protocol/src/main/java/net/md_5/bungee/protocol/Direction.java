@@ -4,4 +4,5 @@ public enum Direction {
     TO_CLIENT, TO_SERVER;
 	
 	public Direction opposite() { return this == TO_CLIENT ? TO_SERVER : TO_CLIENT; }
+	public static final Direction[] VALUES = values();
 }

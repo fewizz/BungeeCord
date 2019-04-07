@@ -46,25 +46,25 @@ public class Team extends DefinedPacket {
 		if (mode == 0 || mode == 2) {
 			displayName = readString(buf, protocolVersion);
 			
-			if (protocolVersion.olderThan(Protocol.MC_1_13_0)) {
+			if (protocolVersion.olderThan(Protocol.MC_1_13)) {
 				prefix = readString(buf, protocolVersion);
 				suffix = readString(buf, protocolVersion);
 			}
 			friendlyFire = buf.readByte();
-			if (protocolVersion.newerOrEqual(Protocol.MC_1_8_0)) {
+			if (protocolVersion.newerOrEqual(Protocol.MC_1_8)) {
 				nameTagVisibility = readString(buf);
-				if (protocolVersion.newerOrEqual(Protocol.MC_1_9_0)) {
+				if (protocolVersion.newerOrEqual(Protocol.MC_1_9)) {
 					collisionRule = readString(buf);
 				}
-				color = (protocolVersion.newerOrEqual(Protocol.MC_1_13_0)) ? readVarInt(buf) : buf.readByte();
-				if (protocolVersion.newerOrEqual(Protocol.MC_1_13_0)) {
+				color = (protocolVersion.newerOrEqual(Protocol.MC_1_13)) ? readVarInt(buf) : buf.readByte();
+				if (protocolVersion.newerOrEqual(Protocol.MC_1_13)) {
 					prefix = readString(buf);
 					suffix = readString(buf);
 				}
 			}
 		}
 		if (mode == 0 || mode == 3 || mode == 4) {
-			int len = (protocolVersion.newerOrEqual(Protocol.MC_1_8_0)) ? readVarInt(buf) : buf.readShort();
+			int len = (protocolVersion.newerOrEqual(Protocol.MC_1_8)) ? readVarInt(buf) : buf.readShort();
 			players = new String[len];
 			for (int i = 0; i < len; i++) {
 				players[i] = readString(buf, protocolVersion);
@@ -81,18 +81,18 @@ public class Team extends DefinedPacket {
 		if (mode == 0 || mode == 2) {
 			writeString(displayName, buf, protocolVersion);
 			
-			if (protocolVersion.olderThan(Protocol.MC_1_13_0)) {
+			if (protocolVersion.olderThan(Protocol.MC_1_13)) {
 				writeString(prefix, buf, protocolVersion);
 				writeString(suffix, buf, protocolVersion);
 			}
 			buf.writeByte(friendlyFire);
-			if (protocolVersion.newerOrEqual(Protocol.MC_1_8_0)) {
+			if (protocolVersion.newerOrEqual(Protocol.MC_1_8)) {
 				writeString(nameTagVisibility, buf);
-				if (protocolVersion.newerOrEqual(Protocol.MC_1_9_0)) {
+				if (protocolVersion.newerOrEqual(Protocol.MC_1_9)) {
 					writeString(collisionRule, buf);
 				}
 
-				if (protocolVersion.newerOrEqual(Protocol.MC_1_13_0)) {
+				if (protocolVersion.newerOrEqual(Protocol.MC_1_13)) {
 					writeVarInt(color, buf);
 					writeString(prefix, buf);
 					writeString(suffix, buf);
@@ -102,7 +102,7 @@ public class Team extends DefinedPacket {
 			}
 		}
 		if (mode == 0 || mode == 3 || mode == 4) {
-			if (protocolVersion.newerOrEqual(Protocol.MC_1_8_0))
+			if (protocolVersion.newerOrEqual(Protocol.MC_1_8))
 				writeVarInt(players.length, buf);
 			else
 				buf.writeShort(players.length);

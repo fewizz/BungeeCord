@@ -22,7 +22,7 @@ public class KeepAlive extends DefinedPacket {
 	public void read(ByteBuf buf, Direction direction, Protocol protocolVersion) {
 		if (protocolVersion.newerOrEqual(Protocol.MC_1_12_2)) {
 			randomId = buf.readLong();
-		} else if (protocolVersion.newerOrEqual(Protocol.MC_1_8_0)) {
+		} else if (protocolVersion.newerOrEqual(Protocol.MC_1_8)) {
 			randomId = readVarInt(buf);
 		} else {
 			randomId = buf.readInt();
@@ -33,7 +33,7 @@ public class KeepAlive extends DefinedPacket {
 	public void write(ByteBuf buf, Direction direction, Protocol protocolVersion) {
 		if (protocolVersion.newerOrEqual(Protocol.MC_1_12_2)) {
 			buf.writeLong(randomId);
-		} else if (protocolVersion.newerOrEqual(Protocol.MC_1_8_0)) {
+		} else if (protocolVersion.newerOrEqual(Protocol.MC_1_8)) {
 			writeVarInt((int) randomId, buf);
 		} else {
 			buf.writeInt((int) randomId);

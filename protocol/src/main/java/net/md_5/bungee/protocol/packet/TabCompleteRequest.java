@@ -33,14 +33,14 @@ public class TabCompleteRequest extends DefinedPacket {
 
 	@Override
 	public void read(ByteBuf buf, Direction direction, Protocol protocolVersion) {
-		if (protocolVersion.newerOrEqual(Protocol.MC_1_13_0))
+		if (protocolVersion.newerOrEqual(Protocol.MC_1_13))
 			transactionId = readVarInt(buf);
 		
 
 		cursor = readString(buf, protocolVersion);
 
-		if (protocolVersion.newerOrEqual(Protocol.MC_1_8_0) && protocolVersion.olderThan(Protocol.MC_1_13_0)) {
-			if (protocolVersion.newerOrEqual(Protocol.MC_1_9_0))
+		if (protocolVersion.newerOrEqual(Protocol.MC_1_8) && protocolVersion.olderThan(Protocol.MC_1_13)) {
+			if (protocolVersion.newerOrEqual(Protocol.MC_1_9))
 				assumeCommand = buf.readBoolean();
 			
 			if (hasPositon = buf.readBoolean())
@@ -50,14 +50,14 @@ public class TabCompleteRequest extends DefinedPacket {
 
 	@Override
 	public void write(ByteBuf buf, Direction direction, Protocol protocolVersion) {
-		if (protocolVersion.newerOrEqual(Protocol.MC_1_13_0))
+		if (protocolVersion.newerOrEqual(Protocol.MC_1_13))
 			writeVarInt(transactionId, buf);
 		
 
 		writeString(cursor, buf, protocolVersion);
 
-		if (protocolVersion.newerOrEqual(Protocol.MC_1_8_0) && protocolVersion.olderThan(Protocol.MC_1_13_0)) {
-			if (protocolVersion.newerOrEqual(Protocol.MC_1_9_0))
+		if (protocolVersion.newerOrEqual(Protocol.MC_1_8) && protocolVersion.olderThan(Protocol.MC_1_13)) {
+			if (protocolVersion.newerOrEqual(Protocol.MC_1_9))
 				buf.writeBoolean(assumeCommand);
 
 			buf.writeBoolean(hasPositon);

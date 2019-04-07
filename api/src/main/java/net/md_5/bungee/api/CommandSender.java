@@ -19,7 +19,6 @@ public interface CommandSender
      *
      * @param message the message to send
      */
-    @Deprecated
     public void sendMessage(String message);
 
     /**

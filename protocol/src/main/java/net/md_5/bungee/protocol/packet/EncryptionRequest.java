@@ -33,7 +33,7 @@ public class EncryptionRequest extends DefinedPacket
         }
         
         serverId = readString( buf );
-        if ( protocolVersion.olderThan(Protocol.MC_1_8_0) )
+        if ( protocolVersion.olderThan(Protocol.MC_1_8) )
         {
             publicKey = readArrayLegacy( buf );
             verifyToken = readArrayLegacy( buf );
@@ -55,7 +55,7 @@ public class EncryptionRequest extends DefinedPacket
     	}
     	
         writeString( serverId, buf );
-        if ( protocolVersion.olderThan(Protocol.MC_1_8_0) )
+        if ( protocolVersion.olderThan(Protocol.MC_1_8) )
         {
             writeArrayLegacy( publicKey, buf, false );
             writeArrayLegacy( verifyToken, buf, false );

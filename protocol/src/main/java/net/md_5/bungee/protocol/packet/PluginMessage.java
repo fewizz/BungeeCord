@@ -72,11 +72,11 @@ public class PluginMessage extends DefinedPacket {
 				data = new byte[len];
 				buf.readBytes(data);
 			}
-		} else if (protocolVersion.olderThan(Protocol.MC_1_8_0)) {
+		} else if (protocolVersion.olderThan(Protocol.MC_1_8)) {
 			tag = readString(buf);
 			data = readArrayLegacy(buf);
 		} else {
-			tag = (protocolVersion.newerOrEqual(Protocol.MC_1_13_0)) ? MODERNISE.apply(readString(buf)) : readString(buf);
+			tag = (protocolVersion.newerOrEqual(Protocol.MC_1_13)) ? MODERNISE.apply(readString(buf)) : readString(buf);
 			int maxSize = direction == Direction.TO_SERVER ? Short.MAX_VALUE : 0x100000;
 			Preconditions.checkArgument(buf.readableBytes() < maxSize);
 			data = new byte[buf.readableBytes()];
@@ -91,11 +91,11 @@ public class PluginMessage extends DefinedPacket {
 			buf.writeShort(data.length);
 			if (data.length > 0)
 				buf.writeBytes(data);
-		} else if (protocolVersion.olderThan(Protocol.MC_1_8_0)) {
+		} else if (protocolVersion.olderThan(Protocol.MC_1_8)) {
 			writeString(tag, buf);
 			writeArrayLegacy(data, buf, allowExtendedPacket);
 		} else {
-			writeString((protocolVersion.newerOrEqual(Protocol.MC_1_13_0)) ? MODERNISE.apply(tag) : tag, buf);
+			writeString((protocolVersion.newerOrEqual(Protocol.MC_1_13)) ? MODERNISE.apply(tag) : tag, buf);
 			buf.writeBytes(data);
 		}
 	}
