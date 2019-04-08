@@ -40,6 +40,10 @@ import net.md_5.bungee.protocol.packet.Team;
 import net.md_5.bungee.protocol.packet.Title;
 
 public enum Protocol {
+	MC_1_3(0, ProtocolGen.PRE_NETTY) { void postInit() {
+		packet(NetworkState.LEGACY, 254, Direction.TO_SERVER, LegacyStatusRequest::new);
+		packet(NetworkState.LEGACY, 255, Direction.TO_CLIENT, Kick::new);
+	}},
 	MC_1_5_2(61, ProtocolGen.PRE_NETTY) { void postInit() {
 		forStatus(NetworkState.LEGACY, new Do() { void apply() {
 			packet(0, KeepAlive::new);

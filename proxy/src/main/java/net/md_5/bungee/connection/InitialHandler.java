@@ -165,7 +165,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 					r.setMotd(pingResult.getResponse().getDescription());
 					r.setMcVersion("");
 					r.setProtocolVersion(pingResult.getConnection().getProtocol().version);
-					unsafe.sendPacket(new Kick(r.build())); // TODO
+					unsafe.sendPacket(new Kick(r.build(getProtocol()))); // TODO
 					ch.close();
 				} else {
 					Gson gson = getProtocol() == Protocol.MC_1_7_2 ? BungeeCord.getInstance().gsonLegacy : BungeeCord.getInstance().gson;
@@ -541,15 +541,17 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 	@Override
 	public void handle(final LegacyStatusRequest request) throws Exception {
 		Handshake handshake = new Handshake();
-		if(!request.isOlderOrEqual_1_5()) {
-			handshake.setHost(request.getHost());
-			handshake.setPort(request.getPort());
-			Protocol p = Protocol.byNumber(request.getProtocolVersion(), ProtocolGen.PRE_NETTY);
-			handshake.setProtocol(p == null ? Protocol.MC_1_6_4 : p);
+		if(request.getFirst() == 1) {
+			if(request.getBranding() == null)
+				handshake.setProtocol(Protocol.MC_1_5_2);
+			else {
+				handshake.setHost(request.getHost());
+				handshake.setPort(request.getPort());
+				handshake.setProtocol(Protocol.MC_1_6_4);
+			}
 		}
-		else {
-			handshake.setProtocol(Protocol.MC_1_5_2);
-		}
+		else
+			handshake.setProtocol(Protocol.MC_1_3);
 		handshake.setRequestedNetworkState(NetworkState.STATUS);
 		handle(handshake);
 		handle(new StatusRequest());
