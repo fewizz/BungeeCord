@@ -33,7 +33,7 @@ public enum Protocol {
 			this.<SkipPacket>serverbound(7, buf -> buf.skipBytes(Integer.BYTES*2 + 1));
 			this.<SkipPacket>clientbound(8, buf -> buf.skipBytes(Float.BYTES + Short.BYTES*2));
 			both(9, Respawn.class);
-			this.<SkipPacket>both(10, buf-> buf.skipBytes(1));
+			this.<SkipPacket>both(10, buf -> buf.skipBytes(1));
 			this.<SkipPacket>both(11, buf -> buf.skipBytes(Double.BYTES*4 + 1));
 			this.<SkipPacket>both(12, buf -> buf.skipBytes(Float.BYTES*2 + 1));
 			this.<SkipPacket>both(13, buf -> buf.skipBytes(Double.BYTES*4 + Float.BYTES*2 + 1));

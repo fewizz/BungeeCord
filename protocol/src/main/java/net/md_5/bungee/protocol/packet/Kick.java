@@ -46,7 +46,7 @@ public class Kick extends DefinedPacket
     @AllArgsConstructor
     @NoArgsConstructor
     @Data
-    public static class StatusResponce {
+    public static class StatusResponceStringBuilder {
     	public int protocolVersion;
     	public String mcVersion;
     	public String motd;

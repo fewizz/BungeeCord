@@ -69,7 +69,7 @@ public class PingHandler extends PacketHandler {
 
 	@Override
 	public void handle(Kick kick) throws Exception {
-		Kick.StatusResponce r = new Kick.StatusResponce();
+		Kick.StatusResponceStringBuilder r = new Kick.StatusResponceStringBuilder();
 		r.parse(kick.getMessage());
 
 		callback.done(new ServerPing(new ServerPing.Protocol("", r.protocolVersion), new ServerPing.Players(r.max, r.players, new ServerPing.PlayerInfo[0]), r.motd, (Favicon) null), null);

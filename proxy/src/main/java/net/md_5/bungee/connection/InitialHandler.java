@@ -159,7 +159,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 
 			Callback<ProxyPingEvent> callback = (ProxyPingEvent pingResult, Throwable error) -> {
 				if (isLegacy()) {
-					Kick.StatusResponce r = new Kick.StatusResponce();
+					Kick.StatusResponceStringBuilder r = new Kick.StatusResponceStringBuilder();
 					r.setMax(pingResult.getResponse().getPlayers().getMax());
 					r.setPlayers(pingResult.getResponse().getPlayers().getOnline());
 					r.setMotd(pingResult.getResponse().getDescription());
