@@ -16,7 +16,7 @@ public interface PacketDecoder extends ChannelInboundHandler {
 		ctx.fireChannelRead(new PacketWrapper(p, buf));
 		int dec = buf.refCnt() - was;
 		if(dec > 0)
-			buf.release(buf.refCnt() - was);
+			buf.release(dec);
 		else if(dec < 0)
 			throw new RuntimeException("Packet's ByteBuf was decreased more than one time");
 	}

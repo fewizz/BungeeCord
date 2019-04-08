@@ -67,6 +67,11 @@ public class Configuration implements ProxyConfig
     private boolean preventProxyConnections;
     private boolean forgeSupport;
     private boolean metrics = false;
+    
+    private boolean initialProtocol = false;
+    private boolean protocolChange = false;
+    private boolean handshake = false;
+    private boolean serverChange = false;
 
     public void load()
     {
@@ -101,6 +106,11 @@ public class Configuration implements ProxyConfig
         metrics = adapter.getBoolean( "metrics", metrics );
 
         disabledCommands = new CaseInsensitiveSet( (Collection<String>) adapter.getList( "disabled_commands", Arrays.asList( "disabledcommandhere" ) ) );
+        
+        initialProtocol = adapter.getBoolean( "debug.initial_protocol", initialProtocol);
+        protocolChange = adapter.getBoolean("debug.protocol_change", protocolChange);
+        handshake = adapter.getBoolean("debug.handshake", handshake);
+        serverChange = adapter.getBoolean("server_change", serverChange);
 
         Preconditions.checkArgument( listeners != null && !listeners.isEmpty(), "No listeners defined." );
 

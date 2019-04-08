@@ -52,10 +52,8 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 			// Do it manually, because when in becomes !in.isReadable, 
 			// super BTMD not sends last message immediately, so it releases bytebuf
 			firePacket(packet, in.slice(begin, in.readerIndex() - begin), ctx);
-		} catch (Exception e) {// Temp. solution. //TODO
+		} catch (IndexOutOfBoundsException e) {// Temp. solution. //TODO
 			in.readerIndex(begin);
-			if (!(e instanceof IndexOutOfBoundsException))
-				throw e;
 		}
 	}
 	

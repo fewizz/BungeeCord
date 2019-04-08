@@ -328,7 +328,8 @@ public class BungeeCord extends ProxyServer
 						@Override
 						public void onIdentified(ProtocolGen gen, ChannelHandlerContext ctx) {
 							Protocol pv = gen == ProtocolGen.POST_NETTY ? getProtocolVersion() : Protocol.MC_1_6_4;
-							getLogger().info("For now, new connection identified as: " + pv);
+							if(config.isInitialProtocol())
+								logger.info("[" + ctx.channel().remoteAddress() + "] Connected to Bungee, identified as " + pv.name() );
 							PipelineUtil.packetHandlers(ch, pv, Direction.TO_CLIENT);
 						}
 					});

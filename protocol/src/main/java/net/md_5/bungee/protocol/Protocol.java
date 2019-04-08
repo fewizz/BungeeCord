@@ -340,7 +340,6 @@ public enum Protocol {
 			serverboundPacket(0x01, EncryptionResponse::new);
 			
 			clientboundPacket(0x02, LoginSuccess::new);
-			clientboundPacket(0x03, SetCompression::new);
 		};});
 		forStatus(NetworkState.GAME, new Do() { void apply() {
 			packet(0x00, KeepAlive::new);
@@ -360,9 +359,6 @@ public enum Protocol {
 			clientboundPacket(0x3E, Team::new);
 			clientboundPacket(0x3F, PluginMessage::new);
 			clientboundPacket(0x40, Kick::new);
-			clientboundPacket(0x45, Title::new);
-			clientboundPacket(0x46, SetCompression::new);
-			clientboundPacket(0x47, PlayerListHeaderFooter::new);
 		};});
 	}},
 	MC_1_7_6(5, ProtocolGen.POST_NETTY) { void postInit() {
@@ -370,6 +366,11 @@ public enum Protocol {
 	}},
 	MC_1_8_0(47, ProtocolGen.POST_NETTY) { void postInit() {
 		inherit(MC_1_7_2);
+		
+		packet(NetworkState.GAME, 0x45, Direction.TO_CLIENT, Title::new);
+		packet(NetworkState.GAME, 0x46, Direction.TO_CLIENT, SetCompression::new);
+		packet(NetworkState.GAME, 0x47, Direction.TO_CLIENT, PlayerListHeaderFooter::new);
+		packet(NetworkState.LOGIN, 0x03, Direction.TO_CLIENT, SetCompression::new);
 	}},
 	MC_1_9_0(107, ProtocolGen.POST_NETTY) { void postInit() {
 		inheritStatusesFromProtocol(MC_1_8_0, NetworkState.HANDSHAKE, NetworkState.LOGIN, NetworkState.STATUS);
@@ -395,7 +396,6 @@ public enum Protocol {
 			clientboundPacket(0x41, Team::new);
 			clientboundPacket(0x42, ScoreboardScore::new);
 			clientboundPacket(0x45, Title::new);
-			clientboundPacket(0x46, SetCompression::new);
 			clientboundPacket(0x48, PlayerListHeaderFooter::new);
 		};});
 	}},
@@ -441,7 +441,6 @@ public enum Protocol {
 			clientboundPacket(0x41, ScoreboardObjective::new);
 			clientboundPacket(0x43, Team::new);
 			clientboundPacket(0x44, ScoreboardScore::new);
-			clientboundPacket(0x46, SetCompression::new);
 			clientboundPacket(0x47, Title::new);
 			clientboundPacket(0x49, PlayerListHeaderFooter::new);
 		};});
@@ -469,7 +468,6 @@ public enum Protocol {
 			clientboundPacket(0x42, ScoreboardObjective::new);
 			clientboundPacket(0x44, Team::new);
 			clientboundPacket(0x45, ScoreboardScore::new);
-			clientboundPacket(0x46, SetCompression::new);
 			clientboundPacket(0x48, Title::new);
 			clientboundPacket(0x4A, PlayerListHeaderFooter::new);
 		};});
@@ -501,7 +499,6 @@ public enum Protocol {
 			clientboundPacket(0x38, Respawn::new);
 			clientboundPacket(0x3E, ScoreboardDisplay::new);
 			clientboundPacket(0x45, ScoreboardObjective::new);
-			clientboundPacket(0x46, SetCompression::new);
 			clientboundPacket(0x47, Team::new);
 			clientboundPacket(0x48, ScoreboardScore::new);
 			clientboundPacket(0x4B, Title::new);
