@@ -33,16 +33,17 @@ public class PingHandler extends PacketHandler {
 	public void connected(ChannelWrapper channel) throws Exception {
 		this.channel = channel;
 
-		if (!protocol.isLegacy()) {
+		if (protocol.isModern()) {
 			channel.setNetworkState(NetworkState.STATUS);
 			channel.write(new StatusRequest());
 		} 
 		else {
 			LegacyStatusRequest lsr = new LegacyStatusRequest();
-			lsr.setBranding("MC");
-			lsr.setHost("");
-			lsr.setOlderOrEqual_1_5(protocol.olderOrEqual(Protocol.MC_1_5_2));
-			lsr.setProtocolVersion(protocol.version);
+			if(protocol.newerThan(Protocol.MC_1_5_2)) {
+				lsr.setBranding("MC|PingHost");
+				lsr.setHost("");
+				lsr.setProtocolVersion(protocol.version);
+			}
 			channel.write(lsr);
 		}
 	}

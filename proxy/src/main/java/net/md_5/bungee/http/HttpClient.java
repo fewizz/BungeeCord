@@ -93,7 +93,7 @@ public class HttpClient
             }
         };
 
-        new Bootstrap().channel( NettyUtil.bestSocketChannel() ).group( eventLoop ).handler( new HttpInitializer( callback, ssl, uri.getHost(), port ) ).
+        new Bootstrap().channel( NettyUtil.BEST_SOCKET_CHANNEL_CLASS ).group( eventLoop ).handler( new HttpInitializer( callback, ssl, uri.getHost(), port ) ).
                 option( ChannelOption.CONNECT_TIMEOUT_MILLIS, TIMEOUT ).remoteAddress( inetHost, port ).connect().addListener( future );
     }
 }

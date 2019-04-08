@@ -12,6 +12,7 @@ import com.google.common.base.Throwables;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
+import lombok.NonNull;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Protocol;
@@ -129,12 +130,12 @@ public abstract class EntityMap
         }
     }
 
-    protected static void rewriteMetaVarInt(ByteBuf packet, int oldId, int newId, int metaIndex)
+    /*protected static void rewriteMetaVarInt(ByteBuf packet, int oldId, int newId, int metaIndex)
     {
         rewriteMetaVarInt( packet, oldId, newId, metaIndex, null );
-    }
+    }*/
 
-    protected static void rewriteMetaVarInt(ByteBuf packet, int oldId, int newId, int metaIndex, Protocol protocolVersion)
+    protected static void rewriteMetaVarInt(ByteBuf packet, int oldId, int newId, int metaIndex, @NonNull Protocol protocolVersion)
     {
         int readerIndex = packet.readerIndex();
 
@@ -142,7 +143,7 @@ public abstract class EntityMap
         while ( ( index = packet.readUnsignedByte() ) != 0xFF )
         {
             int type = DefinedPacket.readVarInt( packet );
-            if ( protocolVersion != null && protocolVersion.newerOrEqual(MC_1_13) )
+            if ( protocolVersion.newerOrEqual(MC_1_13) )
             {
                 switch ( type )
                 {

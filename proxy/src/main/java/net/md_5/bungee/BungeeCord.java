@@ -1,23 +1,14 @@
 package net.md_5.bungee;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.PropertyResourceBundle;
-import java.util.ResourceBundle;
-import java.util.Timer;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -93,10 +84,10 @@ import net.md_5.bungee.module.ModuleManager;
 import net.md_5.bungee.netty.NettyUtil;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.GenerationIdentifier;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolGen;
+import net.md_5.bungee.protocol.Side;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 import net.md_5.bungee.query.RemoteQuery;
@@ -108,11 +99,6 @@ import net.md_5.bungee.util.CaseInsensitiveMap;
  */
 public class BungeeCord extends ProxyServer
 {
-
-    /**
-     * Current operation state.
-     */
-    public volatile boolean isRunning;
     /**
      * Configuration.
      */
@@ -255,7 +241,7 @@ public class BungeeCord extends ProxyServer
             ResourceLeakDetector.setLevel( ResourceLeakDetector.Level.DISABLED ); // Eats performance
         
         ThreadFactory tf = new ThreadFactoryBuilder().setNameFormat( "Netty IO Thread #%1$d" ).build();
-        eventLoops = NettyUtil.bestEventLoopGroup(0, tf);
+        eventLoops = NettyUtil.createBestEventLoopGroup(0, tf);
 
         File moduleDirectory = new File( "modules" );
         moduleManager.load( this, moduleDirectory );
@@ -274,8 +260,6 @@ public class BungeeCord extends ProxyServer
 
             getLogger().warning( "MinecraftForge support is currently unmaintained and may have unresolved issues. Please use at your own risk." );
         }
-
-        isRunning = true;
 
         pluginManager.enablePlugins();
 
@@ -306,7 +290,7 @@ public class BungeeCord extends ProxyServer
             }
     	}
         new ServerBootstrap()
-            .channel(NettyUtil.bestServerSocketChannel())
+            .channel(NettyUtil.BEST_SERVER_SOCKET_CHANNEL_CLASS)
             .option( ChannelOption.SO_REUSEADDR, true ) // TODO: Move this elsewhere!
             .childAttr( LISTENER, info )
             .childHandler( new ChannelInitializer<Channel>() {
@@ -320,7 +304,7 @@ public class BungeeCord extends ProxyServer
 							Protocol pv = gen == ProtocolGen.POST_NETTY ? getProtocolVersion() : Protocol.MC_1_6_4;
 							if(config.isInitialProtocol())
 								logger.info("[" + ctx.channel().remoteAddress() + "] Connected to Bungee, identified as " + pv.name() );
-							PipelineUtil.packetHandlers(ch, pv, Direction.TO_CLIENT);
+							PipelineUtil.packetHandlers(ch, pv, Side.CLIENT);
 						}
 					});
 				}
@@ -341,7 +325,7 @@ public class BungeeCord extends ProxyServer
         	return;
         
         new RemoteQuery( this, info ).start(
-			NettyUtil.bestDatagramChannel(),
+			NettyUtil.BEST_DATAGRAM_CHANNEL_CLASS,
 			new InetSocketAddress( info.getHost().getAddress(), info.getQueryPort() ),
 			eventLoops,
 			(ChannelFuture future) -> {
@@ -377,10 +361,6 @@ public class BungeeCord extends ProxyServer
     @Override
     public synchronized void stop(final String reason)
     {
-        if ( !isRunning )
-            return;
-        isRunning = false;
-
         new Thread(() -> {
             stopListeners();
             getLogger().info( "Closing pending connections" );
@@ -484,17 +464,14 @@ public class BungeeCord extends ProxyServer
 
     public void reloadMessages()
     {
-        File file = new File( "messages.properties" );
-        if ( file.isFile() )
-        {
-            try ( FileReader rd = new FileReader( file ) )
-            {
-                customBundle = new PropertyResourceBundle( rd );
-            } catch ( IOException ex )
-            {
-                getLogger().log( Level.SEVERE, "Could not load custom messages.properties", ex );
-            }
-        }
+    	Path cm = Paths.get("messages.properties");
+    	if(!Files.exists(cm))
+    		return;
+    	try {
+			customBundle = new PropertyResourceBundle(Files.newInputStream(cm));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
     }
 
     @Override

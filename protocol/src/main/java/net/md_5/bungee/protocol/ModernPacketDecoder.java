@@ -12,13 +12,13 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 	@Getter
 	private NetworkState networkState = NetworkState.HANDSHAKE;
 	@Getter
-	private final Direction direction;
+	private final Side side;
 	@Getter
 	private Protocol protocol;
 	private TIntObjectMap<Class<? extends Packet>> map;
 
-	public ModernPacketDecoder(Direction dir, int pv) {
-		this.direction = dir;
+	public ModernPacketDecoder(Side side, int pv) {
+		this.side = side;
 		protocol = Protocol.byNumber(pv, ProtocolGen.POST_NETTY);
 		updateMap();
 	}
@@ -36,7 +36,7 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 	}
 	
 	private void updateMap() {
-		map = protocol.getIdToClassUnmodifiableMap(networkState, direction);
+		map = protocol.getIdToClassUnmodifiableMap(networkState, side.getOutboundDirection());
 	}
 
 	@Override
@@ -57,11 +57,13 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 		if (packet == null)
 			in.skipBytes(in.readableBytes());
 		else {
-			packet.read(in, direction, protocol);
+			packet.read(in, side.getOutboundDirection(), protocol);
 			if (in.isReadable())
-				throw new BadPacketException("Did not read all bytes from packet " + packet.getClass() + ". id: " + packetId + ", ns: " + networkState + ", direction: " + direction);
+				throw new RuntimeException(
+					"Did not read all bytes from packet " + packet.getClass() + ". "
+					+ "Id: " + packetId + ", env: "+environmentDescription());
 		}
 		
-		firePacket(packet, in.slice(0, in.capacity()), ctx);
+		firePacket(packet, in.slice(0, in.writerIndex()), ctx);
 	}
 }

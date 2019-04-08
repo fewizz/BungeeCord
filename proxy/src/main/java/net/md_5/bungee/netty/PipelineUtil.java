@@ -13,15 +13,7 @@ import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.BungeeServerInfo;
 import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.api.config.ListenerInfo;
-import net.md_5.bungee.protocol.NetworkState;
-import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.LegacyPacketDecoder;
-import net.md_5.bungee.protocol.ModernPacketDecoder;
-import net.md_5.bungee.protocol.PacketEncoder;
-import net.md_5.bungee.protocol.ProtocolGen;
-import net.md_5.bungee.protocol.Protocol;
-import net.md_5.bungee.protocol.Varint21FrameDecoder;
-import net.md_5.bungee.protocol.Varint21LengthFieldPrepender;
+import net.md_5.bungee.protocol.*;
 
 public class PipelineUtil {
     public static final AttributeKey<ListenerInfo> LISTENER = AttributeKey.valueOf( "ListerInfo" );
@@ -43,13 +35,13 @@ public class PipelineUtil {
     	DECRYPT = "decrypt",
     	ENCRYPT = "encrypt";
     
-    public static void modernPacketHandlers(Channel ch, int protocolVersion, Direction dir) {
+    public static void modernPacketHandlers(Channel ch, int protocolVersion, Side side) {
 		ch.pipeline().addFirst(FRAME_DEC, new Varint21FrameDecoder());
 		ch.pipeline().addAfter(
 			FRAME_DEC,
 			PACKET_DEC,
 			new ModernPacketDecoder(
-				dir.opposite(),
+				side,
 				protocolVersion
 			)
 		);
@@ -60,17 +52,17 @@ public class PipelineUtil {
 			PACKET_ENC,
 			new PacketEncoder(
 				NetworkState.HANDSHAKE,
-				dir,
+				side,
 				Protocol.byNumber(protocolVersion, ProtocolGen.POST_NETTY)
 			)
 		);
     }
     
-    public static void legacyPacketHandlers(Channel ch, int protocolVersion, Direction dir) {
+    public static void legacyPacketHandlers(Channel ch, int protocolVersion, Side side) {
 		ch.pipeline().addFirst(
 			PACKET_DEC,
 			new LegacyPacketDecoder(
-				dir.opposite(),
+				side,
 				protocolVersion
 			)
 		);
@@ -79,7 +71,7 @@ public class PipelineUtil {
 			PACKET_ENC,
 			new PacketEncoder(
 				NetworkState.LEGACY,
-				dir,
+				side,
 				Protocol.byNumber(protocolVersion, ProtocolGen.PRE_NETTY)
 			)
 		);
@@ -101,20 +93,20 @@ public class PipelineUtil {
     	ch.pipeline().addLast(PipelineUtil.BOSS, new HandlerBoss().setHandler(ph));
     }
     
-    public static void packetHandlers(Channel ch, Protocol pv, Direction dir) {
+    public static void packetHandlers(Channel ch, Protocol pv, Side side) {
     	switch (pv.generation) {
 		case POST_NETTY:
-			modernPacketHandlers(ch, pv.version, dir);
+			modernPacketHandlers(ch, pv.version, side);
 			break;
 
 		case PRE_NETTY:
-			legacyPacketHandlers(ch, pv.version, dir);
+			legacyPacketHandlers(ch, pv.version, side);
 			break;
 		}
     }
     
-    public static void addHandlers(Channel ch, Protocol pv, Direction dir, PacketHandler ph) {
+    public static void addHandlers(Channel ch, Protocol pv, Side side, PacketHandler ph) {
     	basicHandlers(ch, ph);
-    	packetHandlers(ch, pv, dir);
+    	packetHandlers(ch, pv, side);
     }
 }

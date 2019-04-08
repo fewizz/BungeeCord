@@ -7,20 +7,26 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import lombok.Getter;
-import lombok.Setter;
 
 public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketDecoder {
 	@Getter
 	private NetworkState networkState = NetworkState.LEGACY;
 	@Getter
-	private final Direction direction;
+	private final Side side;
 	@Getter
 	private Protocol protocol;
 	private TIntObjectMap<Class<? extends Packet>> map;
 	
-	public LegacyPacketDecoder(Direction d, int pv) {
-		this.direction = d;
+	public LegacyPacketDecoder(Side side, int pv) {
+		this.side = side;
 		this.protocol = (Protocol.byNumber(pv, ProtocolGen.PRE_NETTY));
+		updateMap();
+	}
+	
+	public LegacyPacketDecoder(LegacyPacketDecoder lpd) {
+		this.networkState = lpd.networkState;
+		this.side = lpd.side;
+		this.protocol = lpd.protocol;
 		updateMap();
 	}
 	
@@ -37,13 +43,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 	}
 	
 	private void updateMap() {
-		map = protocol.getIdToClassUnmodifiableMap(networkState, direction);
-	}
-	
-	public LegacyPacketDecoder(LegacyPacketDecoder lpd) {
-		this.networkState = lpd.networkState;
-		this.direction = lpd.direction;
-		this.protocol = lpd.protocol;
+		map = protocol.getIdToClassUnmodifiableMap(networkState, side.getOutboundDirection());
 	}
 
 	@Override
@@ -56,10 +56,9 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 			Packet packet = map.get(packetId).newInstance();
 
 			if (packet == null)
-				throw new RuntimeException("Don't know that packet" + 
-						", id: " + packetId + 
-						", direction: " + direction.name() + 
-						", protocol: " + protocol);
+				throw new RuntimeException("Don't know that packet"
+						+ ", id: " + packetId
+						+ ", env: " + environmentDescription());
 			
 			//System.out.println("DEC, id: " + packetId + ", dir: " + direction.name());
 			read0(in, packet);
@@ -73,6 +72,6 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 	}
 	
 	protected void read0(ByteBuf buf, Packet p) {
-		p.read( buf, direction, protocol );
+		p.read( buf, side.getOutboundDirection(), protocol );
 	}
 }

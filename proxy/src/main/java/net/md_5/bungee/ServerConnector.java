@@ -153,14 +153,12 @@ public class ServerConnector extends PacketHandler {
 			}
 
 			copiedHandshake.setHost(newHost);
-			
-			System.out.println("Setting host: " + newHost);
 		} else if (!user.getExtraDataInHandshake().isEmpty()) {
 			// Restore the extra data
 			copiedHandshake.setHost(copiedHandshake.getHost() + user.getExtraDataInHandshake());
 		}
 
-		if (!originalHandshake.getProtocol().isLegacy()) {
+		if (originalHandshake.getProtocol().isModern()) {
 			channel.write(copiedHandshake);
 			channel.setNetworkState(NetworkState.LOGIN);
 			thisState = State.LOGIN_SUCCESS;

@@ -15,7 +15,7 @@ public class PacketEncoder extends MessageToByteEncoder<Packet>
     @Getter
     @NonNull
     private NetworkState networkState;
-    private final Direction direction;
+    private final Side side;
     @Setter
     @Getter
     @NonNull
@@ -25,17 +25,17 @@ public class PacketEncoder extends MessageToByteEncoder<Packet>
     protected void encode(ChannelHandlerContext ctx, Packet msg, ByteBuf out) throws Exception {
     	int packetID = -1;
     	try {
-    		packetID = protocol.getClassToIdUnmodifiableMap(networkState, direction).get(msg.getClass());
+    		packetID = protocol.getClassToIdUnmodifiableMap(networkState, side.getInboundDirection()).get(msg.getClass());
     	} catch(Exception e) {
     		throw new RuntimeException("Can't find id of packet " + msg.getClass().getName());
     	}
         //System.out.println("ENC, id: " + packetID + ", dir: " + direction.name());
         
-        if(!protocol.isLegacy())
+        if(protocol.isModern())
         	DefinedPacket.writeVarInt( packetID, out );
         else
         	out.writeByte(packetID);
         
-        msg.write( out, direction, protocol );
+        msg.write( out, side.getInboundDirection(), protocol );
     }
 }

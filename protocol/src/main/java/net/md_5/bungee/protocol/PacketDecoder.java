@@ -7,7 +7,7 @@ import io.netty.channel.ChannelInboundHandler;
 public interface PacketDecoder extends ChannelInboundHandler {
 	public Protocol getProtocol();
 	public void setProtocol(Protocol pv);
-	public Direction getDirection();
+	public Side getSide();
 	public NetworkState getNetworkState();
 	public void setNetworkState(NetworkState p);
 	
@@ -23,6 +23,6 @@ public interface PacketDecoder extends ChannelInboundHandler {
 	}
 	
 	default String environmentDescription() {
-		return "networkState: "+getNetworkState()+", protocol: ("+getProtocol()+"), direction: "+getDirection();
+		return "networkState: "+getNetworkState()+", protocol: ("+getProtocol()+"), side: "+getSide();
 	}
 }

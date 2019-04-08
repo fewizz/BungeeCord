@@ -52,6 +52,7 @@ import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Protocol;
+import net.md_5.bungee.protocol.Side;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.ClientSettings;
 import net.md_5.bungee.protocol.packet.Kick;
@@ -290,7 +291,7 @@ public final class UserConnection implements ProxiedPlayer {
 		
 		Bootstrap b = 
 			new Bootstrap()
-			.channel(NettyUtil.bestSocketChannel())
+			.channel(NettyUtil.BEST_SOCKET_CHANNEL_CLASS)
 			.group(ch.getHandle().eventLoop())
 			.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, request.getConnectTimeout())
 			.remoteAddress(target.getAddress())
@@ -298,7 +299,7 @@ public final class UserConnection implements ProxiedPlayer {
 				@Override
 				protected void initChannel(Channel ch) throws Exception {
 					ServerConnector connector = new ServerConnector(bungee, UserConnection.this, target);
-					PipelineUtil.addHandlers(ch, pendingConnection.getProtocol(), Direction.TO_SERVER, connector);
+					PipelineUtil.addHandlers(ch, pendingConnection.getProtocol(), Side.SERVER, connector);
 				}
 			});
 		

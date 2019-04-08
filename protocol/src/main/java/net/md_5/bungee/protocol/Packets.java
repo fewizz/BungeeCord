@@ -74,13 +74,13 @@ public class Packets {
 			addAll(c, ns);
 	}
 	
-	public Class<? extends Packet> get(NetworkState ns, Direction dir, int id) {
+	public Class<? extends Packet> getClassStrictly(NetworkState ns, Direction dir, int id) {
 		Maps m = get(ns, dir);
 		if(m == null) throw new NoSuchElementException();
 		return m.idToClass.get(id);
 	}
 	
-	public int get(NetworkState ns, Direction dir, Class<? extends Packet> id) {
+	public int getIdStrictly(NetworkState ns, Direction dir, Class<? extends Packet> id) {
 		Maps m = get(ns, dir);
 		if(m == null) throw new NoSuchElementException();
 		return m.classToId.get(id);
