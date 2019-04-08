@@ -150,7 +150,7 @@ class EntityMap_1_9 extends EntityMap
                 break;
             case 0x39 /* EntityMetadata : PacketPlayOutEntityMetadata */:
                 DefinedPacket.readVarInt( packet ); // Entity ID
-                rewriteMetaVarInt( packet, oldId + 1, newId + 1, 5 ); // fishing hook
+                rewriteMetaVarInt( packet, oldId + 1, newId + 1, 5, pv); // fishing hook
                 break;
         }
         packet.readerIndex( readerIndex );

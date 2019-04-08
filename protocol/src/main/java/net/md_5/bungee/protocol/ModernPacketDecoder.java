@@ -24,20 +24,20 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-		int begin = in.readerIndex();
 		int packetId = DefinedPacket.readVarInt(in);
 
 		DefinedPacket packet = protocol.createPacket(networkState, packetId, direction);
 
 		if (packet == null)
 			in.skipBytes(in.readableBytes());
-		else
+		else {
 			packet.read(in, direction, protocol);
+			
+			if (in.isReadable())
+				throw new BadPacketException("Did not read all bytes from packet " + packet.getClass() + " " + packetId + " cs " + networkState + " Direction " + direction);
+		}
 		
-		firePacket(packet, in.slice(begin, in.readerIndex() - begin), ctx);
-
-		if (in.isReadable())
-			throw new BadPacketException("Did not read all bytes from packet " + packet.getClass() + " " + packetId + " cs " + networkState + " Direction " + direction);
+		firePacket(packet, in.slice(0, in.writerIndex()), ctx);
 
 	}
 }

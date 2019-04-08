@@ -16,6 +16,8 @@ import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Protocol;
 
+import lombok.NonNull;
+
 /**
  * Class to rewrite integers within packets.
  */
@@ -129,12 +131,7 @@ public abstract class EntityMap
         }
     }
 
-    protected static void rewriteMetaVarInt(ByteBuf packet, int oldId, int newId, int metaIndex)
-    {
-        rewriteMetaVarInt( packet, oldId, newId, metaIndex, null );
-    }
-
-    protected static void rewriteMetaVarInt(ByteBuf packet, int oldId, int newId, int metaIndex, Protocol protocolVersion)
+    protected static void rewriteMetaVarInt(ByteBuf packet, int oldId, int newId, int metaIndex, @NonNull Protocol protocolVersion)
     {
         int readerIndex = packet.readerIndex();
 
@@ -142,7 +139,7 @@ public abstract class EntityMap
         while ( ( index = packet.readUnsignedByte() ) != 0xFF )
         {
             int type = DefinedPacket.readVarInt( packet );
-            if ( protocolVersion != null && protocolVersion.newerOrEqual(MC_1_13_0) )
+            if ( protocolVersion.newerOrEqual(MC_1_13_0) )
             {
                 switch ( type )
                 {
@@ -245,7 +242,7 @@ public abstract class EntityMap
         packet.readerIndex( readerIndex );
     }
 
-    private static void readSkipSlot(ByteBuf packet, Protocol protocolVersion)
+    private static void readSkipSlot(ByteBuf packet, @NonNull Protocol protocolVersion)
     {
         if ( protocolVersion.newerOrEqual(MC_1_13_2) ? packet.readBoolean() : packet.readShort() != -1 )
         {
