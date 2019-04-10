@@ -42,8 +42,15 @@ public class ChannelWrapper
     {
     	if(getProtocol().isLegacy() && state != NetworkState.LEGACY)
     		throw new RuntimeException("You can't use NetworkState other than Legacy, when protocol is legacy itself");
-        ((PacketDecoder)ch.pipeline().get( PipelineUtil.PACKET_DEC)).setNetworkState(state);
-        ((PacketEncoder)ch.pipeline().get( PipelineUtil.PACKET_ENC )).setNetworkState(state);
+    	
+        ((PacketDecoder)ch
+    		.pipeline()
+    		.get( PipelineUtil.PACKET_DEC)
+    	).setNetworkState(state);
+        ((PacketEncoder)ch
+        	.pipeline()
+        	.get( PipelineUtil.PACKET_ENC )
+        ).setNetworkState(state);
     }
     
     public NetworkState getConnectionState() { return ch.pipeline().get(PacketEncoder.class).getNetworkState(); }
@@ -53,16 +60,20 @@ public class ChannelWrapper
     	Protocol was = getProtocol();
     	
     	Preconditions.checkNotNull(protocol, "arg is null");
-    	PacketDecoder dec = (PacketDecoder) ch.pipeline().get(PipelineUtil.PACKET_DEC);
+    	PacketDecoder dec = (PacketDecoder) ch
+    		.pipeline()
+    		.get(PipelineUtil.PACKET_DEC);
     	
     	Preconditions.checkNotNull(dec, "decoder is null");
     	
     	if(was.generation != protocol.generation)
     		throw new RuntimeException( "Incompatible generation" );
     	
-    	PacketEncoder enc = (PacketEncoder) ch.pipeline().get(PipelineUtil.PACKET_ENC);
+    	PacketEncoder enc = (PacketEncoder) ch
+			.pipeline()
+			.get(PipelineUtil.PACKET_ENC);
     	
-    	Preconditions.checkNotNull(dec, "encoder is null");
+    	Preconditions.checkNotNull(enc, "encoder is null");
     	
         dec.setProtocol(protocol);
         enc.setProtocol(protocol);
@@ -74,7 +85,10 @@ public class ChannelWrapper
     }
     
     public Protocol getProtocol() {
-    	return ch.pipeline().get(PacketEncoder.class).getProtocol();
+    	return ch
+			.pipeline()
+			.get(PacketEncoder.class)
+			.getProtocol();
     }
 
     public void write(Object packet)
@@ -95,7 +109,8 @@ public class ChannelWrapper
         close( null );
     }
 
-    public void close(Object packet)
+    @SuppressWarnings("unchecked")
+	public void close(Object packet)
     {
         if ( !closed )
         {
@@ -103,7 +118,8 @@ public class ChannelWrapper
 
             if ( packet != null && ch.isActive() )
             {
-                ch.writeAndFlush( packet ).addListeners( ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE, ChannelFutureListener.CLOSE );
+                ch.writeAndFlush(packet)
+                	.addListeners( ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE, ChannelFutureListener.CLOSE );
                 ch.eventLoop().schedule( new Runnable()
                 {
                     @Override

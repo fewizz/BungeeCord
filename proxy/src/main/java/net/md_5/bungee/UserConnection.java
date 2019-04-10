@@ -295,7 +295,12 @@ public final class UserConnection implements ProxiedPlayer {
 			.handler(new ChannelInitializer<Channel>() {
 				@Override
 				protected void initChannel(Channel ch) throws Exception {
-					ServerConnector connector = new ServerConnector(bungee, UserConnection.this, target);
+					ServerConnector connector = 
+						getPendingConnection().isLegacy() ?
+							new LegacyServerConnector(UserConnection.this, target)
+							:
+							new ModernServerConnector(UserConnection.this, target);
+							
 					PipelineUtil.addHandlers(ch, pendingConnection.getProtocol(), Direction.TO_SERVER, connector);
 				}
 			});

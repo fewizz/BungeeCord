@@ -40,10 +40,10 @@ import net.md_5.bungee.protocol.packet.Team;
 import net.md_5.bungee.protocol.packet.Title;
 
 public enum Protocol {
-	MC_1_3(0, ProtocolGen.PRE_NETTY) { void postInit() {
+	/*MC_1_3(-1, ProtocolGen.PRE_NETTY) { void postInit() {
 		packet(NetworkState.LEGACY, 254, Direction.TO_SERVER, LegacyStatusRequest::new);
 		packet(NetworkState.LEGACY, 255, Direction.TO_CLIENT, Kick::new);
-	}},
+	}},*/
 	MC_1_5_2(61, ProtocolGen.PRE_NETTY) { void postInit() {
 		forStatus(NetworkState.LEGACY, new Do() { void apply() {
 			packet(0, KeepAlive::new);
@@ -284,6 +284,14 @@ public enum Protocol {
 			packet(255, Kick::new);
 		}});
 	}},
+	/*MC_1_5_2_FORGE(61, ProtocolGen.PRE_NETTY) { void postInit() {
+		inherit(MC_1_5_2);
+		replace(NetworkState.LEGACY, 1, Direction.TO_CLIENT, () -> {
+			Login l = new Login();
+			l.setLegacyForgeVanillaComp(false);
+			return l;
+		});
+	}},*/
 	MC_1_6_4(78, ProtocolGen.PRE_NETTY) { void postInit() {
 		inherit(MC_1_5_2);
 		
@@ -327,6 +335,14 @@ public enum Protocol {
 			};});
 		}});
 	}},
+	/*MC_1_6_4_FORGE(78, ProtocolGen.PRE_NETTY) { void postInit() {
+		inherit(MC_1_6_4);
+		replace(NetworkState.LEGACY, 1, Direction.TO_CLIENT, () -> {
+			Login l = new Login();
+			l.setLegacyForgeVanillaComp(false);
+			return l;
+		});
+	}},*/
 	MC_1_7_2(4, ProtocolGen.POST_NETTY){ void postInit(){
 		forStatus(NetworkState.HANDSHAKE, new Do() { void apply() {
 			serverboundPacket(0x00, Handshake::new);
@@ -643,7 +659,7 @@ public enum Protocol {
 				return v;
 		return null;
 	}
-	
+
 	public static final List<String> GAME_VERSIONS = new ArrayList<>();
 	
 	static {

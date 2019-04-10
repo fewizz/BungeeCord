@@ -23,7 +23,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import lombok.RequiredArgsConstructor;
-import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.ServerConnection;
 import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.Util;
@@ -68,7 +67,7 @@ import net.md_5.bungee.tab.TabList;
 public class DownstreamBridge extends PacketHandler
 {
     
-    private final ProxyServer      bungee;
+    private final ProxyServer      bungee = ProxyServer.getInstance();
     private final UserConnection   con;
     private final ServerConnection server;
     

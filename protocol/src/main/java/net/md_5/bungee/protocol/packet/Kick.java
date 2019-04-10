@@ -56,14 +56,14 @@ public class Kick extends DefinedPacket
     	public String build(Protocol p) {
     		StringBuilder r = new StringBuilder();
     		
-    		if(p == Protocol.MC_1_3) {
+    		/*if(p == Protocol.MC_1_3) {
     			r.append(motd.replaceAll("\u00a7.", ""));
         		r.append('\u00a7');
         		r.append(String.valueOf(players));
         		r.append('\u00a7');
         		r.append(String.valueOf(max));
-    		}
-    		else {
+    		}*/
+    		//else {
 	    		r.append('\u00a7');
 	    		r.append('1');
 	    		r.append('\u0000');
@@ -76,7 +76,7 @@ public class Kick extends DefinedPacket
 	    		r.append(String.valueOf(players));
 	    		r.append('\u0000');
 	    		r.append(String.valueOf(max));
-    		}
+    		//}
     		
     		return r.toString();
     	}

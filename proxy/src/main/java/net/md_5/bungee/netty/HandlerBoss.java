@@ -9,12 +9,14 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.haproxy.HAProxyMessage;
 import io.netty.handler.timeout.ReadTimeoutException;
+import lombok.NonNull;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.connection.CancelSendSignal;
 import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.connection.PingHandler;
 import net.md_5.bungee.protocol.BadPacketException;
 import net.md_5.bungee.protocol.OverflowPacketException;
+import net.md_5.bungee.protocol.PacketPreparer;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.util.QuietException;
 
@@ -28,37 +30,32 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter {
 	private ChannelWrapper channel;
 	private PacketHandler handler;
 
-	public HandlerBoss setHandler(PacketHandler handler) {
-		//Preconditions.checkArgument(handler != null, "handler");
+	public HandlerBoss setHandler(@NonNull PacketHandler handler) {
 		this.handler = handler;
 		return this;
 	}
 
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
-		if (handler != null) {
-			channel = new ChannelWrapper(ctx);
-			if (!(handler instanceof InitialHandler || handler instanceof PingHandler))
-				ProxyServer.getInstance().getLogger().log(Level.INFO, "{0} has connected", handler);
-			handler.connected(channel);
-		}
+		channel = new ChannelWrapper(ctx);
+		//if (!(handler instanceof InitialHandler || handler instanceof PingHandler))
+		//	ProxyServer.getInstance().getLogger().log(Level.INFO, "{0} has connected", handler);
+		handler.connected(channel);
 	}
 
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-		if (handler != null) {
-			channel.markClosed();
-			handler.disconnected(channel);
+		channel.markClosed();
+		handler.disconnected(channel);
 
-			if (!(handler instanceof InitialHandler || handler instanceof PingHandler))
-				ProxyServer.getInstance().getLogger().log(Level.INFO, "{0} has disconnected", handler);
-		}
+		//if (!(handler instanceof InitialHandler || handler instanceof PingHandler))
+		//	ProxyServer.getInstance().getLogger().log(Level.INFO, "{0} has disconnected", handler);
 	}
 
 	@Override
 	public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
-		if (handler != null)
-			handler.writabilityChanged(channel);
+		//if (handler != null)
+		handler.writabilityChanged(channel);
 	}
 
 	@Override
@@ -72,10 +69,12 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter {
 			channel.setRemoteAddress(newAddress);
 			return;
 		}
-
-		if (handler == null)
-			return;
 		
+		if(msg instanceof PacketPreparer) {
+			handler.prepare((PacketPreparer)msg);
+			return;
+		}
+			
 		PacketWrapper wrapper = (PacketWrapper) msg;
 		boolean shouldHandle = handler.shouldHandle(wrapper);
 		try {

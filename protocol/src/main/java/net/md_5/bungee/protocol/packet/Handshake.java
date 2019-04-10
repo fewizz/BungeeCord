@@ -31,6 +31,13 @@ public class Handshake extends DefinedPacket {
 	private NetworkState requestedNetworkState;
 	
 	int version;
+	
+	public Handshake(Handshake hs) {
+		hs.setProtocol(protocol);
+		hs.setHost(host);
+		hs.setPort(port);
+		hs.setVersion(version);
+	}
 
 	@Override
 	public void read(ByteBuf buf) {

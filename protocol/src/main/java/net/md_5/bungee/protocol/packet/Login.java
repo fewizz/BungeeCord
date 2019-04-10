@@ -25,7 +25,7 @@ public class Login extends DefinedPacket implements Cloneable {
 	private String levelType;
 	private boolean reducedDebugInfo;
 	private byte worldHeight = -1;
-	private boolean legacyForgeVanillaComp = true;
+	private boolean fmlVanillaComp = true;
 	
 	public Login setMaxPlayers(int v) {
 		maxPlayers = (short) v;
@@ -41,7 +41,7 @@ public class Login extends DefinedPacket implements Cloneable {
 
 		gameMode = buf.readUnsignedByte();
 
-		if (protocolVersion.newerThan(Protocol.MC_1_9_0) || !legacyForgeVanillaComp)
+		if (protocolVersion.newerThan(Protocol.MC_1_9_0) || !fmlVanillaComp)
 			dimension = buf.readInt();
 		else
 			dimension = buf.readByte();
@@ -69,7 +69,7 @@ public class Login extends DefinedPacket implements Cloneable {
 
 		buf.writeByte(gameMode);
 
-		if (protocolVersion.newerThan(Protocol.MC_1_9_0) || !legacyForgeVanillaComp)
+		if (protocolVersion.newerThan(Protocol.MC_1_9_0) || !fmlVanillaComp)
 			buf.writeInt(dimension);
 		else
 			buf.writeByte(dimension);

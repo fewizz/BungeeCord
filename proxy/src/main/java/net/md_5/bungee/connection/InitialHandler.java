@@ -49,6 +49,7 @@ import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.netty.cipher.CipherDecoder;
 import net.md_5.bungee.netty.cipher.CipherEncoder;
 import net.md_5.bungee.protocol.NetworkState;
+import net.md_5.bungee.protocol.PacketPreparer;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
@@ -182,10 +183,16 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 
 		if (forced != null && listener.isPingPassthrough())
 			((BungeeServerInfo) forced).ping(pingBack, handshake.getProtocol());
-		else {
-			Protocol protocol = handshake.getProtocol() != null ? handshake.getProtocol() : bungee.getProtocolVersion();
-			pingBack.done(new ServerPing(new ServerPing.Protocol(bungee.getName() + " " + bungee.getGameVersion(), protocol.version), new ServerPing.Players(listener.getMaxPlayers(), bungee.getOnlineCount(), null), motd, BungeeCord.getInstance().config.getFaviconObject()), null);
-		}
+		else
+			pingBack.done(
+				new ServerPing(
+					new ServerPing.Protocol(bungee.getName() + " " + bungee.getGameVersion(), getProtocol().version),
+					new ServerPing.Players(listener.getMaxPlayers(), bungee.getOnlineCount(), null),
+					motd,
+					BungeeCord.getInstance().config.getFaviconObject())
+				,
+				null
+			);
 
 		thisState = State.PING;
 	}
@@ -215,8 +222,8 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 
 		if(undefinedProtocol)
 			handshake.setProtocol(ch.getProtocol());
-		else
-			ch.setProtocol(handshake.getProtocol());
+		
+		ch.setProtocol(handshake.getProtocol());
 
 		// Starting with FML 1.8, a "\0FML\0" token is appended to the handshake. This
 		// interferes
@@ -260,11 +267,12 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 				bungee.getLogger().log(Level.INFO, "{0} has connected", this);
 			}
 			thisState = State.USERNAME;
-			if(!isLegacy())
-				ch.setNetworkState(NetworkState.LOGIN);
 			
 			if (undefinedProtocol)
 				disconnect(bungee.getTranslation("unsupported_client"));
+			
+			if(!isLegacy())
+				ch.setNetworkState(NetworkState.LOGIN);
 			
 			break;
 		default:
@@ -497,7 +505,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 
 	@Override
 	public Protocol getProtocol() {
-		return (handshake == null) ? null : handshake.getProtocol();
+		return handshake == null ? null : handshake.getProtocol();
 	}
 
 	@Override
@@ -541,17 +549,20 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 	@Override
 	public void handle(final LegacyStatusRequest request) throws Exception {
 		Handshake handshake = new Handshake();
-		if(request.getFirst() == 1) {
-			if(request.getBranding() == null)
+		
+		/*if(request.getProtocolVersion() == 0)
+			handshake.setProtocol(Protocol.MC_1_3);
+		else {*/
+			if(request.getHost() == null)
 				handshake.setProtocol(Protocol.MC_1_5_2);
 			else {
 				handshake.setHost(request.getHost());
 				handshake.setPort(request.getPort());
-				handshake.setProtocol(Protocol.MC_1_6_4);
+				Protocol p = Protocol.byNumber(request.getProtocolVersion(), ProtocolGen.PRE_NETTY);
+				handshake.setProtocol(p != null ? p : Protocol.MC_1_6_4);
 			}
-		}
-		else
-			handshake.setProtocol(Protocol.MC_1_3);
+		//}
+		
 		handshake.setRequestedNetworkState(NetworkState.STATUS);
 		handle(handshake);
 		handle(new StatusRequest());

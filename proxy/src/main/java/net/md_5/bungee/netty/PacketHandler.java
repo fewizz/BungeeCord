@@ -1,11 +1,15 @@
 package net.md_5.bungee.netty;
 
+import net.md_5.bungee.protocol.PacketPreparer;
 import net.md_5.bungee.protocol.PacketWrapper;
 
 public abstract class PacketHandler extends net.md_5.bungee.protocol.AbstractPacketHandler {
 	@Override
 	public abstract String toString();
 
+	public void prepare(PacketPreparer p) {
+	}
+	
 	public boolean shouldHandle(PacketWrapper packet) throws Exception {
 		return true;
 	}
