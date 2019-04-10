@@ -20,17 +20,17 @@ public class LegacyStatusRequest extends DefinedPacket {
 	
 	@Override
 	public void read(ByteBuf buf) {
-		protocolVersion = buf.readByte();
+		throw new RuntimeException();
+		/*protocolVersion = buf.readByte();
 		if(!buf.isReadable())
 			return;
-		
 		buf.skipBytes(1);
 		branding = readLegacyString(buf, 255);
 		buf.skipBytes(2); //len
 		protocolVersion = buf.readUnsignedByte();
 	
 		host = readLegacyString(buf, 255);
-		port = buf.readInt();
+		port = buf.readInt();*/
 	}
 	
 	@Override

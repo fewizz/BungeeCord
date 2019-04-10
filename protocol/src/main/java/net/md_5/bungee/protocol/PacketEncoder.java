@@ -20,6 +20,12 @@ public class PacketEncoder extends MessageToByteEncoder<DefinedPacket>
     @Getter
     @NonNull
     private Protocol protocol;
+    
+    public PacketEncoder(@NonNull NetworkState state,@NonNull Side side,@NonNull Protocol p) {
+		this.networkState = state;
+		this.direction = side.getInboundDirection();
+		this.protocol = p;
+	}
 
     @Override
     protected void encode(ChannelHandlerContext ctx, DefinedPacket msg, ByteBuf out) throws Exception {

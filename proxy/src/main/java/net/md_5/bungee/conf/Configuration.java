@@ -110,7 +110,7 @@ public class Configuration implements ProxyConfig
         initialProtocol = adapter.getBoolean( "debug.initial_protocol", initialProtocol);
         protocolChange = adapter.getBoolean("debug.protocol_change", protocolChange);
         handshake = adapter.getBoolean("debug.handshake", handshake);
-        serverChange = adapter.getBoolean("server_change", serverChange);
+        serverChange = adapter.getBoolean("debug.server_change", serverChange);
 
         Preconditions.checkArgument( listeners != null && !listeners.isEmpty(), "No listeners defined." );
 

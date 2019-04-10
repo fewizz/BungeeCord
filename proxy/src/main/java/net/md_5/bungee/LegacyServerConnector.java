@@ -91,7 +91,7 @@ public class LegacyServerConnector extends ServerConnector {
 		lr.setUserName(user.getName());
 		channel.write(lr);
 		
-		if(forgeSupport() && user.isForgeUser())
+		if(forgeSupport() && user.getPendingConnection().getForgeLogin() != null)
 			ch.write(user.getPendingConnection().getForgeLogin());
 		
 		server = new ServerConnection(ch, target);
@@ -202,17 +202,19 @@ public class LegacyServerConnector extends ServerConnector {
 		user.getPendingConnects().remove(target);
 		user.setServerJoinQueue(null);
 		user.setDimensionChange(false);
-			
+		
 		user.setServer(server);
 		ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new DownstreamBridge(user, user.getServer()));
 
 		ProxyServer.getInstance().getPluginManager().callEvent(new ServerSwitchEvent(user));
+		
+		throw CancelSendSignal.INSTANCE;
 	}
 	
 	@Override
 	public void handle(EncryptionRequest encryptionRequest) throws Exception {
 		if(!encryptionRequest.getServerId().equals("-"))
-			throw new QuietException( "Server is online mode!" );
+			throw new QuietException( "Server in online mode!" );
 		
 		PublicKey pub = EncryptionUtil.getPubkey(encryptionRequest);
 		KeyGenerator kg = KeyGenerator.getInstance("AES");

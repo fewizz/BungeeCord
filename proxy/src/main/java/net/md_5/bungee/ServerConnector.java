@@ -43,9 +43,9 @@ public abstract class ServerConnector extends PacketHandler {
 	protected boolean forgeSupport() {
 		return getTarget()
 			.getForgeSupport() != null ? 
-					getTarget().getForgeSupport() 
-					:
-					BungeeCord.getInstance().config.isForgeSupport()
+				target.getForgeSupport() 
+				:
+				BungeeCord.getInstance().config.isForgeSupport()
 		;
 	}
 	

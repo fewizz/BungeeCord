@@ -72,7 +72,6 @@ public class ServerKickEvent extends Event implements Cancellable
         this.state = state;
     }
 
-    @Deprecated
     public String getKickReason()
     {
         return BaseComponent.toLegacyText( kickReasonComponent );

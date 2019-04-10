@@ -47,9 +47,9 @@ import net.md_5.bungee.forge.ForgeServerHandler;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.NettyUtil;
 import net.md_5.bungee.netty.PipelineUtil;
-import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Protocol;
+import net.md_5.bungee.protocol.Side;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.ClientSettings;
 import net.md_5.bungee.protocol.packet.Kick;
@@ -254,6 +254,7 @@ public final class UserConnection implements ProxiedPlayer {
 		Preconditions.checkNotNull(request, "request");
 
 		final Callback<ServerConnectRequest.Result> callback = request.getCallback();
+		
 		ServerConnectEvent event = new ServerConnectEvent(this, request.getTarget(), request.getReason());
 		if (bungee.getPluginManager().callEvent(event).isCancelled()) {
 			if (callback != null)
@@ -276,6 +277,7 @@ public final class UserConnection implements ProxiedPlayer {
 			sendMessage(bungee.getTranslation("already_connected"));
 			return;
 		}
+		
 		if (pendingConnects.contains(target)) {
 			if (callback != null)
 				callback.done(ServerConnectRequest.Result.ALREADY_CONNECTING, null);
@@ -301,7 +303,7 @@ public final class UserConnection implements ProxiedPlayer {
 							:
 							new ModernServerConnector(UserConnection.this, target);
 							
-					PipelineUtil.addHandlers(ch, pendingConnection.getProtocol(), Direction.TO_SERVER, connector);
+					PipelineUtil.addHandlers(ch, pendingConnection.getProtocol(), Side.SERVER, connector);
 				}
 			});
 		

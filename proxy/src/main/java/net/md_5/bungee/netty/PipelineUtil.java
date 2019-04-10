@@ -2,6 +2,8 @@ package net.md_5.bungee.netty;
 
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.base.Preconditions;
+
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelException;
@@ -9,17 +11,17 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.WriteBufferWaterMark;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.AttributeKey;
+import lombok.NonNull;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.BungeeServerInfo;
 import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.api.config.ListenerInfo;
-import net.md_5.bungee.protocol.NetworkState;
-import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.LegacyPacketDecoder;
 import net.md_5.bungee.protocol.ModernPacketDecoder;
+import net.md_5.bungee.protocol.NetworkState;
 import net.md_5.bungee.protocol.PacketEncoder;
-import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.Protocol;
+import net.md_5.bungee.protocol.Side;
 import net.md_5.bungee.protocol.Varint21FrameDecoder;
 import net.md_5.bungee.protocol.Varint21LengthFieldPrepender;
 
@@ -43,14 +45,16 @@ public class PipelineUtil {
     	DECRYPT = "decrypt",
     	ENCRYPT = "encrypt";
     
-    public static void modernPacketHandlers(Channel ch, int protocolVersion, Direction dir) {
+    public static void modernPacketHandlers(@NonNull Channel ch,@NonNull Protocol protocol, @NonNull Side side) {
+    	Preconditions.checkArgument(protocol.isModern());
+    	
 		ch.pipeline().addFirst(FRAME_DEC, new Varint21FrameDecoder());
 		ch.pipeline().addAfter(
 			FRAME_DEC,
 			PACKET_DEC,
 			new ModernPacketDecoder(
-				dir.opposite(),
-				protocolVersion
+				side,
+				protocol
 			)
 		);
 		
@@ -60,18 +64,18 @@ public class PipelineUtil {
 			PACKET_ENC,
 			new PacketEncoder(
 				NetworkState.HANDSHAKE,
-				dir,
-				Protocol.byNumber(protocolVersion, ProtocolGen.POST_NETTY)
+				side,
+				protocol
 			)
 		);
     }
     
-    public static void legacyPacketHandlers(Channel ch, int protocolVersion, Direction dir) {
+    public static void legacyPacketHandlers(@NonNull Channel ch, @NonNull Protocol protocol, @NonNull Side side) {
 		ch.pipeline().addFirst(
 			PACKET_DEC,
 			new LegacyPacketDecoder(
-				dir.opposite(),
-				protocolVersion
+				side,
+				protocol
 			)
 		);
 		
@@ -79,42 +83,42 @@ public class PipelineUtil {
 			PACKET_ENC,
 			new PacketEncoder(
 				NetworkState.LEGACY,
-				dir,
-				Protocol.byNumber(protocolVersion, ProtocolGen.PRE_NETTY)
+				side,
+				protocol
 			)
 		);
     }
     
-    public static void basicHandlers(Channel ch, PacketHandler ph) {
+    public static void basicHandlers(@NonNull Channel ch, @NonNull PacketHandler ph) {
     	try {
-            ch.config().setOption( ChannelOption.IP_TOS, 0x18 );
-        } catch ( ChannelException ex ) {/* IP_TOS is not supported (Windows XP / Windows Server 2003)*/}
+            ch.config().setOption(ChannelOption.IP_TOS, 0x18);
+        } catch (ChannelException ex ) {/* IP_TOS is not supported (Windows XP / Windows Server 2003)*/}
     	
-        ch.config().setAllocator( PooledByteBufAllocator.DEFAULT );
-        ch.config().setWriteBufferWaterMark( MARK );
+        ch.config().setAllocator(PooledByteBufAllocator.DEFAULT);
+        ch.config().setWriteBufferWaterMark(MARK);
 
         ch.pipeline().addLast(
     		TIMEOUT,
-    		new ReadTimeoutHandler( BungeeCord.getInstance().config.getTimeout(), TimeUnit.MILLISECONDS )
+    		new ReadTimeoutHandler(BungeeCord.getInstance().config.getTimeout(), TimeUnit.MILLISECONDS)
     	);
         
-    	ch.pipeline().addLast(PipelineUtil.BOSS, new HandlerBoss().setHandler(ph));
+    	ch.pipeline().addLast(PipelineUtil.BOSS, new HandlerBoss(ph));
     }
     
-    public static void packetHandlers(Channel ch, Protocol pv, Direction dir) {
+    public static void packetHandlers(@NonNull Channel ch, @NonNull Protocol pv, @NonNull Side side) {
     	switch (pv.generation) {
 		case POST_NETTY:
-			modernPacketHandlers(ch, pv.version, dir);
+			modernPacketHandlers(ch, pv, side);
 			break;
 
 		case PRE_NETTY:
-			legacyPacketHandlers(ch, pv.version, dir);
+			legacyPacketHandlers(ch, pv, side);
 			break;
 		}
     }
     
-    public static void addHandlers(Channel ch, Protocol pv, Direction dir, PacketHandler ph) {
+    public static void addHandlers(Channel ch, Protocol pv, Side side, PacketHandler ph) {
     	basicHandlers(ch, ph);
-    	packetHandlers(ch, pv, dir);
+    	packetHandlers(ch, pv, side);
     }
 }

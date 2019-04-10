@@ -34,6 +34,7 @@ import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.Protocol;
+import net.md_5.bungee.protocol.Side;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 
 @RequiredArgsConstructor
@@ -140,7 +141,7 @@ public class BungeeServerInfo implements ServerInfo
             .handler( new ChannelInitializer<Channel>() {
 				@Override
 				protected void initChannel(Channel ch) throws Exception {
-					PipelineUtil.addHandlers(ch, protocolVersion, Direction.TO_SERVER, null);
+					PipelineUtil.addHandlers(ch, protocolVersion, Side.SERVER, new PingHandler( BungeeServerInfo.this, callback, protocolVersion ));
 				}
 			} )
             .option( ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000 ) // TODO: Configurable
@@ -148,9 +149,7 @@ public class BungeeServerInfo implements ServerInfo
             .connect()
             .addListener( (ChannelFuture future) -> {
             	if ( future.isSuccess() )
-                    future.channel().pipeline().get( HandlerBoss.class ).setHandler( new PingHandler( BungeeServerInfo.this, callback, protocolVersion ) );
-                else
-                    callback.done( null, future.cause() );
+            		callback.done( null, future.cause() );
             });
     }
 

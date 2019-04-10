@@ -652,6 +652,7 @@ public enum Protocol {
 	public boolean olderOrEqual(Protocol ver) {return ordinal() <= ver.ordinal();}
 	
 	public boolean isLegacy() { return generation == ProtocolGen.PRE_NETTY; }
+	public boolean isModern() { return !isLegacy(); }
 	
 	public static Protocol byNumber(int num, ProtocolGen gen) {
 		for(Protocol v : values())

@@ -2,10 +2,13 @@ package net.md_5.bungee.protocol;
 
 import java.util.List;
 
+import com.google.common.base.Preconditions;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 
 public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implements PacketDecoder {
@@ -17,9 +20,10 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 	@Getter
 	private Protocol protocol;
 
-	public ModernPacketDecoder(Direction dir, int pv) {
-		this.direction = dir;
-		protocol = Protocol.byNumber(pv, ProtocolGen.POST_NETTY);
+	public ModernPacketDecoder(@NonNull Side side, @NonNull Protocol p) {
+		Preconditions.checkArgument(p.isModern());
+		this.direction = side.getOutboundDirection();
+		protocol = p;
 	}
 
 	@Override

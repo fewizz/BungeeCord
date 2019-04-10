@@ -3,11 +3,14 @@ package net.md_5.bungee.protocol;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.base.Preconditions;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 
 @AllArgsConstructor
@@ -20,16 +23,11 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 	@Setter
 	@Getter
 	private Protocol protocol;
-	
-	/*int rereadTimes = 0;
-	
-	public static class RereadRequest extends RuntimeException {
-		private static final long serialVersionUID = 1L;
-	}*/
 
-	public LegacyPacketDecoder(Direction dir, int pv) {
-		this.direction = dir;
-		protocol = Protocol.byNumber(pv, ProtocolGen.PRE_NETTY);
+	public LegacyPacketDecoder(@NonNull Side side, @NonNull Protocol p) {
+		Preconditions.checkArgument(p.isLegacy());
+		this.direction = side.getOutboundDirection();
+		this.protocol = p;
 	}
 	
 	public LegacyPacketDecoder(LegacyPacketDecoder lpd) {
@@ -47,31 +45,14 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 
 			DefinedPacket packet = protocol.createPacket(networkState, packetId, direction);
 
+			//System.out.println("read, id: " + packetId);
 			if (packet == null)
 				throw new RuntimeException("Don't know that packet" + 
 						", id: " + packetId + 
 						", direction: " + direction.name() + 
 						", protocol: " + protocol);
 			
-			//System.out.println("DEC, id: " + packetId + ", dir: " + direction.name());
-			//try {
-			
 			ctx.fireChannelRead(new PacketPreparer(packet));
-			
-				read0(in, packet);
-			/*} catch (RereadRequest r) {
-				if(rereadTimes++ == 25) {
-					rereadTimes = 0;
-					System.out.println("Done, " + (in.readerIndex() - begin) + " bytes");
-				} else {
-					System.out.println("Rereading...");
-					in.readerIndex(begin);
-					ctx.channel().eventLoop().schedule(() -> {
-						ctx.read();
-					}, 20, TimeUnit.MILLISECONDS);
-					return;
-				}
-			}*/
 			
 			// Do it manually, because when in becomes !in.isReadable, 
 			// super BTMD not sends last message immediately, so it releases bytebuf

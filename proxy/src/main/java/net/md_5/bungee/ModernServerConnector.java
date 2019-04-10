@@ -258,7 +258,7 @@ public class ModernServerConnector extends ServerConnector {
 
 	@Override
 	public void handle(EncryptionRequest encryptionRequest) throws Exception {
-		throw new QuietException( "Server is online mode!" );
+		throw new QuietException( "Server in online mode!" );
 	}
 
 	@Override

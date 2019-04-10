@@ -40,10 +40,12 @@ import com.google.gson.GsonBuilder;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelException;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -90,15 +92,13 @@ import net.md_5.bungee.forge.ForgeConstants;
 import net.md_5.bungee.log.BungeeLogger;
 import net.md_5.bungee.log.LoggingOutputStream;
 import net.md_5.bungee.module.ModuleManager;
-import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.NettyUtil;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.GenerationIdentifier;
+import net.md_5.bungee.protocol.LegacyStatusRequestHandler;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolGen;
-import net.md_5.bungee.protocol.packet.BossBar;
+import net.md_5.bungee.protocol.Side;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 import net.md_5.bungee.query.RemoteQuery;
@@ -317,50 +317,70 @@ public class BungeeCord extends ProxyServer
     	}
         new ServerBootstrap()
             .channel(NettyUtil.bestServerSocketChannel())
-            .option( ChannelOption.SO_REUSEADDR, true ) // TODO: Move this elsewhere!
-            .childAttr( LISTENER, info )
-            .childHandler( new ChannelInitializer<Channel>() {
+            .option(ChannelOption.SO_REUSEADDR, true) // TODO: Move this elsewhere!
+            .childAttr(LISTENER, info)
+            .childHandler(new ChannelInitializer<Channel>() {
 				@Override
 				protected void initChannel(Channel ch) throws Exception {
 					PipelineUtil.basicHandlers(ch, new InitialHandler(getInstance(), info));
 					
-					ch.pipeline().addFirst(new GenerationIdentifier() {
-						@Override
-						public void onIdentified(ProtocolGen gen, ChannelHandlerContext ctx) {
-							Protocol pv = gen == ProtocolGen.POST_NETTY ? getProtocolVersion() : Protocol.MC_1_6_4;
-							if(config.isInitialProtocol())
+					ch.pipeline().addFirst(new ChannelInboundHandlerAdapter() {
+						public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+							ByteBuf in = (ByteBuf) msg;
+					        if (!in.isReadable() )
+					            return;
+
+					        ProtocolGen gen = ProtocolGen.POST_NETTY;
+					    	// modern's handshake size is not eq. to these numbers, so that's ok
+					        short packetID = in.getUnsignedByte(in.readerIndex());
+					        if(packetID == 0xFE || packetID == 0x02) { // Legacy status request
+					        	gen = ProtocolGen.PRE_NETTY;
+					        }
+					        
+					        Protocol pv = gen == ProtocolGen.POST_NETTY ? getProtocolVersion() : Protocol.MC_1_6_4;
+					        
+					        if(config.isInitialProtocol())
 								logger.info("[" + ctx.channel().remoteAddress() + "] Connected to Bungee, identified as " + pv.name() );
-							PipelineUtil.packetHandlers(ch, pv, Direction.TO_CLIENT);
-						}
+							PipelineUtil.packetHandlers(ch, pv, Side.CLIENT);
+							if(packetID == 0xFE)
+								ctx.pipeline().addBefore(
+									PipelineUtil.PACKET_DEC,
+									"legacy-status-request-decoder",
+									new LegacyStatusRequestHandler()
+								);
+					        
+					        ctx.pipeline().remove(this);
+					        ctx.channel().pipeline().fireChannelRead(msg);
+						};
 					});
 				}
             } )
-        	.group( eventLoops )
-            .localAddress( info.getHost() )
+        	.group(eventLoops)
+            .localAddress(info.getHost())
             .bind()
-            .addListener( (ChannelFuture future) -> {
-                if ( future.isSuccess() ) {
+            .addListener((ChannelFuture future) -> {
+                if (future.isSuccess()) {
                     listeners.add( future.channel() );
-                    getLogger().log( Level.INFO, "Listening on {0}", info.getHost() );
+                    getLogger().log( Level.INFO, "Listening on {0}", info.getHost());
                 } 
                 else
-                    getLogger().log( Level.WARNING, "Could not bind to host " + info.getHost(), future.cause() );
+                    getLogger().log( Level.WARNING, "Could not bind to host " + info.getHost(), future.cause());
             });
 
-        if ( !info.isQueryEnabled() )
+        if (!info.isQueryEnabled())
         	return;
         
-        new RemoteQuery( this, info ).start(
+        new RemoteQuery(this, info).start(
 			NettyUtil.bestDatagramChannel(),
-			new InetSocketAddress( info.getHost().getAddress(), info.getQueryPort() ),
+			new InetSocketAddress( info.getHost().getAddress(), info.getQueryPort()),
 			eventLoops,
 			(ChannelFuture future) -> {
 				if ( future.isSuccess() ) {
                     listeners.add( future.channel() );
-                    getLogger().log( Level.INFO, "Started query on {0}", future.channel().localAddress() );
+                    getLogger().log( Level.INFO, "Started query on {0}", future.channel().localAddress());
 				} 
                 else
-                	getLogger().log( Level.WARNING, "Could not bind to host " + info.getHost(), future.cause() );
+                	getLogger().log( Level.WARNING, "Could not bind to host " + info.getHost(), future.cause());
 			}
 		);
     }
