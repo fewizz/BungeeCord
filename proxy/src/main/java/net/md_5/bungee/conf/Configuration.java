@@ -67,6 +67,7 @@ public class Configuration implements ProxyConfig
     private boolean preventProxyConnections;
     private boolean forgeSupport;
     private boolean metrics = false;
+    private boolean logQueryErrors = false;
     
     private boolean initialProtocol = false;
     private boolean protocolChange = false;
@@ -104,6 +105,7 @@ public class Configuration implements ProxyConfig
         preventProxyConnections = adapter.getBoolean( "prevent_proxy_connections", preventProxyConnections );
         forgeSupport = adapter.getBoolean( "forge_support", forgeSupport );
         metrics = adapter.getBoolean( "metrics", metrics );
+        logQueryErrors = adapter.getBoolean("log_query_errors", logQueryErrors);
 
         disabledCommands = new CaseInsensitiveSet( (Collection<String>) adapter.getList( "disabled_commands", Arrays.asList( "disabledcommandhere" ) ) );
         

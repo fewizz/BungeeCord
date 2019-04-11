@@ -60,7 +60,7 @@ public class LegacyServerConnector extends ServerConnector {
 		Handshake copiedHandshake = user.getPendingConnection().getHandshake();
 		
 		if(ipForward())
-			copiedHandshake.setHost(copiedHandshake.getHost() + "\00" + user.getAddress().getHostString());
+			copiedHandshake.setHost(copiedHandshake.getHost() + "\00" + user.getAddress().getHostString() + "\00" + user.getUUID());
 		
 		if(forgeSupport()) {
 			ChannelPipeline p = user.getCh().getHandle().pipeline();

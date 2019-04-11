@@ -95,7 +95,6 @@ import net.md_5.bungee.module.ModuleManager;
 import net.md_5.bungee.netty.NettyUtil;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.LegacyStatusRequestHandler;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.Side;
@@ -342,12 +341,12 @@ public class BungeeCord extends ProxyServer
 					        if(config.isInitialProtocol())
 								logger.info("[" + ctx.channel().remoteAddress() + "] Connected to Bungee, identified as " + pv.name() );
 							PipelineUtil.packetHandlers(ch, pv, Side.CLIENT);
-							if(packetID == 0xFE)
+							/*if(packetID == 0xFE)
 								ctx.pipeline().addBefore(
 									PipelineUtil.PACKET_DEC,
 									"legacy-status-request-decoder",
 									new LegacyStatusRequestHandler()
-								);
+								);*/
 					        
 					        ctx.pipeline().remove(this);
 					        ctx.channel().pipeline().fireChannelRead(msg);

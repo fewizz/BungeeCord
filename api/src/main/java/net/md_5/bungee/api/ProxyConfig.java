@@ -89,4 +89,8 @@ public interface ProxyConfig
      * Whether the server should handle packets before the player has connected to a server
      */
     boolean getAlwaysHandlePackets();
+    
+    
+    /**/
+    boolean isLogQueryErrors();
 }

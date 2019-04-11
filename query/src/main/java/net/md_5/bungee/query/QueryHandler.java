@@ -142,7 +142,8 @@ public class QueryHandler extends SimpleChannelInboundHandler<DatagramPacket> {
 
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-		bungee.getLogger().log(Level.WARNING, "Error whilst handling query packet from " + ctx.channel().remoteAddress(), cause);
+		if(bungee.getConfig().isLogQueryErrors());
+			bungee.getLogger().log(Level.WARNING, "[query, " + ctx.channel().remoteAddress()+"] "+ cause.getMessage());
 	}
 
 	@Data

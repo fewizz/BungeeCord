@@ -42,6 +42,10 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 		}
 		
 		firePacket(packet, in.slice(0, in.writerIndex()), ctx);
-
+	}
+	
+	@Override
+	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+		super.channelRead(ctx, msg);
 	}
 }

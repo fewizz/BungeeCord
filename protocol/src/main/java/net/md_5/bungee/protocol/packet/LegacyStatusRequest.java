@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Direction;
+import net.md_5.bungee.protocol.LegacyPacketDecoder;
 import net.md_5.bungee.protocol.Protocol;
 
 @Data
@@ -20,17 +21,20 @@ public class LegacyStatusRequest extends DefinedPacket {
 	
 	@Override
 	public void read(ByteBuf buf) {
-		throw new RuntimeException();
-		/*protocolVersion = buf.readByte();
-		if(!buf.isReadable())
-			return;
-		buf.skipBytes(1);
-		branding = readLegacyString(buf, 255);
-		buf.skipBytes(2); //len
-		protocolVersion = buf.readUnsignedByte();
+		try {
+			protocolVersion = buf.readByte();
+			//if(!buf.isReadable())
+				//return;
+			buf.skipBytes(1);
+			branding = readLegacyString(buf, 255);
+			buf.skipBytes(2); //len
+			protocolVersion = buf.readUnsignedByte();
 	
-		host = readLegacyString(buf, 255);
-		port = buf.readInt();*/
+			host = readLegacyString(buf, 255);
+			port = buf.readInt();
+		} catch(Exception e) {
+			throw LegacyPacketDecoder.OMT;
+		}
 	}
 	
 	@Override

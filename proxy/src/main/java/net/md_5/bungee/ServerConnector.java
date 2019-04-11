@@ -29,6 +29,7 @@ public abstract class ServerConnector extends PacketHandler {
 	@Override
 	public void connected(ChannelWrapper channel) throws Exception {
 		this.ch = channel;
+		ProxyServer.getInstance().getLogger().info("[" + user.getName() + "] Connected to [" + target.getName() + "]");
 	}
 	
 	protected boolean ipForward() {
