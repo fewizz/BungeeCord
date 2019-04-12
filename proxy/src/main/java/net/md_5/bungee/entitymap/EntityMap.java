@@ -48,7 +48,7 @@ public abstract class EntityMap
             case MC_1_9_1:
             case MC_1_9_2:
                 return EntityMap_1_9.INSTANCE;
-            case MC_1_9_4:
+            case MC_1_9_3:
                 return EntityMap_1_9_4.INSTANCE;
             case MC_1_10_0:
                 return EntityMap_1_10.INSTANCE;

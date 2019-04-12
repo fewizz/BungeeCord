@@ -51,7 +51,8 @@ public class QueryHandler extends SimpleChannelInboundHandler<DatagramPacket> {
 		try {
 			handleMessage(ctx, msg);
 		} catch (Throwable t) {
-			bungee.getLogger().log(Level.WARNING, "Error whilst handling query packet from " + msg.sender(), t);
+			if(bungee.getConfig().isLogQueryErrors());
+				bungee.getLogger().log(Level.WARNING, "[query, " + ctx.channel().remoteAddress()+"] "+ t.getMessage());
 		}
 	}
 
@@ -138,12 +139,6 @@ public class QueryHandler extends SimpleChannelInboundHandler<DatagramPacket> {
 		}
 
 		ctx.writeAndFlush(response);
-	}
-
-	@Override
-	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-		if(bungee.getConfig().isLogQueryErrors());
-			bungee.getLogger().log(Level.WARNING, "[query, " + ctx.channel().remoteAddress()+"] "+ cause.getMessage());
 	}
 
 	@Data

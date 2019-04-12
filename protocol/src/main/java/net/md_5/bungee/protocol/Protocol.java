@@ -1,314 +1,188 @@
 package net.md_5.bungee.protocol;
 
-import java.util.ArrayList;
-import java.util.List;
+import static net.md_5.bungee.protocol.DefinedPacket.skipLegacyItemStack;
+import static net.md_5.bungee.protocol.DefinedPacket.skipLegacyString;
+import static net.md_5.bungee.protocol.DefinedPacket.skipLegacyTag;
+import static net.md_5.bungee.protocol.DefinedPacket.skipLegacyWatchableObjects;
 
-import io.netty.buffer.ByteBuf;
-import net.md_5.bungee.protocol.PacketMap.PacketInfo;
-import net.md_5.bungee.protocol.packet.BossBar;
-import net.md_5.bungee.protocol.packet.Chat;
-import net.md_5.bungee.protocol.packet.ClientSettings;
-import net.md_5.bungee.protocol.packet.Commands;
-import net.md_5.bungee.protocol.packet.EncryptionRequest;
-import net.md_5.bungee.protocol.packet.EncryptionResponse;
-import net.md_5.bungee.protocol.packet.EntityStatus;
-import net.md_5.bungee.protocol.packet.Handshake;
-import net.md_5.bungee.protocol.packet.KeepAlive;
-import net.md_5.bungee.protocol.packet.Kick;
-import net.md_5.bungee.protocol.packet.LegacyClientCommand;
-import net.md_5.bungee.protocol.packet.LegacyLoginRequest;
-import net.md_5.bungee.protocol.packet.LegacyStatusRequest;
-import net.md_5.bungee.protocol.packet.Login;
-import net.md_5.bungee.protocol.packet.LoginPayloadRequest;
-import net.md_5.bungee.protocol.packet.LoginPayloadResponse;
-import net.md_5.bungee.protocol.packet.LoginRequest;
-import net.md_5.bungee.protocol.packet.LoginSuccess;
-import net.md_5.bungee.protocol.packet.PingPacket;
-import net.md_5.bungee.protocol.packet.PlayerListHeaderFooter;
-import net.md_5.bungee.protocol.packet.PlayerListItem;
-import net.md_5.bungee.protocol.packet.PluginMessage;
-import net.md_5.bungee.protocol.packet.Respawn;
-import net.md_5.bungee.protocol.packet.ScoreboardDisplay;
-import net.md_5.bungee.protocol.packet.ScoreboardObjective;
-import net.md_5.bungee.protocol.packet.ScoreboardScore;
-import net.md_5.bungee.protocol.packet.SetCompression;
-import net.md_5.bungee.protocol.packet.StatusRequest;
-import net.md_5.bungee.protocol.packet.StatusResponse;
-import net.md_5.bungee.protocol.packet.TabCompleteRequest;
-import net.md_5.bungee.protocol.packet.TabCompleteResponse;
-import net.md_5.bungee.protocol.packet.Team;
-import net.md_5.bungee.protocol.packet.Title;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Supplier;
+
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.TObjectIntMap;
+import net.md_5.bungee.protocol.packet.*;
 
 public enum Protocol {
-	/*MC_1_3(-1, ProtocolGen.PRE_NETTY) { void postInit() {
-		packet(NetworkState.LEGACY, 254, Direction.TO_SERVER, LegacyStatusRequest::new);
-		packet(NetworkState.LEGACY, 255, Direction.TO_CLIENT, Kick::new);
-	}},*/
-	MC_1_5_2(61, ProtocolGen.PRE_NETTY) { void postInit() {
+	MC_1_5_2(61, ProtocolGen.PRE_NETTY, "1.5.2") { void postInit() {
 		forStatus(NetworkState.LEGACY, new Do() { void apply() {
-			packet(0, KeepAlive::new);
-			packet(1, Login::new);
-			serverboundPacket(2, LegacyLoginRequest::new);
-			packet(3, Chat::new);
-			clientboundPacket(4, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Long.BYTES*2);
-			};});
-			clientboundPacket(5, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			both(0, KeepAlive.class);
+			both(1, Login.class);
+			serverbound(2, LegacyLoginRequest.class);
+			both(3, Chat.class);
+			this.<SkipPacket>clientbound(4, buf -> buf.skipBytes(Long.BYTES*2));
+			this.<SkipPacket>clientbound(5, buf -> {
 				buf.skipBytes(Integer.BYTES + Short.BYTES);
 				skipLegacyItemStack(buf);
-			};});
-			clientboundPacket(6, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES*3);
-			};});
-			serverboundPacket(7, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES*2 + 1);
-			};});
-			clientboundPacket(8, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Float.BYTES + Short.BYTES*2);
-			};});
-			packet(9, Respawn::new);
-			packet(10, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(1);
-			};});
-			packet(11, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Double.BYTES*4 + 1);
-			};});
-			packet(12, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Float.BYTES*2 + 1);
-			};});
-			packet(13, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Double.BYTES*4 + Float.BYTES*2 + 1);
-			};});
-			serverboundPacket(14, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(3 + Integer.BYTES*2);
-			};});
-			serverboundPacket(15, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>clientbound(6, buf -> buf.skipBytes(Integer.BYTES*3));
+			this.<SkipPacket>serverbound(7, buf -> buf.skipBytes(Integer.BYTES*2 + 1));
+			this.<SkipPacket>clientbound(8, buf -> buf.skipBytes(Float.BYTES + Short.BYTES*2));
+			both(9, Respawn.class);
+			this.<SkipPacket>both(10, buf -> buf.skipBytes(1));
+			this.<SkipPacket>both(11, buf -> buf.skipBytes(Double.BYTES*4 + 1));
+			this.<SkipPacket>both(12, buf -> buf.skipBytes(Float.BYTES*2 + 1));
+			this.<SkipPacket>both(13, buf -> buf.skipBytes(Double.BYTES*4 + Float.BYTES*2 + 1));
+			this.<SkipPacket>serverbound(14, buf -> buf.skipBytes(3 + Integer.BYTES*2));
+			this.<SkipPacket>serverbound(15, buf -> {
 				buf.skipBytes(Integer.BYTES*2 + 2);
 				skipLegacyItemStack(buf);
 				buf.skipBytes(3);
-			};});
-			packet(16, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Short.BYTES);
-			};});
-			clientboundPacket(17, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES*3 + 2);
-			};});
-			packet(18, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES + 1);
-			};});
-			serverboundPacket(19, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES + 1);
-			};});
-			clientboundPacket(20, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>both(16, buf -> buf.skipBytes(Short.BYTES));
+			this.<SkipPacket>clientbound(17, buf -> buf.skipBytes(Integer.BYTES*3 + 2));
+			this.<SkipPacket>both(18, buf -> buf.skipBytes(Integer.BYTES + 1));
+			this.<SkipPacket>serverbound(19, buf -> buf.skipBytes(Integer.BYTES + 1));
+			this.<SkipPacket>clientbound(20, buf -> {
 				buf.skipBytes(Integer.BYTES);
 				skipLegacyString(buf, 16);
 				buf.skipBytes(Integer.BYTES*3 + 2 + Short.BYTES);
 				skipLegacyWatchableObjects(buf);
-			};});
-			clientboundPacket(22, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES*2);
-			};});
-			clientboundPacket(23, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>clientbound(22, buf -> buf.skipBytes(Integer.BYTES*2));
+			this.<SkipPacket>clientbound(23, buf -> {
 				buf.skipBytes(Integer.BYTES*4 + 3);
 				int i = buf.readInt();
 				if(i > 0)
 					buf.skipBytes(Short.BYTES*3);
-			};});
-			clientboundPacket(24, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>clientbound(24, buf -> {
 				buf.skipBytes(Integer.BYTES*4 + 4 + Short.BYTES*3);
 				skipLegacyWatchableObjects(buf);
-			};});
-			clientboundPacket(25, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>clientbound(25, buf -> {
 				buf.skipBytes(Integer.BYTES);
 				skipLegacyString(buf, 13);
 				buf.skipBytes(Integer.BYTES*4);
-			};});
-			clientboundPacket(26, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES*4 + Short.BYTES);
-			};});
-			clientboundPacket(28, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES + Short.BYTES*3);
-			};});
-			clientboundPacket(29, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(buf.readByte() * Integer.BYTES);
-			};});
-			clientboundPacket(30, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES);
-			};});
-			clientboundPacket(31, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES + 3);
-			};});
-			clientboundPacket(32, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES + 2);
-			};});
-			clientboundPacket(33, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES + 5);
-			};});
-			clientboundPacket(34, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES*4 + 2);
-			};});
-			clientboundPacket(35, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES + 1);
-			};});
-			clientboundPacket(38, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES + 1);
-			};});
-			clientboundPacket(39, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES*2);
-			};});
-			clientboundPacket(40, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>clientbound(26, buf -> buf.skipBytes(Integer.BYTES*4 + Short.BYTES));
+			this.<SkipPacket>clientbound(28, buf -> buf.skipBytes(Integer.BYTES + Short.BYTES*3));
+			this.<SkipPacket>clientbound(29, buf -> buf.skipBytes(buf.readByte() * Integer.BYTES));
+			this.<SkipPacket>clientbound(30, buf -> buf.skipBytes(Integer.BYTES));
+			this.<SkipPacket>clientbound(31, buf -> buf.skipBytes(Integer.BYTES + 3));
+			this.<SkipPacket>clientbound(32, buf -> buf.skipBytes(Integer.BYTES + 2));
+			this.<SkipPacket>clientbound(33, buf -> buf.skipBytes(Integer.BYTES + 5));
+			this.<SkipPacket>clientbound(34, buf -> buf.skipBytes(Integer.BYTES*4 + 2));
+			this.<SkipPacket>clientbound(35, buf -> buf.skipBytes(Integer.BYTES + 1));
+			this.<SkipPacket>clientbound(38, buf -> buf.skipBytes(Integer.BYTES + 1));
+			this.<SkipPacket>clientbound(39, buf -> buf.skipBytes(Integer.BYTES*2));
+			this.<SkipPacket>clientbound(40, buf -> {
 				buf.skipBytes(Integer.BYTES);
 				skipLegacyWatchableObjects(buf);
-			};});
-			clientboundPacket(41, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES + 2 + Short.BYTES);
-			};});
-			clientboundPacket(42, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES + 1);
-			};});
-			clientboundPacket(43, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Float.BYTES + Short.BYTES*2);
-			};});
-			clientboundPacket(51, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>clientbound(41, buf -> buf.skipBytes(Integer.BYTES + 2 + Short.BYTES));
+			this.<SkipPacket>clientbound(42, buf -> buf.skipBytes(Integer.BYTES + 1));
+			this.<SkipPacket>clientbound(43, buf -> buf.skipBytes(Float.BYTES + Short.BYTES*2));
+			this.<SkipPacket>clientbound(51, buf -> {
 				buf.skipBytes(Integer.BYTES*2 + 1 + Short.BYTES*2);
 				buf.skipBytes(buf.readInt());
-			};});
-			clientboundPacket(52, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>clientbound(52, buf -> {
 				buf.skipBytes(Integer.BYTES*2 + Short.BYTES);
 				buf.skipBytes(buf.readInt());
-			};});
-			clientboundPacket(53, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES*2 + 2 + Short.BYTES);
-			};});
-			clientboundPacket(54, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES*2 + Short.BYTES*2 + 2);
-			};});
-			clientboundPacket(55, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES*4 + 1);
-			};});
-			clientboundPacket(56, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>clientbound(53, buf -> buf.skipBytes(Integer.BYTES*2 + 2 + Short.BYTES));
+			this.<SkipPacket>clientbound(54, buf -> buf.skipBytes(Integer.BYTES*2 + Short.BYTES*2 + 2));
+			this.<SkipPacket>clientbound(55, buf -> buf.skipBytes(Integer.BYTES*4 + 1));
+			this.<SkipPacket>clientbound(56, buf -> {
 				int count = buf.readShort();
 				int data = buf.readInt();
 				buf.skipBytes(1);
 				buf.skipBytes(data);
 				buf.skipBytes(count * (Integer.BYTES*2 + Short.BYTES*2));
-			};});
-			clientboundPacket(60, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>clientbound(60, buf -> {
 				buf.skipBytes(Double.BYTES*3 + Float.BYTES);
 				buf.skipBytes(3*buf.readInt());
 				buf.skipBytes(Float.BYTES*3);
-			};});
-			clientboundPacket(61, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES*4 + 2);
-			};});
-			clientboundPacket(62, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>clientbound(61, buf -> buf.skipBytes(Integer.BYTES*4 + 2));
+			this.<SkipPacket>clientbound(62, buf -> {
 				skipLegacyString(buf, 256);
 				buf.skipBytes(Integer.BYTES*3 + Float.BYTES + 1);
-			};});
-			clientboundPacket(63, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>clientbound(63, buf -> {
 				skipLegacyString(buf, 64);
 				buf.skipBytes(Float.BYTES*7 + Integer.BYTES);
-			};});
-			clientboundPacket(70, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(2);
-			};});
-			clientboundPacket(71, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES*4 + 1);
-			};});
-			clientboundPacket(100, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>clientbound(70, buf -> buf.skipBytes(2));
+			this.<SkipPacket>clientbound(71, buf -> buf.skipBytes(Integer.BYTES*4 + 1));
+			this.<SkipPacket>clientbound(100, buf -> {
 				buf.skipBytes(2);
 				skipLegacyString(buf, 32);
 				buf.skipBytes(2);
-			};});
-			packet(101, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(1);
-			};});
-			serverboundPacket(102, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>both(101, buf -> buf.skipBytes(1));
+			this.<SkipPacket>serverbound(102, buf -> {
 				buf.skipBytes(3 + Short.BYTES*2);
 				skipLegacyItemStack(buf);
-			};});
-			clientboundPacket(103, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>clientbound(103, buf -> {
 				buf.skipBytes(Short.BYTES + 1);
 				skipLegacyItemStack(buf);
-			};});
-			clientboundPacket(104, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>clientbound(104, buf -> {
 				buf.skipBytes(1);
 				short count = buf.readShort();
 				while(count-- != 0)
 					skipLegacyItemStack(buf);
-			};});
-			clientboundPacket(105, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Short.BYTES*2 + 1);
-			};});
-			packet(106, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(2 + Short.BYTES);
-			};});
-			packet(107, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>clientbound(105, buf -> buf.skipBytes(Short.BYTES*2 + 1));
+			this.<SkipPacket>both(106, buf -> buf.skipBytes(2 + Short.BYTES));
+			this.<SkipPacket>both(107, buf -> {
 				buf.skipBytes(Short.BYTES);
 				skipLegacyItemStack(buf);
-			};});
-			serverboundPacket(108, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(2);
-			};});
-			packet(130, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>serverbound(108, buf -> buf.skipBytes(2));
+			this.<SkipPacket>both(130, buf -> {
 				buf.skipBytes(Integer.BYTES*2 + Short.BYTES);
 				for(int i = 0; i < 4; i++) skipLegacyString(buf, 15);
-			};});
-			packet(131, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>both(131, buf -> {
 				buf.skipBytes(Short.BYTES*2);
 				buf.skipBytes(buf.readUnsignedShort());
-			};});
-			clientboundPacket(132, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>clientbound(132, buf -> {
 				buf.skipBytes(Integer.BYTES*2 + Short.BYTES + 1);
 				skipLegacyTag(buf);
-			};});
-			clientboundPacket(200, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES + 1);
-			};});
-			clientboundPacket(201, PlayerListItem::new);
-			packet(202, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(3);
-			};});
-			serverboundPacket(203, TabCompleteRequest::new);
-			clientboundPacket(203, TabCompleteResponse::new);
-			serverboundPacket(204, ClientSettings::new);
-			serverboundPacket(205, LegacyClientCommand::new);
-			clientboundPacket(206, ScoreboardObjective::new);
-			clientboundPacket(207, ScoreboardScore::new);
-			clientboundPacket(208, ScoreboardDisplay::new);
-			clientboundPacket(209, Team::new);
-			packet(250, PluginMessage::new);
-			packet(252, EncryptionResponse::new);
-			clientboundPacket(253, EncryptionRequest::new);
-			serverboundPacket(254, LegacyStatusRequest::new);
-			packet(255, Kick::new);
+			});
+			this.<SkipPacket>clientbound(200, buf -> buf.skipBytes(Integer.BYTES + 1));
+			clientbound(201, PlayerListItem.class);
+			this.<SkipPacket>both(202, buf -> buf.skipBytes(3));
+			serverbound(203, TabCompleteRequest.class);
+			clientbound(203, TabCompleteResponse.class);
+			serverbound(204, ClientSettings.class);
+			serverbound(205, LegacyClientCommand.class);
+			clientbound(206, ScoreboardObjective.class);
+			clientbound(207, ScoreboardScore.class);
+			clientbound(208, ScoreboardDisplay.class);
+			clientbound(209, Team.class);
+			both(250, PluginMessage.class);
+			both(252, EncryptionResponse.class);
+			clientbound(253, EncryptionRequest.class);
+			serverbound(254, LegacyStatusRequest.class);
+			both(255, Kick.class);
 		}});
 	}},
-	/*MC_1_5_2_FORGE(61, ProtocolGen.PRE_NETTY) { void postInit() {
-		inherit(MC_1_5_2);
-		replace(NetworkState.LEGACY, 1, Direction.TO_CLIENT, () -> {
-			Login l = new Login();
-			l.setLegacyForgeVanillaComp(false);
-			return l;
-		});
-	}},*/
-	MC_1_6_4(78, ProtocolGen.PRE_NETTY) { void postInit() {
+	MC_1_6_4(78, ProtocolGen.PRE_NETTY, "1.6.4") { void postInit() {
 		inherit(MC_1_5_2);
 		
 		forStatus(NetworkState.LEGACY, new Do() {void apply() {
-			replace(8, Direction.TO_CLIENT, () -> new SkipPacket() {
-				void skip(ByteBuf buf) { buf.skipBytes(Float.BYTES*2 + Short.BYTES); }
-			});
-			replace(19, Direction.TO_SERVER, () -> new SkipPacket() {
-				void skip(ByteBuf buf) { buf.skipBytes(Integer.BYTES*2 + 1); }
-			});
-			serverboundPacket(27, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Float.BYTES*2 + 2);
-			};});
-			replace(39, Direction.TO_CLIENT, () -> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES*2 + 1);
-			}});
-			clientboundPacket(44, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			this.<SkipPacket>replace(Direction.TO_CLIENT, 8, buf -> buf.skipBytes(Float.BYTES*2 + Short.BYTES));
+			this.<SkipPacket>replace(Direction.TO_SERVER, 19, buf -> buf.skipBytes(Integer.BYTES*2 + 1));
+			this.<SkipPacket>serverbound(27, buf -> buf.skipBytes(Float.BYTES*2 + 2));
+			this.<SkipPacket>replace(Direction.TO_CLIENT, 39, buf -> buf.skipBytes(Integer.BYTES*2 + 1));
+			this.<SkipPacket>clientbound(44, buf -> {
 				buf.skipBytes(Integer.BYTES);
 				int count = buf.readInt();
 				while(count-- != 0) {
@@ -316,230 +190,219 @@ public enum Protocol {
 					buf.skipBytes(Double.BYTES);
 					buf.skipBytes(buf.readShort()*(Long.BYTES*2+Double.BYTES+1));
 				}
-			}});
-			replace(100, Direction.TO_CLIENT, ()-> new SkipPacket() { void skip(ByteBuf buf) {
+			});
+			this.<SkipPacket>replace(Direction.TO_CLIENT, 100, buf -> {
 				buf.skipBytes(1);
 				int v = buf.readByte();
 				skipLegacyString(buf, 32);
 				buf.skipBytes(2);
 				if(v == 11) buf.skipBytes(Integer.BYTES);
-			}});
-			clientboundPacket(133, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES*3 + 1);
-			}});
-			replace(200, Direction.TO_CLIENT, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(Integer.BYTES*2);
-			}});
-			replace(202, ()-> new SkipPacket() { void skip(ByteBuf buf) {
-				buf.skipBytes(1 + Float.BYTES*2);
-			};});
+			});
+			this.<SkipPacket>clientbound(133, buf -> buf.skipBytes(Integer.BYTES*3 + 1));
+			this.<SkipPacket>replace(Direction.TO_CLIENT, 200, buf -> buf.skipBytes(Integer.BYTES*2));
+			this.<SkipPacket>replace(202, buf -> buf.skipBytes(1 + Float.BYTES*2));
 		}});
 	}},
-	/*MC_1_6_4_FORGE(78, ProtocolGen.PRE_NETTY) { void postInit() {
-		inherit(MC_1_6_4);
-		replace(NetworkState.LEGACY, 1, Direction.TO_CLIENT, () -> {
-			Login l = new Login();
-			l.setLegacyForgeVanillaComp(false);
-			return l;
-		});
-	}},*/
-	MC_1_7_2(4, ProtocolGen.POST_NETTY){ void postInit(){
+	MC_1_7_2(4, ProtocolGen.POST_NETTY, "1.7.2", "1.7.4", "1.7.5"){ void postInit(){
 		forStatus(NetworkState.HANDSHAKE, new Do() { void apply() {
-			serverboundPacket(0x00, Handshake::new);
+			serverbound(0x00, Handshake.class);
 		};});
 		forStatus(NetworkState.STATUS, new Do() { void apply() {
-			serverboundPacket(0x00, StatusRequest::new);
-			clientboundPacket(0x00, StatusResponse::new);
-			packet(0x01, PingPacket::new);
+			serverbound(0x00, StatusRequest.class);
+			clientbound(0x00, StatusResponse.class);
+			both(0x01, PingPacket.class);
 		};});
 		forStatus(NetworkState.LOGIN, new Do() { void apply() {
-			clientboundPacket(0x00, Kick::new);
-			serverboundPacket(0x00, LoginRequest::new);
+			clientbound(0x00, Kick.class);
+			serverbound(0x00, LoginRequest.class);
 			
-			clientboundPacket(0x01, EncryptionRequest::new);
-			serverboundPacket(0x01, EncryptionResponse::new);
+			clientbound(0x01, EncryptionRequest.class);
+			serverbound(0x01, EncryptionResponse.class);
 			
-			clientboundPacket(0x02, LoginSuccess::new);
+			clientbound(0x02, LoginSuccess.class);
 		};});
 		forStatus(NetworkState.GAME, new Do() { void apply() {
-			packet(0x00, KeepAlive::new);
-			clientboundPacket(0x01, Login::new);
-			serverboundPacket(0x01, Chat::new);
-			clientboundPacket(0x02, Chat::new);
-			clientboundPacket(0x07, Respawn::new);
-			serverboundPacket(0x14, TabCompleteRequest::new);
-			serverboundPacket(0x15, ClientSettings::new);
-			serverboundPacket(0x17, PluginMessage::new);
-			clientboundPacket(0x1A, EntityStatus::new);
-			clientboundPacket(0x38, PlayerListItem::new);
-			clientboundPacket(0x3A, TabCompleteResponse::new);
-			clientboundPacket(0x3B, ScoreboardObjective::new);
-			clientboundPacket(0x3C, ScoreboardScore::new);
-			clientboundPacket(0x3D, ScoreboardDisplay::new);
-			clientboundPacket(0x3E, Team::new);
-			clientboundPacket(0x3F, PluginMessage::new);
-			clientboundPacket(0x40, Kick::new);
+			both(0x00, KeepAlive.class);
+			clientbound(0x01, Login.class);
+			serverbound(0x01, Chat.class);
+			clientbound(0x02, Chat.class);
+			clientbound(0x07, Respawn.class);
+			serverbound(0x14, TabCompleteRequest.class);
+			serverbound(0x15, ClientSettings.class);
+			serverbound(0x17, PluginMessage.class);
+			clientbound(0x1A, EntityStatus.class);
+			clientbound(0x38, PlayerListItem.class);
+			clientbound(0x3A, TabCompleteResponse.class);
+			clientbound(0x3B, ScoreboardObjective.class);
+			clientbound(0x3C, ScoreboardScore.class);
+			clientbound(0x3D, ScoreboardDisplay.class);
+			clientbound(0x3E, Team.class);
+			clientbound(0x3F, PluginMessage.class);
+			clientbound(0x40, Kick.class);
+			clientbound(0x45, Title.class);
+			clientbound(0x46, SetCompression.class);
+			clientbound(0x47, PlayerListHeaderFooter.class);
 		};});
 	}},
-	MC_1_7_6(5, ProtocolGen.POST_NETTY) { void postInit() {
+	MC_1_7_6(5, ProtocolGen.POST_NETTY, "1.7.6", "1.7.7", "1.7.8", "1.7.9", "1.7.10") { void postInit() {
 		inherit(MC_1_7_2);
 	}},
-	MC_1_8_0(47, ProtocolGen.POST_NETTY) { void postInit() {
+	MC_1_8_0(47, ProtocolGen.POST_NETTY,
+		"1.8", "1.8.1", "1.8.2", "1.8.3", "1.8.4", "1.8.5", "1.8.6", "1.8.7", "1.8.8", "1.8.9") { 
+	void postInit() {
 		inherit(MC_1_7_2);
 		
-		packet(NetworkState.GAME, 0x45, Direction.TO_CLIENT, Title::new);
-		packet(NetworkState.GAME, 0x46, Direction.TO_CLIENT, SetCompression::new);
-		packet(NetworkState.GAME, 0x47, Direction.TO_CLIENT, PlayerListHeaderFooter::new);
-		packet(NetworkState.LOGIN, 0x03, Direction.TO_CLIENT, SetCompression::new);
+		packet(NetworkState.GAME, Direction.TO_CLIENT, 0x45, Title.class);
+		packet(NetworkState.GAME, Direction.TO_CLIENT, 0x46, SetCompression.class);
+		packet(NetworkState.GAME, Direction.TO_CLIENT, 0x47, PlayerListHeaderFooter.class);
+		packet(NetworkState.LOGIN, Direction.TO_CLIENT, 0x03, SetCompression.class);
 	}},
-	MC_1_9_0(107, ProtocolGen.POST_NETTY) { void postInit() {
-		inheritStatusesFromProtocol(MC_1_8_0, NetworkState.HANDSHAKE, NetworkState.LOGIN, NetworkState.STATUS);
+	MC_1_9_0(107, ProtocolGen.POST_NETTY, "1.9") { void postInit() {
+		inheritStatesFromProtocol(MC_1_8_0, NetworkState.HANDSHAKE, NetworkState.LOGIN, NetworkState.STATUS);
 		
 		forStatus(NetworkState.GAME, new Do() { void apply() {
-			serverboundPacket(0x01, TabCompleteRequest::new);
-			serverboundPacket(0x02, Chat::new);
-			serverboundPacket(0x04, ClientSettings::new);
-			serverboundPacket(0x09, PluginMessage::new);
-			serverboundPacket(0x0B, KeepAlive::new);
-			clientboundPacket(0x0C, BossBar::new);
-			clientboundPacket(0x0E, TabCompleteResponse::new);
-			clientboundPacket(0x0F, Chat::new);
-			clientboundPacket(0x18, PluginMessage::new);
-			clientboundPacket(0x1A, Kick::new);
-			clientboundPacket(0x1B, EntityStatus::new);
-			clientboundPacket(0x1F, KeepAlive::new);
-			clientboundPacket(0x23, Login::new);
-			clientboundPacket(0x2D, PlayerListItem::new);
-			clientboundPacket(0x33, Respawn::new);
-			clientboundPacket(0x38, ScoreboardDisplay::new);
-			clientboundPacket(0x3F, ScoreboardObjective::new);
-			clientboundPacket(0x41, Team::new);
-			clientboundPacket(0x42, ScoreboardScore::new);
-			clientboundPacket(0x45, Title::new);
-			clientboundPacket(0x48, PlayerListHeaderFooter::new);
+			serverbound(0x01, TabCompleteRequest.class);
+			serverbound(0x02, Chat.class);
+			serverbound(0x04, ClientSettings.class);
+			serverbound(0x09, PluginMessage.class);
+			serverbound(0x0B, KeepAlive.class);
+			clientbound(0x0C, BossBar.class);
+			clientbound(0x0E, TabCompleteResponse.class);
+			clientbound(0x0F, Chat.class);
+			clientbound(0x18, PluginMessage.class);
+			clientbound(0x1A, Kick.class);
+			clientbound(0x1B, EntityStatus.class);
+			clientbound(0x1F, KeepAlive.class);
+			clientbound(0x23, Login.class);
+			clientbound(0x2D, PlayerListItem.class);
+			clientbound(0x33, Respawn.class);
+			clientbound(0x38, ScoreboardDisplay.class);
+			clientbound(0x3F, ScoreboardObjective.class);
+			clientbound(0x41, Team.class);
+			clientbound(0x42, ScoreboardScore.class);
+			clientbound(0x45, Title.class);
+			clientbound(0x48, PlayerListHeaderFooter.class);
 		};});
 	}},
-	MC_1_9_1(108, ProtocolGen.POST_NETTY) { void postInit() {
+	MC_1_9_1(108, ProtocolGen.POST_NETTY, "1.9.1") { void postInit() {
 		inherit(MC_1_9_0);
 	}},
-	MC_1_9_2(109, ProtocolGen.POST_NETTY) { void postInit() {
+	MC_1_9_2(109, ProtocolGen.POST_NETTY, "1.9.2") { void postInit() {
 		inherit(MC_1_9_0);
 	}},
-	MC_1_9_4(110, ProtocolGen.POST_NETTY) { void postInit() {
+	MC_1_9_3(110, ProtocolGen.POST_NETTY, "1.9.3", "1.9.4") { void postInit() {
 		inherit(MC_1_9_0);
-		reassign(NetworkState.GAME, PlayerListHeaderFooter.class, Direction.TO_CLIENT, 0x47);
+		reassign(NetworkState.GAME, Direction.TO_CLIENT, PlayerListHeaderFooter.class, 0x47);
 	}},
-	MC_1_10_0(210, ProtocolGen.POST_NETTY) { void postInit() {
-		inherit(MC_1_9_4);
+	MC_1_10_0(210, ProtocolGen.POST_NETTY, "1.10", "1.10.1", "1.10.2") { void postInit() {
+		inherit(MC_1_9_3);
 	}},
-	MC_1_11_0(315, ProtocolGen.POST_NETTY) { void postInit() {
+	MC_1_11_0(315, ProtocolGen.POST_NETTY, "1.11") { void postInit() {
 		inherit(MC_1_10_0);
 	}},
-	MC_1_11_1(316, ProtocolGen.POST_NETTY) { void postInit() {
+	MC_1_11_1(316, ProtocolGen.POST_NETTY, "1.11.1", "1.11.2") { void postInit() {
 		inherit(MC_1_11_0);
 	}},
-	MC_1_12_0(335, ProtocolGen.POST_NETTY) { void postInit() {
-		inheritStatusesFromProtocol(MC_1_11_1, NetworkState.HANDSHAKE, NetworkState.LOGIN, NetworkState.STATUS);
+	MC_1_12_0(335, ProtocolGen.POST_NETTY, "1.12") { void postInit() {
+		inheritStatesFromProtocol(MC_1_11_1, NetworkState.HANDSHAKE, NetworkState.LOGIN, NetworkState.STATUS);
 		
 		forStatus(NetworkState.GAME, new Do() { void apply() {
-			serverboundPacket(0x02, TabCompleteRequest::new);
-			serverboundPacket(0x03, Chat::new);
-			serverboundPacket(0x05, ClientSettings::new);
-			serverboundPacket(0x0A, PluginMessage::new);
-			serverboundPacket(0x0C, KeepAlive::new);
-			clientboundPacket(0x0C, BossBar::new);
-			clientboundPacket(0x0E, TabCompleteResponse::new);
-			clientboundPacket(0x0F, Chat::new);
-			clientboundPacket(0x18, PluginMessage::new);
-			clientboundPacket(0x1A, Kick::new);
-			clientboundPacket(0x1B, EntityStatus::new);
-			clientboundPacket(0x1F, KeepAlive::new);
-			clientboundPacket(0x23, Login::new);
-			clientboundPacket(0x2D, PlayerListItem::new);
-			clientboundPacket(0x34, Respawn::new);
-			clientboundPacket(0x3A, ScoreboardDisplay::new);
-			clientboundPacket(0x41, ScoreboardObjective::new);
-			clientboundPacket(0x43, Team::new);
-			clientboundPacket(0x44, ScoreboardScore::new);
-			clientboundPacket(0x47, Title::new);
-			clientboundPacket(0x49, PlayerListHeaderFooter::new);
+			serverbound(0x02, TabCompleteRequest.class);
+			serverbound(0x03, Chat.class);
+			serverbound(0x05, ClientSettings.class);
+			serverbound(0x0A, PluginMessage.class);
+			serverbound(0x0C, KeepAlive.class);
+			clientbound(0x0C, BossBar.class);
+			clientbound(0x0E, TabCompleteResponse.class);
+			clientbound(0x0F, Chat.class);
+			clientbound(0x18, PluginMessage.class);
+			clientbound(0x1A, Kick.class);
+			clientbound(0x1B, EntityStatus.class);
+			clientbound(0x1F, KeepAlive.class);
+			clientbound(0x23, Login.class);
+			clientbound(0x2D, PlayerListItem.class);
+			clientbound(0x34, Respawn.class);
+			clientbound(0x3A, ScoreboardDisplay.class);
+			clientbound(0x41, ScoreboardObjective.class);
+			clientbound(0x43, Team.class);
+			clientbound(0x44, ScoreboardScore.class);
+			clientbound(0x47, Title.class);
+			clientbound(0x49, PlayerListHeaderFooter.class);
 		};});
 	}},
-	MC_1_12_1(338, ProtocolGen.POST_NETTY) { void postInit() {
-		inheritStatusesFromProtocol(MC_1_11_1, NetworkState.HANDSHAKE, NetworkState.LOGIN, NetworkState.STATUS);
+	MC_1_12_1(338, ProtocolGen.POST_NETTY, "1.12.1") { void postInit() {
+		inheritStatesFromProtocol(MC_1_11_1, NetworkState.HANDSHAKE, NetworkState.LOGIN, NetworkState.STATUS);
 		
 		forStatus(NetworkState.GAME, new Do() { void apply() {
-			serverboundPacket(0x01, TabCompleteRequest::new);
-			serverboundPacket(0x02, Chat::new);
-			serverboundPacket(0x04, ClientSettings::new);
-			serverboundPacket(0x09, PluginMessage::new);
-			serverboundPacket(0x0B, KeepAlive::new);
-			clientboundPacket(0x0C, BossBar::new);
-			clientboundPacket(0x0E, TabCompleteResponse::new);
-			clientboundPacket(0x0F, Chat::new);
-			clientboundPacket(0x18, PluginMessage::new);
-			clientboundPacket(0x1A, Kick::new);
-			clientboundPacket(0x1B, EntityStatus::new);
-			clientboundPacket(0x1F, KeepAlive::new);
-			clientboundPacket(0x23, Login::new);
-			clientboundPacket(0x2E, PlayerListItem::new);
-			clientboundPacket(0x35, Respawn::new);
-			clientboundPacket(0x3B, ScoreboardDisplay::new);
-			clientboundPacket(0x42, ScoreboardObjective::new);
-			clientboundPacket(0x44, Team::new);
-			clientboundPacket(0x45, ScoreboardScore::new);
-			clientboundPacket(0x48, Title::new);
-			clientboundPacket(0x4A, PlayerListHeaderFooter::new);
+			serverbound(0x01, TabCompleteRequest.class);
+			serverbound(0x02, Chat.class);
+			serverbound(0x04, ClientSettings.class);
+			serverbound(0x09, PluginMessage.class);
+			serverbound(0x0B, KeepAlive.class);
+			clientbound(0x0C, BossBar.class);
+			clientbound(0x0E, TabCompleteResponse.class);
+			clientbound(0x0F, Chat.class);
+			clientbound(0x18, PluginMessage.class);
+			clientbound(0x1A, Kick.class);
+			clientbound(0x1B, EntityStatus.class);
+			clientbound(0x1F, KeepAlive.class);
+			clientbound(0x23, Login.class);
+			clientbound(0x2E, PlayerListItem.class);
+			clientbound(0x35, Respawn.class);
+			clientbound(0x3B, ScoreboardDisplay.class);
+			clientbound(0x42, ScoreboardObjective.class);
+			clientbound(0x44, Team.class);
+			clientbound(0x45, ScoreboardScore.class);
+			clientbound(0x48, Title.class);
+			clientbound(0x4A, PlayerListHeaderFooter.class);
 		};});
 	}},
-	MC_1_12_2(340, ProtocolGen.POST_NETTY) { void postInit() {
+	MC_1_12_2(340, ProtocolGen.POST_NETTY, "1.12.2") { void postInit() {
 		inherit(MC_1_12_1);
 	}},
-	MC_1_13_0(393, ProtocolGen.POST_NETTY) { void postInit() {
-		inheritStatusesFromProtocol(MC_1_11_1, NetworkState.HANDSHAKE, NetworkState.LOGIN, NetworkState.STATUS);
-		packet(NetworkState.LOGIN, 0x04, Direction.TO_CLIENT, LoginPayloadRequest::new);
-		packet(NetworkState.LOGIN, 0x02, Direction.TO_SERVER, LoginPayloadResponse::new);
+	MC_1_13_0(393, ProtocolGen.POST_NETTY, "1.13") { void postInit() {
+		inheritStatesFromProtocol(MC_1_11_1, NetworkState.HANDSHAKE, NetworkState.LOGIN, NetworkState.STATUS);
+		packet(NetworkState.LOGIN, Direction.TO_CLIENT, 0x04, LoginPayloadRequest.class);
+		packet(NetworkState.LOGIN, Direction.TO_SERVER, 0x02, LoginPayloadResponse.class);
 		
 		forStatus(NetworkState.GAME, new Do() { void apply() {
-			serverboundPacket(0x02, Chat::new);
-			serverboundPacket(0x04, ClientSettings::new);
-			serverboundPacket(0x05, TabCompleteRequest::new);
-			serverboundPacket(0x0A, PluginMessage::new);
-			serverboundPacket(0x0E, KeepAlive::new);
-			clientboundPacket(0x0E, Chat::new);
-			clientboundPacket(0x0C, BossBar::new);
-			clientboundPacket(0x10, TabCompleteResponse::new);
-			clientboundPacket(0x11, Commands::new);
-			clientboundPacket(0x19, PluginMessage::new);
-			clientboundPacket(0x1B, Kick::new);
-			clientboundPacket(0x1C, EntityStatus::new);
-			clientboundPacket(0x21, KeepAlive::new);
-			clientboundPacket(0x25, Login::new);
-			clientboundPacket(0x30, PlayerListItem::new);
-			clientboundPacket(0x38, Respawn::new);
-			clientboundPacket(0x3E, ScoreboardDisplay::new);
-			clientboundPacket(0x45, ScoreboardObjective::new);
-			clientboundPacket(0x47, Team::new);
-			clientboundPacket(0x48, ScoreboardScore::new);
-			clientboundPacket(0x4B, Title::new);
-			clientboundPacket(0x4E, PlayerListHeaderFooter::new);
+			serverbound(0x02, Chat.class);
+			serverbound(0x04, ClientSettings.class);
+			serverbound(0x05, TabCompleteRequest.class);
+			serverbound(0x0A, PluginMessage.class);
+			serverbound(0x0E, KeepAlive.class);
+			clientbound(0x0E, Chat.class);
+			clientbound(0x0C, BossBar.class);
+			clientbound(0x10, TabCompleteResponse.class);
+			clientbound(0x11, Commands.class);
+			clientbound(0x19, PluginMessage.class);
+			clientbound(0x1B, Kick.class);
+			clientbound(0x1C, EntityStatus.class);
+			clientbound(0x21, KeepAlive.class);
+			clientbound(0x25, Login.class);
+			clientbound(0x30, PlayerListItem.class);
+			clientbound(0x38, Respawn.class);
+			clientbound(0x3E, ScoreboardDisplay.class);
+			clientbound(0x45, ScoreboardObjective.class);
+			clientbound(0x47, Team.class);
+			clientbound(0x48, ScoreboardScore.class);
+			clientbound(0x4B, Title.class);
+			clientbound(0x4E, PlayerListHeaderFooter.class);
 		};});
 	}},
-	MC_1_13_1(401, ProtocolGen.POST_NETTY) { void postInit() {
+	MC_1_13_1(401, ProtocolGen.POST_NETTY, "1.13.1") { void postInit() {
 		inherit(MC_1_13_0);
 	}},
-	MC_1_13_2(404, ProtocolGen.POST_NETTY) { void postInit() {
+	MC_1_13_2(404, ProtocolGen.POST_NETTY, "1.13.2") { void postInit() {
 		inherit(MC_1_13_1);
 	}};
 	
-	private Protocol(int ver, ProtocolGen gen) {
+	private Protocol(int ver, ProtocolGen gen, String... versions) {
 		this.version = ver;
 		this.generation = gen;
-		packets = new PacketMap();
-	}
-	
-	interface Factory {
-		public DefinedPacket create();
+		this.versions = Arrays.asList(versions);
+		
+		postInit();
 	}
 	
 	static abstract class Do {
@@ -548,69 +411,85 @@ public enum Protocol {
 		
 		abstract void apply();
 		
-		void packet(int id, Direction d, Factory c) {
-			pv.packet(s, id, d, c);
+		<P extends Packet> void packet(Direction d, int id, Supplier<P> c) {
+			pv.packet(s, d, id, c.get().getClass());
 		}
 		
-		void clientboundPacket(int id, Factory c) {
-			pv.packet(s, id, Direction.TO_CLIENT, c);
+		<P extends Packet> void packet(Direction d, int id, P c) {
+			pv.packet(s, d, id, c.getClass());
 		}
 		
-		void serverboundPacket(int id, Factory c) {
-			pv.packet(s, id, Direction.TO_SERVER, c);
+		<P extends Packet> void packet(Direction d, int id, Class<P> c) {
+			pv.packet(s, d, id, c);
 		}
 		
-		void packet(int id, Factory c) {
-			clientboundPacket(id, c);
-			serverboundPacket(id, c);
+		<P extends Packet> void clientbound(int id, Class<P> c) {
+			packet(Direction.TO_CLIENT, id, c);
 		}
 		
-		void replace(int id, Direction d, Factory f) {
-			pv.replace(s, id, d, f);
+		<P extends Packet> void clientbound(int id, P c) {
+			packet(Direction.TO_CLIENT, id, c);
 		}
 		
-		void replace(int id, Factory f) {
-			pv.replace(s, id, Direction.TO_CLIENT, f);
-			pv.replace(s, id, Direction.TO_SERVER, f);
+		<P extends Packet> void serverbound(int id, P c) {
+			packet(Direction.TO_SERVER, id, c);
+		}
+		
+		<P extends Packet> void serverbound(int id, Class<P> c) {
+			packet(Direction.TO_SERVER, id, c);
+		}
+		
+		<P extends Packet> void both(int id, P c) {
+			clientbound(id, c);
+			serverbound(id, c);
+		}
+		
+		<P extends Packet> void both(int id, Class<P> c) {
+			clientbound(id, c);
+			serverbound(id, c);
+		}
+		
+		<P extends Packet> void replace(Direction d, int id, Class<? extends Packet> p) {
+			pv.replace(s, d, id, p);
+		}
+		
+		<P extends Packet> void replace(Direction d, int id, P s) {
+			replace(d, id, s.getClass());
+		}
+		
+		<P extends Packet> void replace(int id, P p) {
+			replace(Direction.TO_CLIENT, id, p);
+			replace(Direction.TO_SERVER, id, p);
 		}
 	}
 	
 	void postInit() {}
 	
-	static {
-		for(Protocol pv : values())
-			pv.postInit();
+	void packet(NetworkState networkState, Direction direction, int id, Class<? extends Packet> clazz) {
+		if(packets.put(networkState, direction, id, clazz) != null) throw new RuntimeException("Overwriting existing packet");
+	}
+	
+	void reassign(NetworkState networkState, Direction direction, Class<? extends Packet> clazz, int id) {
+		packets.remove(networkState, direction, clazz);
+		packet(networkState, direction, id, clazz);
+	}
+	
+	void replace(NetworkState networkState, Direction direction, int id, Class<? extends Packet> clazz) {
+		packets.remove(networkState, direction, id);
+		packet(networkState, direction, id, clazz);
 	}
 	
 	void inherit(Protocol v) {
-		packets.addFrom(v.packets, pi -> true);
+		packets.addAll(v.packets);
 	}
 	
-	void inheritStatus(NetworkState ns, Protocol v) {
-		packets.addFrom(v.packets, pi -> pi.getNetworkState() == ns);
+	void inheritState(Protocol v, NetworkState ns) {
+		packets.addAll(v.packets, ns);
 	}
 	
-	void inheritStatusesFromProtocol(Protocol v, NetworkState... css) {
+	void inheritStatesFromProtocol(Protocol v, NetworkState... css) {
 		for(NetworkState cs : css)
-			inheritStatus(cs, v);
-	}
-	
-	void reassign(NetworkState ns, Class<? extends DefinedPacket> c, Direction dir, int newId) {
-		PacketMap.PacketInfo pi = packets.remove(ns, c, dir);
-		packet(pi.networkState, newId, pi.direction, pi.factory);
-	}
-	
-	void reassign(NetworkState ns, int oldID, Direction dir, int newId) {
-		packet(ns, newId, dir, remove(ns, oldID, dir).getFactory());
-	}
-	
-	PacketMap.PacketInfo remove(NetworkState ns, int id, Direction d) {
-		return packets.remove(ns, id, d);
-	}
-	
-	void replace(NetworkState ns, int id, Direction d, Factory f) {
-		packets.remove(ns, id, d);
-		packets.add(ns, id, d, f);
+			inheritState(v, cs);
 	}
 	
 	void forStatus(NetworkState cs, Do p) {
@@ -619,27 +498,18 @@ public enum Protocol {
 		p.apply();
 	}
 	
-	void packet(NetworkState ns, int id, Direction direction, Factory factory) {
-		packets.add(ns, id, direction, factory);
+	public TIntObjectMap<Class<? extends Packet>> getIdToClassUnmodifiableMap(NetworkState ns, Direction dir) {
+		return packets.getIdToClassUnmodifiableMap(ns, dir);
 	}
 	
-	public Factory packetFactory(NetworkState ns, int id, Direction d) {
-		PacketInfo pi = packets.getInfo(ns, id, d);
-		return pi == null ? null : pi.getFactory();
+	public TObjectIntMap<Class<? extends Packet>> getClassToIdUnmodifiableMap(NetworkState ns, Direction dir) {
+		return packets.getClassToIdUnmodifiableMap(ns, dir);
 	}
 	
-	public DefinedPacket createPacket(NetworkState cs, int id, Direction d) {
-		Factory f = packetFactory(cs, id, d);
-		return f == null ? null : f.create();
-	}
-	
-	public int idOf(NetworkState ns, DefinedPacket p, Direction dir) {
-		return packets.getInfo(ns, p.getClass(), dir).getId();
-	}
-	
-	private PacketMap packets;
+	private final Packets packets = new Packets();
 	public final int version;
 	public final ProtocolGen generation;
+	public final List<String> versions;
 	
 	@Override
 	public String toString() {
@@ -652,19 +522,14 @@ public enum Protocol {
 	public boolean olderOrEqual(Protocol ver) {return ordinal() <= ver.ordinal();}
 	
 	public boolean isLegacy() { return generation == ProtocolGen.PRE_NETTY; }
-	public boolean isModern() { return !isLegacy(); }
+	public boolean isModern() { return generation == ProtocolGen.POST_NETTY; }
 	
 	public static Protocol byNumber(int num, ProtocolGen gen) {
-		for(Protocol v : values())
+		for(Protocol v : VALUES)
 			if(v.version == num && gen == v.generation)
 				return v;
 		return null;
 	}
-
-	public static final List<String> GAME_VERSIONS = new ArrayList<>();
 	
-	static {
-		for(Protocol v : values())
-			GAME_VERSIONS.add(v.name().substring("MC_".length()).replace('_', '.'));
-	}
+	public static final Protocol[] VALUES = values();
 }

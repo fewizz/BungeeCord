@@ -4,33 +4,48 @@ import java.util.List;
 
 import com.google.common.base.Preconditions;
 
+import gnu.trove.map.TIntObjectMap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 
 public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implements PacketDecoder {
-	@Setter
 	@Getter
 	private NetworkState networkState = NetworkState.HANDSHAKE;
 	private final Direction direction;
-	@Setter
 	@Getter
 	private Protocol protocol;
+	
+	private TIntObjectMap<Class<? extends Packet>> map;
 
 	public ModernPacketDecoder(@NonNull Side side, @NonNull Protocol p) {
 		Preconditions.checkArgument(p.isModern());
 		this.direction = side.getOutboundDirection();
-		protocol = p;
+		this.protocol = p;
+		updateMap();
+	}
+	
+	public void setNetworkState(NetworkState ns) {
+		this.networkState = ns;
+		updateMap();
+	}
+	
+	public void setProtocol(Protocol p) {
+		this.protocol = p;
+		updateMap();
+	}
+	
+	private void updateMap() {
+		map = protocol.getIdToClassUnmodifiableMap(networkState, direction);
 	}
 
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
 		int packetId = DefinedPacket.readVarInt(in);
 
-		DefinedPacket packet = protocol.createPacket(networkState, packetId, direction);
+		DefinedPacket packet = (DefinedPacket) map.get(packetId).newInstance();
 
 		if (packet == null)
 			in.skipBytes(in.readableBytes());

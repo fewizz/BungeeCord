@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 import java.util.UUID;
 
 @RequiredArgsConstructor
-public abstract class DefinedPacket
+public abstract class DefinedPacket implements Packet
 {
 
     public static void writeString(String s, ByteBuf buf)
@@ -227,24 +227,16 @@ public abstract class DefinedPacket
         return new UUID( input.readLong(), input.readLong() );
     }
 
+    @Override
     public void read(ByteBuf buf)
     {
         throw new UnsupportedOperationException( "Packet must implement read method" );
     }
 
-    public void read(ByteBuf buf, Direction direction, Protocol protocolVersion)
-    {
-        read( buf );
-    }
-
+    @Override
     public void write(ByteBuf buf)
     {
         throw new UnsupportedOperationException( "Packet must implement write method" );
-    }
-
-    public void write(ByteBuf buf, Direction direction, Protocol protocolVersion)
-    {
-        write( buf );
     }
 
     public abstract void handle(AbstractPacketHandler handler) throws Exception;

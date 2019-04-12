@@ -5,25 +5,23 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Preconditions;
 
+import gnu.trove.map.TIntObjectMap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.util.concurrent.ScheduledFuture;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 
-@AllArgsConstructor
 public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketDecoder {
-	@Setter
 	@Getter
 	private NetworkState networkState = NetworkState.LEGACY;
 	@Getter
 	private final Direction direction;
-	@Setter
 	@Getter
 	private Protocol protocol;
+	
+	private TIntObjectMap<Class<? extends Packet>> map;
 
 	public LegacyPacketDecoder(@NonNull Side side, @NonNull Protocol p) {
 		Preconditions.checkArgument(p.isLegacy());
@@ -37,6 +35,22 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 		this.protocol = lpd.protocol;
 	}
 	
+	@Override
+	public void setNetworkState(NetworkState ns) {
+		this.networkState = ns;
+		updateMap();
+	}
+	
+	@Override
+	public void setProtocol(Protocol protocol) {
+		this.protocol = protocol;
+		updateMap();
+	}
+	
+	private void updateMap() {
+		map = protocol.getIdToClassUnmodifiableMap(networkState, direction);
+	}
+	
 	public static final RuntimeException OMT = new RuntimeException();
 	ScheduledFuture<?> future = null;
 	boolean scheduledRead = false;
@@ -48,7 +62,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 		try {
 			int packetId = in.readUnsignedByte();
 
-			DefinedPacket packet = protocol.createPacket(networkState, packetId, direction);
+			DefinedPacket packet = (DefinedPacket) map.get(packetId).newInstance();
 
 			//System.out.println("read, id: " + packetId);
 			if (packet == null)

@@ -643,14 +643,16 @@ public class BungeeCord extends ProxyServer
     @Override
     public Protocol getProtocolVersion()
     {
-    	return Protocol.values()[Protocol.values().length-1];
+    	return Protocol.VALUES[Protocol.VALUES.length - 1];
     }
 
     @Override
     public String getGameVersion()
     {
-        //return ProtocolConstants.SUPPORTED_VERSIONS.get( 0 ) + "-" + ProtocolConstants.SUPPORTED_VERSIONS.get( ProtocolConstants.SUPPORTED_VERSIONS.size() - 1 );
-    	return Protocol.GAME_VERSIONS.get(0) + "-" + Protocol.GAME_VERSIONS.get(Protocol.GAME_VERSIONS.size()-1);
+        String first = Protocol.VALUES[0].versions.get(0);
+        Protocol lastP = Protocol.VALUES[Protocol.VALUES.length - 1];
+        String last = lastP.versions.get(lastP.versions.size() - 1);
+        return first + " - " + last;
     }
 
     @Override
