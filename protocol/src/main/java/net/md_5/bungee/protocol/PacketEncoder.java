@@ -1,6 +1,7 @@
 package net.md_5.bungee.protocol;
 
 import gnu.trove.map.TObjectIntMap;
+import gnu.trove.map.hash.TObjectIntHashMap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
@@ -16,11 +17,11 @@ public class PacketEncoder extends MessageToByteEncoder<DefinedPacket> {
 	@NonNull
 	private Protocol protocol;
 
-	private TObjectIntMap<Class<? extends Packet>> map;
+	private TObjectIntMap<Class<? extends Packet>> map = new TObjectIntHashMap<>();
 	
-	public PacketEncoder(NetworkState ns, Direction d, Protocol p) {
-		this.networkState = ns;
-		this.direction = d;
+	public PacketEncoder(@NonNull NetworkState state, @NonNull Side side, @NonNull Protocol p) {
+		this.networkState = state;
+		this.direction = side.getInboundDirection();
 		this.protocol = p;
 		updateMap();
 	}
@@ -39,19 +40,13 @@ public class PacketEncoder extends MessageToByteEncoder<DefinedPacket> {
 		map = protocol.getClassToIdUnmodifiableMap(networkState, direction);
 	}
 
-	public PacketEncoder(@NonNull NetworkState state, @NonNull Side side, @NonNull Protocol p) {
-		this.networkState = state;
-		this.direction = side.getInboundDirection();
-		this.protocol = p;
-	}
-
 	@Override
 	protected void encode(ChannelHandlerContext ctx, DefinedPacket msg, ByteBuf out) throws Exception {
 		int packetID = -1;
 		try {
 			packetID = map.get(msg.getClass());
 		} catch (Exception e) {
-			throw new RuntimeException("Can't find id of packet " + msg.getClass().getName());
+			(new RuntimeException("Error while retrieving id of packet " + msg.getClass().getName(), e)).printStackTrace();
 		}
 		// System.out.println("ENC, id: " + packetID + ", dir: " + direction.name());
 

@@ -5,13 +5,46 @@ import static net.md_5.bungee.protocol.DefinedPacket.skipLegacyString;
 import static net.md_5.bungee.protocol.DefinedPacket.skipLegacyTag;
 import static net.md_5.bungee.protocol.DefinedPacket.skipLegacyWatchableObjects;
 
+import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.TObjectIntMap;
-import net.md_5.bungee.protocol.packet.*;
+import net.md_5.bungee.protocol.packet.BossBar;
+import net.md_5.bungee.protocol.packet.Chat;
+import net.md_5.bungee.protocol.packet.ClientSettings;
+import net.md_5.bungee.protocol.packet.Commands;
+import net.md_5.bungee.protocol.packet.EncryptionRequest;
+import net.md_5.bungee.protocol.packet.EncryptionResponse;
+import net.md_5.bungee.protocol.packet.EntityStatus;
+import net.md_5.bungee.protocol.packet.Handshake;
+import net.md_5.bungee.protocol.packet.KeepAlive;
+import net.md_5.bungee.protocol.packet.Kick;
+import net.md_5.bungee.protocol.packet.LegacyClientCommand;
+import net.md_5.bungee.protocol.packet.LegacyLoginRequest;
+import net.md_5.bungee.protocol.packet.LegacyStatusRequest;
+import net.md_5.bungee.protocol.packet.Login;
+import net.md_5.bungee.protocol.packet.LoginPayloadRequest;
+import net.md_5.bungee.protocol.packet.LoginPayloadResponse;
+import net.md_5.bungee.protocol.packet.LoginRequest;
+import net.md_5.bungee.protocol.packet.LoginSuccess;
+import net.md_5.bungee.protocol.packet.PingPacket;
+import net.md_5.bungee.protocol.packet.PlayerListHeaderFooter;
+import net.md_5.bungee.protocol.packet.PlayerListItem;
+import net.md_5.bungee.protocol.packet.PluginMessage;
+import net.md_5.bungee.protocol.packet.Respawn;
+import net.md_5.bungee.protocol.packet.ScoreboardDisplay;
+import net.md_5.bungee.protocol.packet.ScoreboardObjective;
+import net.md_5.bungee.protocol.packet.ScoreboardScore;
+import net.md_5.bungee.protocol.packet.SetCompression;
+import net.md_5.bungee.protocol.packet.StatusRequest;
+import net.md_5.bungee.protocol.packet.StatusResponse;
+import net.md_5.bungee.protocol.packet.TabCompleteRequest;
+import net.md_5.bungee.protocol.packet.TabCompleteResponse;
+import net.md_5.bungee.protocol.packet.Team;
+import net.md_5.bungee.protocol.packet.Title;
 
 public enum Protocol {
 	MC_1_5_2(61, ProtocolGen.PRE_NETTY, "1.5.2") { void postInit() {
@@ -239,9 +272,6 @@ public enum Protocol {
 			clientbound(0x3E, Team.class);
 			clientbound(0x3F, PluginMessage.class);
 			clientbound(0x40, Kick.class);
-			clientbound(0x45, Title.class);
-			clientbound(0x46, SetCompression.class);
-			clientbound(0x47, PlayerListHeaderFooter.class);
 		};});
 	}},
 	MC_1_7_6(5, ProtocolGen.POST_NETTY, "1.7.6", "1.7.7", "1.7.8", "1.7.9", "1.7.10") { void postInit() {
@@ -410,10 +440,7 @@ public enum Protocol {
 		Protocol pv;
 		
 		abstract void apply();
-		
-		<P extends Packet> void packet(Direction d, int id, Supplier<P> c) {
-			pv.packet(s, d, id, c.get().getClass());
-		}
+
 		
 		<P extends Packet> void packet(Direction d, int id, P c) {
 			pv.packet(s, d, id, c.getClass());
@@ -431,11 +458,11 @@ public enum Protocol {
 			packet(Direction.TO_CLIENT, id, c);
 		}
 		
-		<P extends Packet> void serverbound(int id, P c) {
+		<P extends Packet> void serverbound(int id, Class<P> c) {
 			packet(Direction.TO_SERVER, id, c);
 		}
 		
-		<P extends Packet> void serverbound(int id, Class<P> c) {
+		<P extends Packet> void serverbound(int id, P c) {
 			packet(Direction.TO_SERVER, id, c);
 		}
 		
@@ -498,8 +525,8 @@ public enum Protocol {
 		p.apply();
 	}
 	
-	public TIntObjectMap<Class<? extends Packet>> getIdToClassUnmodifiableMap(NetworkState ns, Direction dir) {
-		return packets.getIdToClassUnmodifiableMap(ns, dir);
+	public TIntObjectMap<Constructor<? extends Packet>> getIdToConstructorUnmodifiableMap(NetworkState ns, Direction dir) {
+		return packets.getIdToConstructorUnmodifiableMap(ns, dir);
 	}
 	
 	public TObjectIntMap<Class<? extends Packet>> getClassToIdUnmodifiableMap(NetworkState ns, Direction dir) {

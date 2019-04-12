@@ -1,5 +1,6 @@
 package net.md_5.bungee.protocol;
 
+import java.lang.reflect.Constructor;
 import java.util.List;
 
 import com.google.common.base.Preconditions;
@@ -18,7 +19,7 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 	@Getter
 	private Protocol protocol;
 	
-	private TIntObjectMap<Class<? extends Packet>> map;
+	private TIntObjectMap<Constructor<? extends Packet>> map;
 
 	public ModernPacketDecoder(@NonNull Side side, @NonNull Protocol p) {
 		Preconditions.checkArgument(p.isModern());
@@ -38,7 +39,7 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 	}
 	
 	private void updateMap() {
-		map = protocol.getIdToClassUnmodifiableMap(networkState, direction);
+		map = protocol.getIdToConstructorUnmodifiableMap(networkState, direction);
 	}
 
 	@Override

@@ -1,5 +1,6 @@
 package net.md_5.bungee.protocol;
 
+import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -21,18 +22,20 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 	@Getter
 	private Protocol protocol;
 	
-	private TIntObjectMap<Class<? extends Packet>> map;
+	private TIntObjectMap<Constructor<? extends Packet>> map;
 
 	public LegacyPacketDecoder(@NonNull Side side, @NonNull Protocol p) {
 		Preconditions.checkArgument(p.isLegacy());
 		this.direction = side.getOutboundDirection();
 		this.protocol = p;
+		updateMap();
 	}
 	
 	public LegacyPacketDecoder(LegacyPacketDecoder lpd) {
 		this.networkState = lpd.networkState;
 		this.direction = lpd.direction;
 		this.protocol = lpd.protocol;
+		updateMap();
 	}
 	
 	@Override
@@ -48,7 +51,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 	}
 	
 	private void updateMap() {
-		map = protocol.getIdToClassUnmodifiableMap(networkState, direction);
+		map = protocol.getIdToConstructorUnmodifiableMap(networkState, direction);
 	}
 	
 	public static final RuntimeException OMT = new RuntimeException();
@@ -62,7 +65,12 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 		try {
 			int packetId = in.readUnsignedByte();
 
-			DefinedPacket packet = (DefinedPacket) map.get(packetId).newInstance();
+			Packet packet = null;
+			try {
+				packet = map.get(packetId).newInstance();
+			} catch (Exception e) {
+				(new RuntimeException("Can't create packet instance with id: " + packetId, e)).printStackTrace();
+			}
 
 			//System.out.println("read, id: " + packetId);
 			if (packet == null)
@@ -96,13 +104,13 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 			
 			// Do it manually, because when in becomes !in.isReadable, 
 			// super BTMD not sends last message immediately, so it releases bytebuf
-			firePacket(packet, in.slice(begin, in.readerIndex() - begin), ctx);
+			firePacket(packet instanceof DefinedPacket ? (DefinedPacket)packet : null, in.slice(begin, in.readerIndex() - begin), ctx);
 		} catch (IndexOutOfBoundsException e) {// Temp. solution. //TODO
 			in.readerIndex(begin);
 		}
 	}
 	
-	protected void read0(ByteBuf buf, DefinedPacket p) {
+	protected void read0(ByteBuf buf, Packet p) {
 		p.read( buf, direction, protocol );
 	}
 }

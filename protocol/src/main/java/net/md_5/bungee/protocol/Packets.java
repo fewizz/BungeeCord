@@ -1,9 +1,9 @@
 package net.md_5.bungee.protocol;
 
+import java.lang.reflect.Constructor;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 
 import gnu.trove.TCollections;
@@ -16,33 +16,72 @@ import lombok.val;
 public class Packets {
 	
 	private static final class Maps {
-		final TIntObjectMap<Class<? extends Packet>> idToClass = new TIntObjectHashMap<>();
 		final TObjectIntMap<Class<? extends Packet>> classToId = new TObjectIntHashMap<>();
+		final TIntObjectMap<Constructor<? extends Packet>> idToFactory = new TIntObjectHashMap<>();
 		
-		public void addAll(Maps maps) {
-			idToClass.putAll(maps.idToClass);
-			classToId.putAll(maps.classToId);
+		public Class<? extends Packet> put(int id, Class<? extends Packet> clazz) {
+			Constructor<? extends Packet> c;
+			
+			try {
+				c = clazz.getDeclaredConstructor();
+				c.setAccessible(true);
+				classToId.put(clazz, id);
+				val prevConstr = idToFactory.put(id, c);
+				return prevConstr != null ? prevConstr.newInstance().getClass() : null;
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
+		
+		public int idOf(Class<? extends Packet> clazz) {
+			if(!classToId.containsKey(clazz))
+				return -1;
+			return classToId.get(clazz);
+		}
+		
+		public void putAll(Maps m) {
+			classToId.putAll(m.classToId);
+			idToFactory.putAll(m.idToFactory);
+		}
+		
+		public Class<? extends Packet> remove(int id) {
+			try {
+				Class<? extends Packet> cl = idToFactory.remove(id).newInstance().getClass();
+				classToId.remove(cl);
+				return cl;
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
+		
+		public int remove(Class<? extends Packet> clazz) {
+			int id = -1;
+			if(!classToId.containsKey(clazz))
+				throw new RuntimeException();
+			id = classToId.get(clazz);
+			idToFactory.remove(id);
+			return id;
 		}
 	}
 	
 	private final Map<NetworkState, EnumMap<Direction, Maps>> map = new HashMap<>();
 	
 	public Class<? extends Packet> put(NetworkState networkState, Direction direction, int id, Class<? extends Packet> clazz) {
-		Maps maps = createIfAbsent(networkState, direction);
-		
-		maps.classToId.put(clazz, id);
-		return maps.idToClass.put(id, clazz);
+		return createIfAbsent(networkState, direction).put(id, clazz);
 	}
 	
 	public int idOf(NetworkState ns, Direction dir, Class<? extends Packet> clazz) {
 		Maps maps = get(ns, dir);
-		if(maps == null || !maps.classToId.containsKey(clazz))
+		int id = -1;
+		if(maps != null) id = maps.idOf(clazz);
+		
+		if(id == -1)
 			throw new RuntimeException(
 				"There's no such packet for networkState: " + ns.name()
 				+ ", direction: " + dir.name()
 				+ ", class" + clazz );
 		
-		return maps.classToId.get(clazz);
+		return id;
 	}
 	
 	private Maps get(NetworkState ns, Direction d) { 
@@ -61,7 +100,7 @@ public class Packets {
 	}
 	
 	public void addAll(Packets c, NetworkState ns, Direction dir) {
-		createIfAbsent(ns, dir).addAll(c.get(ns, dir));
+		createIfAbsent(ns, dir).putAll(c.get(ns, dir));
 	}
 	
 	public void addAll(Packets c, NetworkState ns) {
@@ -74,40 +113,22 @@ public class Packets {
 			addAll(c, ns);
 	}
 	
-	public Class<? extends Packet> getClassStrictly(NetworkState ns, Direction dir, int id) {
-		Maps m = get(ns, dir);
-		if(m == null) throw new NoSuchElementException();
-		return m.idToClass.get(id);
-	}
-	
-	public int getIdStrictly(NetworkState ns, Direction dir, Class<? extends Packet> id) {
-		Maps m = get(ns, dir);
-		if(m == null) throw new NoSuchElementException();
-		return m.classToId.get(id);
-	}
-	
 	public Class<? extends Packet> remove(NetworkState ns, Direction d, int id) {
-		Maps m = get(ns, d);
-		val c = m.idToClass.remove(id);
-		m.classToId.remove(c);
-		return c;
+		return get(ns, d).remove(id);
 	}
 	
 	public int remove(NetworkState ns, Direction d, Class<? extends Packet> clazz) {
-		Maps m = get(ns, d);
-		int id = m.classToId.remove(clazz);
-		m.idToClass.remove(id);
-		return id;
+		return get(ns, d).remove(clazz);
 	}
 	
 	public void replace(NetworkState ns, Direction d, int oldId, int newId) {
 		put(ns, d, newId, remove(ns, d, oldId));
 	}
 	
-	public TIntObjectMap<Class<? extends Packet>> getIdToClassUnmodifiableMap(NetworkState ns, Direction dir) {
+	public TIntObjectMap<Constructor<? extends Packet>> getIdToConstructorUnmodifiableMap(NetworkState ns, Direction dir) {
 		Maps m = get(ns, dir);
-		if(m == null || m.idToClass == null) return null;
-		return TCollections.unmodifiableMap(m.idToClass);
+		if(m == null || m.idToFactory == null) return null;
+		return TCollections.unmodifiableMap(m.idToFactory);
 	}
 	
 	public TObjectIntMap<Class<? extends Packet>> getClassToIdUnmodifiableMap(NetworkState ns, Direction dir) {
