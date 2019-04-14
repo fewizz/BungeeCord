@@ -263,6 +263,8 @@ public class YamlConfig implements ConfigurationAdapter
             }
             boolean setLocalAddress = get( "bind_local_address", true, val );
             boolean pingPassthrough = get( "ping_passthrough", false, val );
+            boolean remoteMotd = get("ping_passthrough_override.remote_server_motd", true, val);
+            boolean remotePlayers = get("ping_passthrough_override.remote_server_players", true, val);
 
             boolean query = get( "query_enabled", false, val );
             int queryPort = get( "query_port", 25577, val );
@@ -292,7 +294,7 @@ public class YamlConfig implements ConfigurationAdapter
             }
             set( "priorities", serverPriority, val );
 
-            ListenerInfo info = new ListenerInfo( address, motd, maxPlayers, tabListSize, serverPriority, forceDefault, forced, value.toString(), setLocalAddress, pingPassthrough, queryPort, query, proxyProtocol );
+            ListenerInfo info = new ListenerInfo( address, motd, maxPlayers, tabListSize, serverPriority, forceDefault, forced, value.toString(), setLocalAddress, pingPassthrough, queryPort, query, proxyProtocol, remoteMotd, remotePlayers );
             ret.add( info );
         }
 

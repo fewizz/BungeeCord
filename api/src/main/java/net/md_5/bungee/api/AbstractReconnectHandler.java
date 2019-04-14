@@ -23,8 +23,7 @@ public abstract class AbstractReconnectHandler implements ReconnectHandler {
 
 	public static ServerInfo getForcedHost(PendingConnection con) {
 		String forced = 
-			con.getVirtualHost() == null
-			?
+			con.getVirtualHost() == null ?
 			null
 			:
 			con.getListener().getForcedHosts().get(con.getVirtualHost().getHostString());
@@ -32,7 +31,7 @@ public abstract class AbstractReconnectHandler implements ReconnectHandler {
 		if (forced == null && con.getListener().isForceDefault())
 			forced = con.getListener().getDefaultServer();
 		
-		return ProxyServer.getInstance().getServerInfo(forced);
+		return forced == null ? null : ProxyServer.getInstance().getServerInfo(forced);
 	}
 
 	protected abstract ServerInfo getStoredServer(ProxiedPlayer player);

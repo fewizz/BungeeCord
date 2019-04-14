@@ -71,20 +71,27 @@ public class ListenerInfo
      * Whether to support HAProxy PROXY protocol.
      */
     private final boolean proxyProtocol;
+    
+    private final boolean remoteMotd;
+    private final boolean remotePlayers;
 
     @Deprecated
     public ListenerInfo(InetSocketAddress host, String motd, int maxPlayers, int tabListSize, List<String> serverPriority, boolean forceDefault, Map<String, String> forcedHosts, String tabListType, boolean setLocalAddress, boolean pingPassthrough, int queryPort, boolean queryEnabled)
     {
-        this( host, motd, maxPlayers, tabListSize, serverPriority, forceDefault, forcedHosts, tabListType, setLocalAddress, pingPassthrough, queryPort, queryEnabled, false);
+        this( host, motd, maxPlayers, tabListSize, serverPriority, forceDefault, forcedHosts, tabListType, setLocalAddress, pingPassthrough, queryPort, queryEnabled, false, false, false);
     }
 
+    @Deprecated
+    public ListenerInfo(InetSocketAddress host, String motd, int maxPlayers, int tabListSize, List<String> serverPriority, boolean forceDefault, Map<String, String> forcedHosts, String tabListType, boolean setLocalAddress, boolean pingPassthrough, int queryPort, boolean queryEnabled, boolean remoteMotd, boolean remotePlayers)
+    {
+        this( host, motd, maxPlayers, tabListSize, serverPriority, forceDefault, forcedHosts, tabListType, setLocalAddress, pingPassthrough, queryPort, queryEnabled, false, pingPassthrough, remotePlayers);
+    }
     /**
      * Gets the highest priority server to join.
      *
      * @return default server
-     * @deprecated replaced by {@link #serverPriority}
+     * deprecated replaced by {@link #serverPriority}
      */
-    @Deprecated
     public String getDefaultServer()
     {
         return serverPriority.get( 0 );

@@ -5,8 +5,10 @@ import java.util.logging.Level;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.haproxy.HAProxyMessage;
 import lombok.NonNull;
+import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.connection.CancelSendSignal;
 import net.md_5.bungee.protocol.PacketPreparer;
@@ -88,6 +90,12 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter {
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
 		try {
+			if(cause instanceof DecoderException) {
+				BungeeCord.getInstance().getLogger().log(Level.WARNING, "Exception while decoding packet", cause);
+			}
+			else {
+				BungeeCord.getInstance().getLogger().log(Level.WARNING, "Exception caught", cause);
+			}
 			handler.exception(cause);
 		} catch (Exception ex) {
 			ProxyServer.getInstance().getLogger().log(Level.SEVERE, handler + " - exception processing exception", ex);

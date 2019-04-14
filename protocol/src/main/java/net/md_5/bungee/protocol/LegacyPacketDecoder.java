@@ -55,6 +55,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 	}
 	
 	public static final RuntimeException OMT = new RuntimeException();
+	public ByteBuf omtBuf;
 	ScheduledFuture<?> future = null;
 	boolean scheduledRead = false;
 	
@@ -69,7 +70,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 			try {
 				packet = map.get(packetId).newInstance();
 			} catch (Exception e) {
-				(new RuntimeException("Can't create packet instance with id: " + packetId, e)).printStackTrace();
+				throw new RuntimeException("Can't create packet instance with id: " + packetId, e);
 			}
 
 			//System.out.println("read, id: " + packetId);
@@ -79,7 +80,10 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 						", direction: " + direction.name() + 
 						", protocol: " + protocol);
 			
-			ctx.fireChannelRead(new PacketPreparer(packet));
+			boolean defined = packet instanceof DefinedPacket;
+			
+			if(defined)
+				ctx.fireChannelRead(new PacketPreparer((DefinedPacket)packet));
 			
 			try {
 				read0(in, packet);
@@ -90,10 +94,16 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 				if(future == null) {
 					future = ctx.channel().eventLoop().schedule(() -> {
 						scheduledRead = true;
-						ctx.channel().read();
-					}, 200, TimeUnit.MILLISECONDS);
+						ctx.channel().pipeline().fireChannelRead(omtBuf);
+						omtBuf.release();
+						omtBuf = null;
+					}, 100, TimeUnit.MILLISECONDS);
 				}
 				if(!scheduledRead) {
+					if(omtBuf != null)
+						omtBuf.release();
+
+					omtBuf = in.copy();
 					in.readerIndex(begin);
 					return;
 				}
@@ -104,7 +114,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 			
 			// Do it manually, because when in becomes !in.isReadable, 
 			// super BTMD not sends last message immediately, so it releases bytebuf
-			firePacket(packet instanceof DefinedPacket ? (DefinedPacket)packet : null, in.slice(begin, in.readerIndex() - begin), ctx);
+			firePacket(defined ? (DefinedPacket)packet : null, in.slice(begin, in.readerIndex() - begin), ctx);
 		} catch (IndexOutOfBoundsException e) {// Temp. solution. //TODO
 			in.readerIndex(begin);
 		}

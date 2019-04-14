@@ -12,26 +12,22 @@ import net.md_5.bungee.protocol.DefinedPacket;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class PingPacket extends DefinedPacket
-{
+public class PingPacket extends DefinedPacket {
 
-    private long time;
+	private long time;
 
-    @Override
-    public void read(ByteBuf buf)
-    {
-        time = buf.readLong();
-    }
+	@Override
+	public void read(ByteBuf buf) {
+		time = buf.readLong();
+	}
 
-    @Override
-    public void write(ByteBuf buf)
-    {
-        buf.writeLong( time );
-    }
+	@Override
+	public void write(ByteBuf buf) {
+		buf.writeLong(time);
+	}
 
-    @Override
-    public void handle(AbstractPacketHandler handler) throws Exception
-    {
-        handler.handle( this );
-    }
+	@Override
+	public void handle(AbstractPacketHandler handler) throws Exception {
+		handler.handle(this);
+	}
 }

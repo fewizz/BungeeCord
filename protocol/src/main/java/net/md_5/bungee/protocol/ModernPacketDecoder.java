@@ -11,6 +11,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.val;
 
 public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implements PacketDecoder {
 	@Getter
@@ -46,7 +47,10 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
 		int packetId = DefinedPacket.readVarInt(in);
 
-		DefinedPacket packet = (DefinedPacket) map.get(packetId).newInstance();
+		DefinedPacket packet = null;
+		val contructor = map.get(packetId);
+		if(contructor != null)
+			packet = (DefinedPacket) contructor.newInstance();
 
 		if (packet == null)
 			in.skipBytes(in.readableBytes());

@@ -8,7 +8,6 @@ import static net.md_5.bungee.protocol.DefinedPacket.skipLegacyWatchableObjects;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
 
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.TObjectIntMap;
@@ -550,6 +549,9 @@ public enum Protocol {
 	
 	public boolean isLegacy() { return generation == ProtocolGen.PRE_NETTY; }
 	public boolean isModern() { return generation == ProtocolGen.POST_NETTY; }
+	public boolean isBetweenInclusive(Protocol p1, Protocol p2) {
+		return newerOrEqual(p1) && olderOrEqual(p2);
+	}
 	
 	public static Protocol byNumber(int num, ProtocolGen gen) {
 		for(Protocol v : VALUES)

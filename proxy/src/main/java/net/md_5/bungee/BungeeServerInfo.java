@@ -148,7 +148,7 @@ public class BungeeServerInfo implements ServerInfo
             .remoteAddress( getAddress() )
             .connect()
             .addListener( (ChannelFuture future) -> {
-            	if ( future.isSuccess() )
+            	if ( !future.isSuccess() )
             		callback.done( null, future.cause() );
             });
     }

@@ -5,20 +5,18 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class LoginResult
-{
+public class LoginResult {
 
-    private String id;
-    private String name;
-    private Property[] properties;
+	private String id;
+	private String name;
+	private Property[] properties;
 
-    @Data
-    @AllArgsConstructor
-    public static class Property
-    {
+	@Data
+	@AllArgsConstructor
+	public static class Property {
 
-        private String name;
-        private String value;
-        private String signature;
-    }
+		private String name;
+		private String value;
+		private String signature;
+	}
 }

@@ -4,5 +4,5 @@ import lombok.Value;
 
 @Value
 public class PacketPreparer {
-	Packet packet;
+	DefinedPacket packet;
 }
