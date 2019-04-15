@@ -52,15 +52,14 @@ public class QueryHandler extends SimpleChannelInboundHandler<DatagramPacket> {
 			handleMessage(ctx, msg);
 		} catch (Throwable t) {
 			if(bungee.getConfig().isLogQueryErrors());
-				bungee.getLogger().log(Level.WARNING, "[query, " + ctx.channel().remoteAddress()+"] "+ t.getMessage());
+				bungee.getLogger().log(Level.WARNING, "[query, " + msg.sender()+"] "+ t.getMessage());
 		}
 	}
 
 	private void handleMessage(ChannelHandlerContext ctx, DatagramPacket msg) {
 		ByteBuf in = msg.content();
 		if (in.readUnsignedByte() != 0xFE || in.readUnsignedByte() != 0xFD) {
-			bungee.getLogger().log(Level.WARNING, "Query - Incorrect magic!: {0}", msg.sender());
-			return;
+			throw new RuntimeException("Incorrect magic!");
 		}
 
 		ByteBuf out = ctx.alloc().buffer();
