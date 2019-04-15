@@ -44,12 +44,12 @@ import net.md_5.bungee.protocol.packet.ScoreboardObjective;
 import net.md_5.bungee.protocol.packet.ScoreboardScore;
 import net.md_5.bungee.util.QuietException;
 
-public class LegacyServerConnector extends ServerConnector {
+public class LegacyServerConnector extends ServerConnector<LegacyUserConnection> {
 	private int fmlVanillaCompatabilityLevel = 0;
 	private ChannelInboundHandler legacyFMLModlistCatcher = null;
 	private SecretKey secret;
 	
-	public LegacyServerConnector(UserConnection user, BungeeServerInfo target) {
+	public LegacyServerConnector(LegacyUserConnection user, BungeeServerInfo target) {
 		super(user, target);
 	}
 	
@@ -57,10 +57,10 @@ public class LegacyServerConnector extends ServerConnector {
 	public void connected(ChannelWrapper channel) throws Exception {
 		super.connected(channel);
 		
-		Handshake copiedHandshake = user.getPendingConnection().getHandshake();
+		LegacyLoginRequest lr = new LegacyLoginRequest(user.getPendingConnection().getLoginRequest());
 		
 		if(ipForward())
-			copiedHandshake.setHost(copiedHandshake.getHost() + "\00" + user.getAddress().getHostString() + "\00" + user.getUUID());
+			lr.setHost(lr.getHost() + "\00" + user.getAddress().getHostString() + "\00" + user.getUUID());
 		
 		if(forgeSupport()) {
 			ChannelPipeline p = user.getCh().getHandle().pipeline();
@@ -84,14 +84,9 @@ public class LegacyServerConnector extends ServerConnector {
 			p.addBefore(PipelineUtil.BOSS, "legacy_fml_modlist_catcher", legacyFMLModlistCatcher);
 		}
 		
-		LegacyLoginRequest lr = new LegacyLoginRequest();
-		lr.setHost(copiedHandshake.getHost());
-		lr.setPort(copiedHandshake.getPort());
-		lr.setProtocolVersion(copiedHandshake.getProtocol().version);
-		lr.setUserName(user.getName());
 		channel.write(lr);
 		
-		if(forgeSupport() && user.getPendingConnection().getForgeLogin() != null)
+		if(forgeSupport() && user.isForgeUser())
 			ch.write(user.getPendingConnection().getForgeLogin());
 		
 		server = new ServerConnection(ch, target);

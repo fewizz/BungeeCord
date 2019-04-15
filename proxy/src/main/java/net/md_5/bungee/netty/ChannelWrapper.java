@@ -54,14 +54,10 @@ public class ChannelWrapper {
 
 		PacketDecoder dec = (PacketDecoder) ch.pipeline().get(PipelineUtil.PACKET_DEC);
 
-		Preconditions.checkNotNull(dec, "decoder is null");
-
 		if (was.generation != protocol.generation)
 			throw new RuntimeException("Incompatible generation");
 
 		PacketEncoder enc = (PacketEncoder) ch.pipeline().get(PipelineUtil.PACKET_ENC);
-
-		Preconditions.checkNotNull(enc, "encoder is null");
 
 		dec.setProtocol(protocol);
 		enc.setProtocol(protocol);
@@ -93,7 +89,7 @@ public class ChannelWrapper {
 	@SuppressWarnings("unchecked")
 	public void close(Object packet) {
 		if (!closed) {
-			closed = closing = true;
+			markClosed();
 
 			if (packet != null && ch.isActive()) {
 				ch.writeAndFlush(packet).addListeners(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE,

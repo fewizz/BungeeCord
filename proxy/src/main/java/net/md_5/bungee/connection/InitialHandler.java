@@ -4,16 +4,12 @@ import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
-import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
 
 import javax.crypto.SecretKey;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Preconditions;
-import com.google.common.hash.Hashing;
-import com.google.gson.Gson;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +17,6 @@ import lombok.Setter;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.BungeeServerInfo;
 import net.md_5.bungee.EncryptionUtil;
-import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.Util;
 import net.md_5.bungee.api.AbstractReconnectHandler;
 import net.md_5.bungee.api.Callback;
@@ -35,42 +30,13 @@ import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.PendingConnection;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.LoginEvent;
-import net.md_5.bungee.api.event.PlayerHandshakeEvent;
-import net.md_5.bungee.api.event.PostLoginEvent;
-import net.md_5.bungee.api.event.PreLoginEvent;
 import net.md_5.bungee.api.event.ProxyPingEvent;
-import net.md_5.bungee.api.event.ServerConnectEvent;
-import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.http.HttpClient;
-import net.md_5.bungee.jni.cipher.BungeeCipher;
 import net.md_5.bungee.netty.ChannelWrapper;
-import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.PacketHandler;
-import net.md_5.bungee.netty.PipelineUtil;
-import net.md_5.bungee.netty.cipher.CipherDecoder;
-import net.md_5.bungee.netty.cipher.CipherEncoder;
-import net.md_5.bungee.protocol.NetworkState;
-import net.md_5.bungee.protocol.PacketPreparer;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.PacketWrapper;
-import net.md_5.bungee.protocol.Protocol;
-import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
-import net.md_5.bungee.protocol.packet.EncryptionResponse;
-import net.md_5.bungee.protocol.packet.Handshake;
-import net.md_5.bungee.protocol.packet.Kick;
-import net.md_5.bungee.protocol.packet.LegacyClientCommand;
-import net.md_5.bungee.protocol.packet.LegacyLoginRequest;
-import net.md_5.bungee.protocol.packet.LegacyStatusRequest;
-import net.md_5.bungee.protocol.packet.Login;
-import net.md_5.bungee.protocol.packet.LoginPayloadResponse;
-import net.md_5.bungee.protocol.packet.LoginRequest;
-import net.md_5.bungee.protocol.packet.LoginSuccess;
-import net.md_5.bungee.protocol.packet.PingPacket;
-import net.md_5.bungee.protocol.packet.PluginMessage;
-import net.md_5.bungee.protocol.packet.StatusRequest;
-import net.md_5.bungee.protocol.packet.StatusResponse;
-import net.md_5.bungee.util.BoundedArrayList;
 import net.md_5.bungee.util.BufUtil;
 import net.md_5.bungee.util.QuietException;
 
@@ -80,11 +46,15 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 	@Setter
 	@Getter
 	boolean onlineMode = bungee.config.isOnlineMode();
-	
 	protected ChannelWrapper ch;
 	@Getter
-	protected
-	final ListenerInfo listener;
+	protected final ListenerInfo listener;
+	@Getter
+	@Setter
+	private UUID uniqueId = null;
+	@Getter
+	@Setter
+	private UUID offlineId = null;
 	
 	protected final Unsafe unsafe = new Unsafe() {
 		@Override
@@ -93,19 +63,7 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 		}
 	};
 	@Getter
-	private final List<PluginMessage> relayMessages = new BoundedArrayList<>(128);
-	@Getter
-	protected InetSocketAddress virtualHost;
-	protected String name;
-	@Getter
-	protected UUID uniqueId;
-	@Getter
-	private UUID offlineId;
-	@Getter
 	private LoginResult loginProfile;
-
-	@Getter
-	public Login forgeLogin;
 
 	@Override
 	public boolean shouldHandle(PacketWrapper packet) throws Exception {
@@ -126,13 +84,6 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 	public void handle(PacketWrapper packet) throws Exception {
 		if (packet.packet == null)
 			throw new QuietException("Unexpected packet received during login process! " + BufUtil.dump(packet.content(), 16));
-	}
-
-	@Override
-	public void handle(PluginMessage pluginMessage) throws Exception {
-		// TODO: Unregister?
-		if (PluginMessage.SHOULD_RELAY.apply(pluginMessage))
-			relayMessages.add(pluginMessage);
 	}
 
 	protected void ping(Callback<ProxyPingEvent> cb) {
@@ -176,7 +127,7 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 	}
 
 	protected void loginAndFinish(EncryptionRequest request, SecretKey sharedKey) throws Exception {
-		String encName = URLEncoder.encode(InitialHandler.this.getName(), "UTF-8");
+		String encName = URLEncoder.encode(getName(), "UTF-8");
 
 		MessageDigest sha = MessageDigest.getInstance("SHA-1");
 		for (byte[] bit : new byte[][] { request.getServerId().getBytes("ISO_8859_1"), sharedKey.getEncoded(), EncryptionUtil.keys.getPublic().getEncoded() }) {
@@ -192,9 +143,8 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 				LoginResult obj = BungeeCord.getInstance().gson.fromJson(result, LoginResult.class);
 				if (obj != null && obj.getId() != null) {
 					loginProfile = obj;
-					name = obj.getName();
-					uniqueId = Util.getUUID(obj.getId());
-					login();
+					uniqueId = Util.getUUID(loginProfile.getId());
+					finish();
 					return;
 				}
 				disconnect(bungee.getTranslation("offline_mode_player"));
@@ -205,9 +155,12 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 		});
 	}
 
-	abstract protected void login();
+	abstract protected void finish();
 	
 	final protected void checkPlayer(Callback<LoginEvent> cb) {
+		offlineId = UUID.nameUUIDFromBytes(("OfflinePlayer:" + getName()).getBytes(Charsets.UTF_8));
+		uniqueId = uniqueId == null ? offlineId : uniqueId;
+				
 		if (isOnlineMode()) {
 			// Check for multiple connections
 			// We have to check for the old name first
@@ -233,11 +186,6 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 
 		}
 
-		offlineId = UUID.nameUUIDFromBytes(("OfflinePlayer:" + getName()).getBytes(Charsets.UTF_8));
-		
-		if (uniqueId == null)
-			uniqueId = offlineId;
-
 		Callback<LoginEvent> complete = (LoginEvent result, Throwable error) -> {
 			if (ch.isClosed())
 				return;
@@ -251,12 +199,7 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 		};
 
 		// fire login event
-		bungee.getPluginManager().callEvent(new LoginEvent(InitialHandler.this, complete));
-	}
-
-	@Override
-	public void handle(LoginPayloadResponse response) throws Exception {
-		disconnect("Unexpected custom LoginPayloadResponse");
+		bungee.getPluginManager().callEvent(new LoginEvent(this, complete));
 	}
 
 	@Override
@@ -286,7 +229,11 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 
 	@Override
 	public String toString() {
-		return "[" + ((getName() != null) ? getName() : getAddress()) + "] <-> InitialHandler";
+		String str = "[" + getAddress();
+		if(getName() != null)
+			str += "/" + getName();
+		str += "][IH]";
+		return str;
 	}
 
 	@Override

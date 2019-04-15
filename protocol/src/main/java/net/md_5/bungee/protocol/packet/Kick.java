@@ -2,6 +2,7 @@ package net.md_5.bungee.protocol.packet;
 
 import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -44,8 +45,8 @@ public class Kick extends DefinedPacket
     }
     
     @AllArgsConstructor
-    @NoArgsConstructor
     @Data
+    @Builder
     public static class StatusResponce {
     	public int protocolVersion;
     	public String mcVersion;
@@ -53,7 +54,8 @@ public class Kick extends DefinedPacket
     	public int players;
     	public int max;
     	
-    	public String build(Protocol p) {
+    	@Override
+    	public String toString() {
     		StringBuilder r = new StringBuilder();
     		
     		/*if(p == Protocol.MC_1_3) {
@@ -81,7 +83,7 @@ public class Kick extends DefinedPacket
     		return r.toString();
     	}
     	
-    	public void parse(String str) {
+    	public StatusResponce(String str) {
     		if(str.charAt(0) != '\u00a7' && str.charAt(1) != '\u0000')
     			throw new RuntimeException();
     		

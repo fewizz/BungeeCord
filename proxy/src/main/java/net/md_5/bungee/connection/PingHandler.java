@@ -2,7 +2,6 @@ package net.md_5.bungee.connection;
 
 import com.google.gson.Gson;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.api.Callback;
@@ -35,7 +34,7 @@ public class PingHandler extends PacketHandler {
 		this.channel = channel;
 
 		if (protocol.isModern()) {
-			channel.write( new Handshake( protocol, target.getAddress().getHostString(), target.getAddress().getPort(), NetworkState.STATUS ) );
+			channel.write( new Handshake( protocol.version, target.getAddress().getHostString(), target.getAddress().getPort(), NetworkState.STATUS ) );
 			channel.setNetworkState(NetworkState.STATUS);
 			channel.write(new StatusRequest());
 		} 
@@ -62,19 +61,27 @@ public class PingHandler extends PacketHandler {
 	}
 
 	@Override
-	@SuppressFBWarnings("UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
 	public void handle(StatusResponse statusResponse) throws Exception {
 		Gson gson = protocol == Protocol.MC_1_7_2 ? BungeeCord.getInstance().gsonLegacy : BungeeCord.getInstance().gson;
 		callback.done(gson.fromJson(statusResponse.getResponse(), ServerPing.class), null);
+		
 		channel.close();
 	}
 
 	@Override
 	public void handle(Kick kick) throws Exception {
-		Kick.StatusResponce r = new Kick.StatusResponce();
-		r.parse(kick.getMessage());
+		Kick.StatusResponce responce = new Kick.StatusResponce(kick.getMessage());
 
-		callback.done(new ServerPing(new ServerPing.Protocol("", r.protocolVersion), new ServerPing.Players(r.max, r.players, new ServerPing.PlayerInfo[0]), r.motd, (Favicon) null), null);
+		callback.done(
+			new ServerPing(
+				new ServerPing.Protocol("", responce.protocolVersion),
+				new ServerPing.Players(responce.max, responce.players, new ServerPing.PlayerInfo[0]),
+				responce.motd,
+				(Favicon) null
+			),
+			null
+		);
+		
 		channel.close();
 	}
 

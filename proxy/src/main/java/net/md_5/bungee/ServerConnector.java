@@ -19,8 +19,8 @@ import net.md_5.bungee.protocol.packet.Kick;
 import net.md_5.bungee.util.QuietException;
 
 @RequiredArgsConstructor
-public abstract class ServerConnector extends PacketHandler {
-	final UserConnection user;
+public abstract class ServerConnector<UC extends UserConnection<?>> extends PacketHandler {
+	final UC user;
 	ServerConnection server;
 	ChannelWrapper ch;
 	@Getter

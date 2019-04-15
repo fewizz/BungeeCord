@@ -16,6 +16,13 @@ public class LegacyLoginRequest extends DefinedPacket {
 	String host;
 	int port; 
 	
+	public LegacyLoginRequest(LegacyLoginRequest lr) {
+		this.protocolVersion = lr.protocolVersion;
+		this.userName = lr.userName;
+		this.host = lr.host;
+		this.port = lr.port;
+	}
+	
 	@Override
 	public void read(ByteBuf buf) {
 		protocolVersion = buf.readUnsignedByte();

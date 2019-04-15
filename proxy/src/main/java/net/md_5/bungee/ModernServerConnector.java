@@ -42,12 +42,12 @@ import net.md_5.bungee.protocol.packet.ScoreboardScore;
 import net.md_5.bungee.protocol.packet.SetCompression;
 import net.md_5.bungee.util.QuietException;
 
-public class ModernServerConnector extends ServerConnector {
+public class ModernServerConnector extends ServerConnector<ModernUserConnection> {
 	private State thisState = State.UNDEF;
 	@Getter
 	private ForgeServerHandler handshakeHandler;
 	
-	public ModernServerConnector(UserConnection user, BungeeServerInfo target) {
+	public ModernServerConnector(ModernUserConnection user, BungeeServerInfo target) {
 		super(user, target);
 	}
 
@@ -61,7 +61,7 @@ public class ModernServerConnector extends ServerConnector {
 
 		this.handshakeHandler = new ForgeServerHandler(user, ch, target);
 		Handshake originalHandshake = user.getPendingConnection().getHandshake();
-		Handshake copiedHandshake = new Handshake(originalHandshake.getProtocol(), originalHandshake.getHost(), originalHandshake.getPort(), NetworkState.LOGIN);
+		Handshake copiedHandshake = new Handshake(originalHandshake.getProtocolVersion(), originalHandshake.getHost(), originalHandshake.getPort(), NetworkState.LOGIN);
 
 		if (ipForward()) {
 			String newHost = copiedHandshake.getHost() + "\00" + user.getAddress().getHostString() + "\00" + user.getUUID();

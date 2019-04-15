@@ -1,12 +1,17 @@
 package net.md_5.bungee.connection;
 
+import java.net.InetSocketAddress;
+import java.util.UUID;
+
 import javax.crypto.SecretKey;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.hash.Hashing;
 
+import lombok.Getter;
 import net.md_5.bungee.EncryptionUtil;
+import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.config.ListenerInfo;
 import net.md_5.bungee.jni.cipher.BungeeCipher;
 import net.md_5.bungee.netty.PipelineUtil;
@@ -17,6 +22,8 @@ import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.packet.EncryptionResponse;
 import net.md_5.bungee.protocol.packet.Handshake;
+import net.md_5.bungee.protocol.packet.Kick;
+import net.md_5.bungee.protocol.packet.Kick.StatusResponce;
 import net.md_5.bungee.protocol.packet.LegacyClientCommand;
 import net.md_5.bungee.protocol.packet.LegacyLoginRequest;
 import net.md_5.bungee.protocol.packet.LegacyStatusRequest;
@@ -25,6 +32,10 @@ import net.md_5.bungee.protocol.packet.LoginRequest;
 import net.md_5.bungee.protocol.packet.StatusRequest;
 
 public class LegacyInitialHandler extends InitialHandler {
+	@Getter
+	private LegacyLoginRequest loginRequest;
+	@Getter
+	private Login forgeLogin;
 
 	public LegacyInitialHandler(ListenerInfo listener) {
 		super(listener);
@@ -32,32 +43,53 @@ public class LegacyInitialHandler extends InitialHandler {
 	
 	@Override
 	public void handle(final LegacyStatusRequest request) throws Exception {
-		Handshake handshake = new Handshake();
+		Protocol protocol = null;
+		Protocol possibleProtocol = null;
+		String host = null;
+		int port = -1;
 		
 		if(request.getHost() == null)
-			handshake.setProtocol(Protocol.MC_1_5_2);
+			possibleProtocol = Protocol.MC_1_5_2;
 		else {
-			handshake.setHost(request.getHost());
-			handshake.setPort(request.getPort());
-			Protocol p = Protocol.byNumber(request.getProtocolVersion(), ProtocolGen.PRE_NETTY);
-			handshake.setProtocol(p != null ? p : Protocol.MC_1_6_4);
+			host = request.getHost();
+			port = request.getPort();
+			protocol = Protocol.byNumber(request.getProtocolVersion(), ProtocolGen.PRE_NETTY);
+			if(protocol == null)
+				possibleProtocol = Protocol.MC_1_6_4;
 		}
 		
-		handshake.setRequestedNetworkState(NetworkState.STATUS);
-		handle(handshake);
-		handle(new StatusRequest());
+		if(bungee.getConfig().isHandshake()) {
+			String str = protocol == null ? 
+				"Undefined protocol, version : " + request.getProtocolVersion()
+				: 
+				"Protocol: " + protocol.name();
+			str = "[" + ch.getRemoteAddress() + "] " + str;
+			bungee.getLogger().info(str);
+		}
+		
+		if(protocol == null)
+			protocol = possibleProtocol;
+		
+		ch.setProtocol(protocol);
+		
+		final Protocol protocol0 = protocol;
+		
+		ping((result, error) -> {
+			String message = StatusResponce.builder()
+				.protocolVersion(protocol0.version)
+				.mcVersion(protocol0.versions.get(0))
+				.motd(result.getResponse().getDescription())
+				.players(result.getResponse().getPlayers().getOnline())
+				.max(result.getResponse().getPlayers().getMax())
+				.build()
+				.toString();
+			ch.close(new Kick(message));
+		});
 	}
 
 	@Override
 	public void handle(LegacyLoginRequest lr) throws Exception {
-		Preconditions.checkState(thisState == State.HANDSHAKE, "Not expecting NADSHAKE");
-		Handshake handshake = new Handshake();
-		handshake.setProtocol(Protocol.byNumber(lr.getProtocolVersion(), ProtocolGen.PRE_NETTY));
-		handshake.setHost(lr.getHost());
-		handshake.setPort(lr.getPort());
-		handshake.setRequestedNetworkState(NetworkState.LOGIN);
-		handle(handshake);
-		handle(new LoginRequest(lr.getUserName()));
+		this.loginRequest = lr;
 	}
 
 	@Override
@@ -67,7 +99,7 @@ public class LegacyInitialHandler extends InitialHandler {
 
 		if(isOnlineMode())
 			loginAndFinish(EncryptionUtil.getSecret(encryptResponse, request));
-		else login();
+		else finish();
 	}
 	
 	@Override
@@ -94,6 +126,33 @@ public class LegacyInitialHandler extends InitialHandler {
 		ch.addBefore(PipelineUtil.PACKET_DEC, PipelineUtil.DECRYPT, new CipherDecoder(decrypt));
 		BungeeCipher encrypt = EncryptionUtil.getCipher(true, sharedKey);
 		ch.addBefore(PipelineUtil.PACKET_ENC, PipelineUtil.ENCRYPT, new CipherEncoder(encrypt));
+	}
+
+	@Override
+	public String getName() {
+		return loginRequest.getUserName();
+	}
+
+	@Override
+	public Protocol getProtocol() {
+		return Protocol.byNumber(loginRequest.getProtocolVersion(), ProtocolGen.PRE_NETTY);
+	}
+
+	@Override
+	public void disconnect(BaseComponent... reason) {
+		
+	}
+
+	@Override
+	protected void finish() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public InetSocketAddress getVirtualHost() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

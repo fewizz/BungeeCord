@@ -2,7 +2,6 @@ package net.md_5.bungee.connection;
 
 import java.net.InetSocketAddress;
 import java.util.List;
-import java.util.UUID;
 import java.util.logging.Level;
 
 import javax.crypto.SecretKey;
@@ -11,9 +10,10 @@ import com.google.common.base.Preconditions;
 import com.google.gson.Gson;
 
 import lombok.Getter;
+import lombok.Setter;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.EncryptionUtil;
-import net.md_5.bungee.UserConnection;
+import net.md_5.bungee.ModernUserConnection;
 import net.md_5.bungee.api.AbstractReconnectHandler;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.config.ListenerInfo;
@@ -35,6 +35,7 @@ import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.protocol.packet.EncryptionResponse;
 import net.md_5.bungee.protocol.packet.Handshake;
 import net.md_5.bungee.protocol.packet.Kick;
+import net.md_5.bungee.protocol.packet.LoginPayloadResponse;
 import net.md_5.bungee.protocol.packet.LoginRequest;
 import net.md_5.bungee.protocol.packet.LoginSuccess;
 import net.md_5.bungee.protocol.packet.PingPacket;
@@ -52,6 +53,11 @@ public class ModernInitialHandler extends InitialHandler {
 	@Getter
 	private final List<PluginMessage> relayMessages = new BoundedArrayList<>(128);
 	private State thisState = State.HANDSHAKE;
+	@Getter
+	@Setter
+	private InetSocketAddress virtualHost;
+	@Setter
+	private String name;
 	@Getter
 	private String extraDataInHandshake = "";
 	
@@ -79,9 +85,6 @@ public class ModernInitialHandler extends InitialHandler {
 			str = "[" + ch.getRemoteAddress() + "] " + str;
 			bungee.getLogger().info(str);
 		}
-
-		//if(undefinedProtocol)
-		//	handshake.setProtocol(ch.getProtocol());
 		
 		if(protocol != null)
 			ch.setProtocol(protocol);
@@ -110,7 +113,6 @@ public class ModernInitialHandler extends InitialHandler {
 		if (bungee.getConfig().isLogPings())
 			bungee.getLogger().log(Level.INFO, "{0} has connected", this);
 		
-
 		bungee.getPluginManager().callEvent(new PlayerHandshakeEvent(this, handshake));
 
 		switch (handshake.getRequestedNetworkState()) {
@@ -160,6 +162,11 @@ public class ModernInitialHandler extends InitialHandler {
 	}
 	
 	@Override
+	public void handle(LoginPayloadResponse response) throws Exception {
+		disconnect("Unexpected custom LoginPayloadResponse");
+	}
+	
+	@Override
 	public void handle(LoginRequest loginRequest) throws Exception {
 		Preconditions.checkState(thisState == State.USERNAME, "Not expecting USERNAME");
 		this.loginRequest = loginRequest;
@@ -201,7 +208,7 @@ public class ModernInitialHandler extends InitialHandler {
 			
 			if (isOnlineMode())
 				unsafe().sendPacket(request = EncryptionUtil.encryptRequest());
-			else login();
+			else finish();
 		}));
 	}
 	
@@ -241,13 +248,6 @@ public class ModernInitialHandler extends InitialHandler {
 		Preconditions.checkState(thisState == State.USERNAME, "Can only set online mode status whilst state is username");
 		this.onlineMode = onlineMode;
 	}
-
-	@Override
-	public void setUniqueId(UUID uuid) {
-		Preconditions.checkState(thisState == State.USERNAME, "Can only set uuid while state is username");
-		Preconditions.checkState(!onlineMode, "Can only set uuid when online mode is false");
-		this.uniqueId = uuid;
-	}
 	
 	@Override
 	public String getName() {
@@ -255,9 +255,9 @@ public class ModernInitialHandler extends InitialHandler {
 	}
 
 	@Override
-	protected void login() {
+	protected void finish() {
 		checkPlayer((result, error) -> {
-			UserConnection userCon = new UserConnection(bungee, ch, getName(), this);
+			ModernUserConnection userCon = new ModernUserConnection(bungee, ch, getName(), this);
 			userCon.setCompressionThreshold(BungeeCord.getInstance().config.getCompressionThreshold());
 			userCon.init();
 

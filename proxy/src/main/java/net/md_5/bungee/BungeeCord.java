@@ -306,12 +306,12 @@ public class BungeeCord extends ProxyServer
     }
     
     private void listenTo(final ListenerInfo info) {
-    	if ( info.isProxyProtocol() ) {
-            getLogger().log( Level.WARNING, "Using PROXY protocol for listener {0}, please ensure this listener is adequately firewalled.", info.getHost() );
+    	if (info.isProxyProtocol()) {
+            getLogger().log(Level.WARNING, "Using PROXY protocol for listener {0}, please ensure this listener is adequately firewalled.", info.getHost());
             
-            if ( connectionThrottle != null ) {
+            if(connectionThrottle != null) {
                 connectionThrottle = null;
-                getLogger().log( Level.WARNING, "Since PROXY protocol is in use, internal connection throttle has been disabled." );
+                getLogger().log(Level.WARNING, "Since PROXY protocol is in use, internal connection throttle has been disabled.");
             }
     	}
         new ServerBootstrap()
@@ -321,7 +321,7 @@ public class BungeeCord extends ProxyServer
             .childHandler(new ChannelInitializer<Channel>() {
 				@Override
 				protected void initChannel(Channel ch) throws Exception {
-					PipelineUtil.basicHandlers(ch, new InitialHandler(getInstance(), info));
+					PipelineUtil.basicHandlers(ch, new InitialHandler(info));
 					
 					ch.pipeline().addFirst(new ChannelInboundHandlerAdapter() {
 						public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -341,12 +341,6 @@ public class BungeeCord extends ProxyServer
 					        if(config.isInitialProtocol())
 								logger.info("[" + ctx.channel().remoteAddress() + "] Connected to Bungee, identified as " + pv.name() );
 							PipelineUtil.packetHandlers(ch, pv, Side.CLIENT);
-							/*if(packetID == 0xFE)
-								ctx.pipeline().addBefore(
-									PipelineUtil.PACKET_DEC,
-									"legacy-status-request-decoder",
-									new LegacyStatusRequestHandler()
-								);*/
 					        
 					        ctx.pipeline().remove(this);
 					        ctx.channel().pipeline().fireChannelRead(msg);
@@ -687,7 +681,7 @@ public class BungeeCord extends ProxyServer
         broadcast( new Chat( ComponentSerializer.toString( message ) ) );
     }
 
-    public void addConnection(UserConnection con)
+    public void addConnection(UserConnection<?> con)
     {
         connectionLock.writeLock().lock();
         try
@@ -701,7 +695,7 @@ public class BungeeCord extends ProxyServer
         }
     }
 
-    public void removeConnection(UserConnection con)
+    public void removeConnection(UserConnection<?> con)
     {
         connectionLock.writeLock().lock();
         try

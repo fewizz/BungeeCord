@@ -6,14 +6,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.logging.Level;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -41,9 +39,6 @@ import net.md_5.bungee.api.score.Scoreboard;
 import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.entitymap.EntityMap;
-import net.md_5.bungee.forge.ForgeClientHandler;
-import net.md_5.bungee.forge.ForgeConstants;
-import net.md_5.bungee.forge.ForgeServerHandler;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.NettyUtil;
 import net.md_5.bungee.netty.PipelineUtil;
@@ -62,7 +57,7 @@ import net.md_5.bungee.util.CaseInsensitiveSet;
 import net.md_5.bungee.util.ChatComponentTransformer;
 
 @RequiredArgsConstructor
-public final class UserConnection implements ProxiedPlayer {
+public abstract class UserConnection<IH extends InitialHandler> implements ProxiedPlayer {
 
 	/* ======================================================================== */
 	@NonNull
@@ -74,7 +69,7 @@ public final class UserConnection implements ProxiedPlayer {
 	@NonNull
 	private final String name;
 	@Getter
-	private final InitialHandler pendingConnection;
+	private final IH pendingConnection;
 	/* ======================================================================== */
 	@Getter
 	@Setter
@@ -129,13 +124,7 @@ public final class UserConnection implements ProxiedPlayer {
 	@Getter
 	private EntityMap entityRewrite;
 	private Locale locale;
-	/* ======================================================================== */
-	@Getter
-	@Setter
-	private ForgeClientHandler forgeClientHandler;
-	@Getter
-	@Setter
-	private ForgeServerHandler forgeServerHandler;
+
 	/* ======================================================================== */
 	private final Unsafe unsafe = new Unsafe() {
 		@Override
@@ -156,13 +145,6 @@ public final class UserConnection implements ProxiedPlayer {
 		for (String s : g) {
 			addGroups(s);
 		}
-
-		forgeClientHandler = new ForgeClientHandler(this);
-
-		// No-config FML handshake marker.
-		// Set whether the connection has a 1.8 FML marker in the handshake.
-		if (this.getPendingConnection().getExtraDataInHandshake().contains(ForgeConstants.FML_HANDSHAKE_TOKEN))
-			forgeClientHandler.setFmlTokenInHandshake(true);
 		
 		//forgeClientHandler.setForgeLogin(this.getPendingConnection().forgeLogin);
 	}
@@ -434,7 +416,7 @@ public final class UserConnection implements ProxiedPlayer {
 
 	@Override
 	public void sendData(String channel, byte[] data) {
-		unsafe().sendPacket(new PluginMessage(channel, data, forgeClientHandler.isForgeUser()));
+		unsafe().sendPacket(new PluginMessage(channel, data, false));
 	}
 
 	@Override
@@ -554,22 +536,6 @@ public final class UserConnection implements ProxiedPlayer {
 	}
 
 	@Override
-	public boolean isForgeUser() {
-		return forgeClientHandler.isForgeUser();
-	}
-
-	@Override
-	public Map<String, String> getModList() {
-		if (forgeClientHandler.getClientModList() == null) {
-			// Return an empty map, rather than a null, if the client hasn't got any mods,
-			// or is yet to complete a handshake.
-			return ImmutableMap.of();
-		}
-
-		return ImmutableMap.copyOf(forgeClientHandler.getClientModList());
-	}
-
-	@Override
 	public void setTabHeader(BaseComponent header, BaseComponent footer) {
 		if (pendingConnection.getProtocol().newerOrEqual(Protocol.MC_1_8_0)) {
 			header = ChatComponentTransformer.getInstance().transform(this, header)[0];
@@ -599,10 +565,6 @@ public final class UserConnection implements ProxiedPlayer {
 	@Override
 	public void sendTitle(Title title) {
 		title.send(this);
-	}
-
-	public String getExtraDataInHandshake() {
-		return this.getPendingConnection().getExtraDataInHandshake();
 	}
 
 	public void setCompressionThreshold(int compressionThreshold) {
