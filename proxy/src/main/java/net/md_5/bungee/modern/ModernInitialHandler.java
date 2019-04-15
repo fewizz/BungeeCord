@@ -10,7 +10,6 @@ import com.google.common.base.Preconditions;
 import com.google.gson.Gson;
 
 import lombok.Getter;
-import lombok.Setter;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.EncryptionUtil;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -48,11 +47,6 @@ public class ModernInitialHandler extends InitialHandler {
 	private final List<PluginMessage> relayMessages = new BoundedArrayList<>(128);
 	private State thisState = State.HANDSHAKE;
 	@Getter
-	@Setter
-	private InetSocketAddress virtualHost;
-	@Setter
-	private String name;
-	@Getter
 	private String extraDataInHandshake = "";
 	
 	private enum State {
@@ -73,11 +67,11 @@ public class ModernInitialHandler extends InitialHandler {
 
 		if(bungee.getConfig().isHandshake()) {
 			String str = undefinedProtocol ? 
-					"Undefined protocol, version : " + handshake.getProtocolVersion()
-					: 
-					"Protocol: " + protocol.name();
-			str = "[" + ch.getRemoteAddress() + "] " + str;
-			bungee.getLogger().info(str);
+				" Undefined protocol, version: " + handshake.getProtocolVersion()
+				: 
+				" Protocol: " + protocol.name();
+			
+			bungee.getLogger().info(toString() + str);
 		}
 		
 		if(protocol != null)
@@ -92,8 +86,6 @@ public class ModernInitialHandler extends InitialHandler {
 		// SRV records can end with a . depending on DNS / client.
 		if (handshake.getHost().endsWith("."))
 			handshake.setHost(handshake.getHost().substring(0, handshake.getHost().length() - 1));
-		
-		this.virtualHost = InetSocketAddress.createUnresolved(handshake.getHost(), handshake.getPort());
 			
 		if (bungee.getConfig().isLogPings())
 			bungee.getLogger().log(Level.INFO, "{0} has connected", this);
@@ -192,7 +184,7 @@ public class ModernInitialHandler extends InitialHandler {
 
 	@Override
 	public Protocol getProtocol() {
-		return Protocol.byNumber(handshake.getProtocolVersion(), ProtocolGen.POST_NETTY);
+		return ch.getProtocol();
 	}
 	
 	@Override
@@ -203,7 +195,7 @@ public class ModernInitialHandler extends InitialHandler {
 	
 	@Override
 	public String getName() {
-		return (name != null) ? name : (loginRequest == null) ? null : loginRequest.getData();
+		return (loginRequest == null) ? null : loginRequest.getData();
 	}
 
 	protected void login() {
@@ -223,5 +215,10 @@ public class ModernInitialHandler extends InitialHandler {
 
 			thisState = State.FINISHED;
 		});
+	}
+
+	@Override
+	public InetSocketAddress getVirtualHost() {
+		return InetSocketAddress.createUnresolved(handshake.getHost(), handshake.getPort());
 	}
 }

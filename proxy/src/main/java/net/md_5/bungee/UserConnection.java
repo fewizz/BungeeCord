@@ -23,6 +23,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.val;
 import net.md_5.bungee.api.Callback;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.ProxyServer;
@@ -80,8 +81,10 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 	@Getter
 	@Setter
 	private boolean dimensionChange = true;
+	//private final AtomicReference<Future<V>> connector;
 	@Getter
 	private final Collection<ServerInfo> pendingConnects = new HashSet<>();
+	
 	/* ======================================================================== */
 	@Getter
 	@Setter
@@ -145,15 +148,8 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 		for (String s : g) {
 			addGroups(s);
 		}
-		
-		//forgeClientHandler.setForgeLogin(this.getPendingConnection().forgeLogin);
 	}
 
-	/*public void sendPacket(PacketWrapper packet) {
-		ch.write(packet);
-	}*/
-
-	@Deprecated
 	public boolean isActive() {
 		return !ch.isClosed();
 	}
@@ -234,10 +230,8 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 	protected abstract <UC extends UserConnection<IH>> ServerConnector<IH, UC> createServerConnector(BungeeServerInfo target);
 
 	@Override
-	public void connect(final ServerConnectRequest request) {
-		Preconditions.checkNotNull(request, "request");
-
-		final Callback<ServerConnectRequest.Result> callback = request.getCallback();
+	public void connect(final @NonNull ServerConnectRequest request) {
+		final val callback = request.getCallback();
 		
 		ServerConnectEvent event = new ServerConnectEvent(this, request.getTarget(), request.getReason());
 		if (bungee.getPluginManager().callEvent(event).isCancelled()) {

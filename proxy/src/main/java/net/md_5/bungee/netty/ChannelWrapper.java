@@ -41,12 +41,23 @@ public class ChannelWrapper {
 		if (getProtocol().isLegacy() && state != NetworkState.LEGACY)
 			throw new RuntimeException("You can't use NetworkState other than Legacy, when protocol is legacy itself");
 
-		((PacketDecoder) ch.pipeline().get(PipelineUtil.PACKET_DEC)).setNetworkState(state);
-		((PacketEncoder) ch.pipeline().get(PipelineUtil.PACKET_ENC)).setNetworkState(state);
+		(
+			(PacketDecoder) ch
+			.pipeline()
+			.get(PipelineUtil.PACKET_DEC)
+		).setNetworkState(state);
+		(
+			(PacketEncoder) ch
+			.pipeline()
+			.get(PipelineUtil.PACKET_ENC)
+		).setNetworkState(state);
 	}
 
 	public NetworkState getConnectionState() {
-		return ch.pipeline().get(PacketEncoder.class).getNetworkState();
+		return ch
+				.pipeline()
+				.get(PacketEncoder.class)
+				.getNetworkState();
 	}
 
 	public void setProtocol(@NonNull Protocol protocol) {
@@ -68,7 +79,10 @@ public class ChannelWrapper {
 	}
 
 	public Protocol getProtocol() {
-		return ch.pipeline().get(PacketEncoder.class).getProtocol();
+		return ch
+				.pipeline()
+				.get(PacketEncoder.class)
+				.getProtocol();
 	}
 
 	public void write(Object packet) {

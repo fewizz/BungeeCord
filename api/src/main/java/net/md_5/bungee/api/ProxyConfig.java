@@ -9,9 +9,8 @@ import java.util.Map;
 /**
  * Core configuration adaptor for the proxy api.
  *
- * @deprecated This class is subject to rapid change between releases
+ * This class is subject to rapid change between releases
  */
-@Deprecated
 public interface ProxyConfig
 {
 

@@ -41,6 +41,7 @@ import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.PacketWrapper;
+import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.util.BufUtil;
 import net.md_5.bungee.util.QuietException;
@@ -119,7 +120,7 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 				}
 				pingBack.done(ping, error);
 				
-			}, /*handshake.getProtocol()*/null);//TODO
+			}, getProtocol());
 		}
 		else pingBack.done(
 			new ServerPing(
@@ -241,8 +242,8 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 		}));
 	}
 	
-	protected <UC extends UserConnection<?>> void postLogin(UC userCon) {
-		ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new UpstreamBridge(bungee, userCon));
+	protected <IH extends InitialHandler, UC extends UserConnection<IH>> void postLogin(UC userCon) {
+		ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new UpstreamBridge<IH, UC>(bungee, userCon));
 		bungee.getPluginManager().callEvent(new PostLoginEvent(userCon));
 	
 		ServerInfo server;
@@ -295,5 +296,10 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 	@Override
 	public boolean isConnected() {
 		return !ch.isClosed();
+	}
+	
+	@Override
+	public Protocol getProtocol() {
+		return ch.getProtocol();
 	}
 }

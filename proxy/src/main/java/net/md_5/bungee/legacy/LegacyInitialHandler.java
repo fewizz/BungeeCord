@@ -144,11 +144,6 @@ public class LegacyInitialHandler extends InitialHandler {
 	}
 
 	@Override
-	public Protocol getProtocol() {
-		return ch.getProtocol();
-	}
-
-	@Override
 	public void disconnect(BaseComponent... reason) {
 		ch.write(new Kick(ComponentSerializer.toString(reason)));
 	}

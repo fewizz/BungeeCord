@@ -68,7 +68,7 @@ public class DownstreamBridge extends PacketHandler
 {
     
     private final ProxyServer      bungee = ProxyServer.getInstance();
-    private final UserConnection   con;
+    private final UserConnection<?>   con;
     private final ServerConnection server;
     
     @Override

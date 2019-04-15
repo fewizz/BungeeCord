@@ -251,8 +251,8 @@ public class UpstreamBridge<IH extends InitialHandler, UC extends UserConnection
         }
 
         // TODO: Unregister as well?
-        if ( PluginMessage.SHOULD_RELAY.apply( pluginMessage ) )
-        {
+        if ( PluginMessage.SHOULD_RELAY.apply( pluginMessage ) && !con.getPendingConnection().isLegacy() )
+        {// TODO
             ((ModernUserConnection)con).getPendingConnection().getRelayMessages().add( pluginMessage );
         }
     }
@@ -260,6 +260,6 @@ public class UpstreamBridge<IH extends InitialHandler, UC extends UserConnection
     @Override
     public String toString()
     {
-        return "[" + con.getName() + "] -> UpstreamBridge";
+        return "[" + con.getAddress() +"/"+ con.getName() + "] [UB]";
     }
 }

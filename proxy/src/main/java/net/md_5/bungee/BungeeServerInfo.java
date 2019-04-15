@@ -29,10 +29,8 @@ import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.connection.Server;
 import net.md_5.bungee.connection.PingHandler;
-import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.Side;
 import net.md_5.bungee.protocol.packet.PluginMessage;
@@ -136,20 +134,20 @@ public class BungeeServerInfo implements ServerInfo
         Preconditions.checkNotNull( callback, "callback" );
 
         new Bootstrap()
-            .channel( NioSocketChannel.class )
-            .group( BungeeCord.getInstance().eventLoops )
-            .handler( new ChannelInitializer<Channel>() {
+            .channel(NioSocketChannel.class)
+            .group(BungeeCord.getInstance().eventLoops)
+            .handler(new ChannelInitializer<Channel>() {
 				@Override
 				protected void initChannel(Channel ch) throws Exception {
 					PipelineUtil.addHandlers(ch, protocolVersion, Side.SERVER, new PingHandler( BungeeServerInfo.this, callback, protocolVersion ));
 				}
-			} )
-            .option( ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000 ) // TODO: Configurable
-            .remoteAddress( getAddress() )
+			})
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000) // TODO: Configurable
+            .remoteAddress(getAddress() )
             .connect()
-            .addListener( (ChannelFuture future) -> {
-            	if ( !future.isSuccess() )
-            		callback.done( null, future.cause() );
+            .addListener((ChannelFuture future) -> {
+            	if (!future.isSuccess())
+            		callback.done(null, future.cause());
             });
     }
 

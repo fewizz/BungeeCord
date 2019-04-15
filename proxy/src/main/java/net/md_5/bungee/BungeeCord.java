@@ -139,10 +139,10 @@ public class BungeeCord extends ProxyServer
     /**
      * Fully qualified connections.
      */
-    private final Map<String, UserConnection> connections = new CaseInsensitiveMap<>();
+    private final Map<String, UserConnection<?>> connections = new CaseInsensitiveMap<>();
     // Used to help with packet rewriting
-    private final Map<UUID, UserConnection> connectionsByOfflineUUID = new HashMap<>();
-    private final Map<UUID, UserConnection> connectionsByUUID = new HashMap<>();
+    private final Map<UUID, UserConnection<?>> connectionsByOfflineUUID = new HashMap<>();
+    private final Map<UUID, UserConnection<?>> connectionsByUUID = new HashMap<>();
     private final ReadWriteLock connectionLock = new ReentrantReadWriteLock();
     /**
      * Plugin manager.
@@ -423,7 +423,7 @@ public class BungeeCord extends ProxyServer
             try
             {
                 getLogger().log( Level.INFO, "Disconnecting {0} connections", connections.size() );
-                for ( UserConnection user : connections.values() )
+                for ( UserConnection<?> user : connections.values() )
                 {
                     user.disconnect( reason );
                 }
@@ -494,7 +494,7 @@ public class BungeeCord extends ProxyServer
         connectionLock.readLock().lock();
         try
         {
-            for ( UserConnection con : connections.values() )
+            for ( UserConnection<?> con : connections.values() )
             {
                 con.unsafe().sendPacket( packet );
             }
@@ -577,7 +577,7 @@ public class BungeeCord extends ProxyServer
         }
     }
 
-    public UserConnection getPlayerByOfflineUUID(UUID name)
+    public UserConnection<?> getPlayerByOfflineUUID(UUID name)
     {
         connectionLock.readLock().lock();
         try
