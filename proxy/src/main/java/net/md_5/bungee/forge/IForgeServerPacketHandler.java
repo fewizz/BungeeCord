@@ -1,6 +1,7 @@
 package net.md_5.bungee.forge;
 
 import net.md_5.bungee.UserConnection;
+import net.md_5.bungee.modern.ModernUserConnection;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 
@@ -32,5 +33,5 @@ public interface IForgeServerPacketHandler<S>
      * or read from.
      * @return The state to transition to.
      */
-    public S send(PluginMessage message, UserConnection con);
+    public S send(PluginMessage message, ModernUserConnection con);
 }

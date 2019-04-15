@@ -1,4 +1,4 @@
-package net.md_5.bungee;
+package net.md_5.bungee.modern;
 
 import java.util.Map;
 
@@ -7,8 +7,9 @@ import com.google.common.collect.ImmutableMap;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
+import net.md_5.bungee.BungeeServerInfo;
+import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.connection.ModernInitialHandler;
 import net.md_5.bungee.forge.ForgeClientHandler;
 import net.md_5.bungee.forge.ForgeConstants;
 import net.md_5.bungee.forge.ForgeServerHandler;
@@ -63,5 +64,12 @@ public class ModernUserConnection extends UserConnection<ModernInitialHandler> {
 
 	public @NonNull String getExtraDataInHandshake() {
 		return getPendingConnection().getExtraDataInHandshake();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	protected ModernServerConnector createServerConnector(
+			BungeeServerInfo target) {
+		return new ModernServerConnector(this, target);
 	}
 }

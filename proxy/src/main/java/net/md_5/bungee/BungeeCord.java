@@ -87,11 +87,13 @@ import net.md_5.bungee.command.ConsoleCommandSender;
 import net.md_5.bungee.compress.CompressFactory;
 import net.md_5.bungee.conf.Configuration;
 import net.md_5.bungee.conf.YamlConfig;
-import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.forge.ForgeConstants;
+import net.md_5.bungee.legacy.LegacyInitialHandler;
 import net.md_5.bungee.log.BungeeLogger;
 import net.md_5.bungee.log.LoggingOutputStream;
+import net.md_5.bungee.modern.ModernInitialHandler;
 import net.md_5.bungee.module.ModuleManager;
+import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.NettyUtil;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.DefinedPacket;
@@ -321,7 +323,7 @@ public class BungeeCord extends ProxyServer
             .childHandler(new ChannelInitializer<Channel>() {
 				@Override
 				protected void initChannel(Channel ch) throws Exception {
-					PipelineUtil.basicHandlers(ch, new InitialHandler(info));
+					PipelineUtil.basicConfig(ch);
 					
 					ch.pipeline().addFirst(new ChannelInboundHandlerAdapter() {
 						public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -341,6 +343,15 @@ public class BungeeCord extends ProxyServer
 					        if(config.isInitialProtocol())
 								logger.info("[" + ctx.channel().remoteAddress() + "] Connected to Bungee, identified as " + pv.name() );
 							PipelineUtil.packetHandlers(ch, pv, Side.CLIENT);
+							HandlerBoss boss = new HandlerBoss(
+									pv.isModern() ? new ModernInitialHandler(info)
+											:
+											new LegacyInitialHandler(info)
+										);
+							boss.channelActive(ctx);
+							
+							ch.pipeline().addLast(PipelineUtil.BOSS, boss); 
+							PipelineUtil.readTimeoutHandler(ch);
 					        
 					        ctx.pipeline().remove(this);
 					        ctx.channel().pipeline().fireChannelRead(msg);

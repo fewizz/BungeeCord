@@ -10,7 +10,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import net.md_5.bungee.UserConnection;
+import net.md_5.bungee.modern.ModernUserConnection;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 
 /**
@@ -20,7 +20,7 @@ import net.md_5.bungee.protocol.packet.PluginMessage;
 public class ForgeClientHandler {
 
 	@NonNull
-	private final UserConnection con;
+	private final ModernUserConnection con;
 
 	/**
 	 * The users' mod list.
@@ -140,6 +140,6 @@ public class ForgeClientHandler {
 	 * @return <code>true</code> if the user is a forge user.
 	 */
 	public boolean isForgeUser() {
-		return (fmlTokenInHandshake || clientModList != null) || con.getPendingConnection().forgeLogin != null;
+		return fmlTokenInHandshake || clientModList != null;
 	}
 }

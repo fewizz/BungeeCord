@@ -2,6 +2,7 @@ package net.md_5.bungee.forge;
 
 import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.forge.ForgeLogger.LogDirection;
+import net.md_5.bungee.modern.ModernUserConnection;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 
@@ -27,7 +28,7 @@ public enum ForgeServerHandshakeState implements IForgeServerPacketHandler<Forge
         }
 
         @Override
-        public ForgeServerHandshakeState send(PluginMessage message, UserConnection con)
+        public ForgeServerHandshakeState send(PluginMessage message, ModernUserConnection con)
         {
             // Send custom channel registration. Send Hello.
             return HELLO;
@@ -54,7 +55,7 @@ public enum ForgeServerHandshakeState implements IForgeServerPacketHandler<Forge
         }
 
         @Override
-        public ForgeServerHandshakeState send(PluginMessage message, UserConnection con)
+        public ForgeServerHandshakeState send(PluginMessage message, ModernUserConnection con)
         {
             // Send Server Mod List.
             return WAITINGCACK;
@@ -72,7 +73,7 @@ public enum ForgeServerHandshakeState implements IForgeServerPacketHandler<Forge
         }
 
         @Override
-        public ForgeServerHandshakeState send(PluginMessage message, UserConnection con)
+        public ForgeServerHandshakeState send(PluginMessage message, ModernUserConnection con)
         {
             if ( message.getData()[0] == 3 && message.getTag().equals( ForgeConstants.FML_HANDSHAKE_TAG ) )
             {
@@ -106,7 +107,7 @@ public enum ForgeServerHandshakeState implements IForgeServerPacketHandler<Forge
         }
 
         @Override
-        public ForgeServerHandshakeState send(PluginMessage message, UserConnection con)
+        public ForgeServerHandshakeState send(PluginMessage message, ModernUserConnection con)
         {
             // Send ACK
             return DONE;
@@ -130,7 +131,7 @@ public enum ForgeServerHandshakeState implements IForgeServerPacketHandler<Forge
         }
 
         @Override
-        public ForgeServerHandshakeState send(PluginMessage message, UserConnection con)
+        public ForgeServerHandshakeState send(PluginMessage message, ModernUserConnection con)
         {
             // Packets should never make it here but if they ever do, pass everything to client
             ForgeLogger.logServer( LogDirection.SENDING, this.name(), message);

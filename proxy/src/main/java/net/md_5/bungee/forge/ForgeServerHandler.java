@@ -5,10 +5,9 @@ import java.util.ArrayDeque;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.forge.ForgeLogger.LogDirection;
+import net.md_5.bungee.modern.ModernUserConnection;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 
@@ -18,7 +17,7 @@ import net.md_5.bungee.protocol.packet.PluginMessage;
 @RequiredArgsConstructor
 public class ForgeServerHandler {
 
-	private final UserConnection con;
+	private final ModernUserConnection con;
 	@Getter
 	private final ChannelWrapper ch;
 

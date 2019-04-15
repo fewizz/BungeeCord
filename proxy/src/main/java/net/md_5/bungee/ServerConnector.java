@@ -12,6 +12,7 @@ import net.md_5.bungee.api.event.ServerConnectEvent;
 import net.md_5.bungee.api.event.ServerKickEvent;
 import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.connection.CancelSendSignal;
+import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.protocol.PacketWrapper;
@@ -19,12 +20,12 @@ import net.md_5.bungee.protocol.packet.Kick;
 import net.md_5.bungee.util.QuietException;
 
 @RequiredArgsConstructor
-public abstract class ServerConnector<UC extends UserConnection<?>> extends PacketHandler {
-	final UC user;
-	ServerConnection server;
-	ChannelWrapper ch;
+public abstract class ServerConnector<IH extends InitialHandler, UC extends UserConnection<IH>> extends PacketHandler {
+	protected final UC user;
+	protected ServerConnection server;
+	protected ChannelWrapper ch;
 	@Getter
-	final BungeeServerInfo target;
+	protected final BungeeServerInfo target;
 	
 	@Override
 	public void connected(ChannelWrapper channel) throws Exception {
@@ -59,14 +60,14 @@ public abstract class ServerConnector<UC extends UserConnection<?>> extends Pack
 	public void handle(Kick kick) throws Exception {
 		ServerInfo def = user.updateAndGetNextServer(target);
 		ServerKickEvent event = new ServerKickEvent(
-				user,
-				target,
-				user.getPendingConnection().isLegacy() ? 
-					TextComponent.fromLegacyText(kick.getMessage())
-					:
-					ComponentSerializer.parse(kick.getMessage()),
-				def,
-				ServerKickEvent.State.CONNECTING
+			user,
+			target,
+			user.getPendingConnection().isLegacy() ? 
+				TextComponent.fromLegacyText(kick.getMessage())
+				:
+				ComponentSerializer.parse(kick.getMessage()),
+			def,
+			ServerKickEvent.State.CONNECTING
 		);
 		if (event.getKickReason().toLowerCase(Locale.ROOT).contains("outdated") && def != null) {
 			// Pre cancel the event if we are going to try another server

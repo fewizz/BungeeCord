@@ -1,4 +1,4 @@
-package net.md_5.bungee.connection;
+package net.md_5.bungee.modern;
 
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -13,18 +13,12 @@ import lombok.Getter;
 import lombok.Setter;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.EncryptionUtil;
-import net.md_5.bungee.ModernUserConnection;
-import net.md_5.bungee.api.AbstractReconnectHandler;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.config.ListenerInfo;
-import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.event.PlayerHandshakeEvent;
-import net.md_5.bungee.api.event.PostLoginEvent;
-import net.md_5.bungee.api.event.PreLoginEvent;
-import net.md_5.bungee.api.event.ServerConnectEvent;
 import net.md_5.bungee.chat.ComponentSerializer;
+import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.jni.cipher.BungeeCipher;
-import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.netty.cipher.CipherDecoder;
 import net.md_5.bungee.netty.cipher.CipherEncoder;
@@ -89,15 +83,6 @@ public class ModernInitialHandler extends InitialHandler {
 		if(protocol != null)
 			ch.setProtocol(protocol);
 
-		// Starting with FML 1.8, a "\0FML\0" token is appended to the handshake. This
-		// interferes
-		// with Bungee's IP forwarding, so we detect it, and remove it from the host
-		// string, for now.
-		// We know FML appends \00FML\00. However, we need to also consider that other
-		// systems might
-		// add their own data to the end of the string. So, we just take everything from
-		// the \0 character
-		// and save it for later.
 		if (handshake.getHost().contains("\0")) {
 			String[] split = handshake.getHost().split("\0", 2);
 			handshake.setHost(split[0]);
@@ -171,45 +156,13 @@ public class ModernInitialHandler extends InitialHandler {
 		Preconditions.checkState(thisState == State.USERNAME, "Not expecting USERNAME");
 		this.loginRequest = loginRequest;
 
-		if (getName().contains(".")) {
-			disconnect(bungee.getTranslation("name_invalid"));
-			return;
-		}
-
-		if (getName().length() > 16) {
-			disconnect(bungee.getTranslation("name_too_long"));
-			return;
-		}
-
-		int limit = BungeeCord.getInstance().config.getPlayerLimit();
-		if (limit > 0 && bungee.getOnlineCount() > limit) {
-			disconnect(bungee.getTranslation("proxy_full"));
-			return;
-		}
-
-		// If offline mode and they are already on, don't allow connect
-		// We can just check by UUID here as names are based on UUID
-		if (!isOnlineMode() && bungee.getPlayer(getUniqueId()) != null) {
-			disconnect(bungee.getTranslation("already_connected_proxy"));
-			return;
-		}
-
-
-		// fire pre login event
-		bungee.getPluginManager().callEvent(new PreLoginEvent(this, (PreLoginEvent result, Throwable error) -> {
-			if (ch.isClosed())
-				return;
-			if (result.isCancelled()) {
-				disconnect(result.getCancelReasonComponents());
-				return;
-			}
-			
+		preLogin((result, error) -> {
 			thisState = State.ENCRYPT;
 			
 			if (isOnlineMode())
 				unsafe().sendPacket(request = EncryptionUtil.encryptRequest());
-			else finish();
-		}));
+			else login();
+		});
 	}
 	
 	@Override
@@ -226,8 +179,7 @@ public class ModernInitialHandler extends InitialHandler {
 		ch.addBefore(PipelineUtil.FRAME_ENC, PipelineUtil.ENCRYPT, new CipherEncoder(encrypt));
 
 		if(isOnlineMode())
-			loginAndFinish(request, sharedKey);
-
+			auth(request, sharedKey, () -> login());
 	}
 	
 	@Override
@@ -254,9 +206,8 @@ public class ModernInitialHandler extends InitialHandler {
 		return (name != null) ? name : (loginRequest == null) ? null : loginRequest.getData();
 	}
 
-	@Override
-	protected void finish() {
-		checkPlayer((result, error) -> {
+	protected void login() {
+		login((result, error) -> {
 			ModernUserConnection userCon = new ModernUserConnection(bungee, ch, getName(), this);
 			userCon.setCompressionThreshold(BungeeCord.getInstance().config.getCompressionThreshold());
 			userCon.init();
@@ -268,20 +219,7 @@ public class ModernInitialHandler extends InitialHandler {
 
 			ch.setNetworkState(NetworkState.GAME);
 
-			ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new UpstreamBridge(bungee, userCon));
-			bungee.getPluginManager().callEvent(new PostLoginEvent(userCon));
-		
-			ServerInfo server;
-			
-			if (bungee.getReconnectHandler() != null)
-				server = bungee.getReconnectHandler().getServer(userCon);
-			else
-				server = AbstractReconnectHandler.getForcedHost(this);
-			
-			if (server == null)
-				server = bungee.getServerInfo(listener.getDefaultServer());
-
-			userCon.connect(server, null, true, ServerConnectEvent.Reason.JOIN_PROXY);
+			postLogin(userCon);
 
 			thisState = State.FINISHED;
 		});

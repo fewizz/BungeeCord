@@ -230,6 +230,8 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 
 		connect(builder.build());
 	}
+	
+	protected abstract <UC extends UserConnection<IH>> ServerConnector<IH, UC> createServerConnector(BungeeServerInfo target);
 
 	@Override
 	public void connect(final ServerConnectRequest request) {
@@ -279,13 +281,7 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 			.handler(new ChannelInitializer<Channel>() {
 				@Override
 				protected void initChannel(Channel ch) throws Exception {
-					ServerConnector connector = 
-						getPendingConnection().isLegacy() ?
-							new LegacyServerConnector(UserConnection.this, target)
-							:
-							new ModernServerConnector(UserConnection.this, target);
-							
-					PipelineUtil.addHandlers(ch, pendingConnection.getProtocol(), Side.SERVER, connector);
+					PipelineUtil.addHandlers(ch, pendingConnection.getProtocol(), Side.SERVER, createServerConnector(target));
 				}
 			});
 		

@@ -21,6 +21,7 @@ import net.md_5.bungee.api.event.PluginMessageEvent;
 import net.md_5.bungee.api.event.SettingsChangedEvent;
 import net.md_5.bungee.api.event.TabCompleteEvent;
 import net.md_5.bungee.forge.ForgeConstants;
+import net.md_5.bungee.modern.ModernUserConnection;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.protocol.PacketWrapper;
@@ -33,13 +34,13 @@ import net.md_5.bungee.protocol.packet.PluginMessage;
 import net.md_5.bungee.protocol.packet.TabCompleteRequest;
 import net.md_5.bungee.protocol.packet.TabCompleteResponse;
 
-public class UpstreamBridge extends PacketHandler
+public class UpstreamBridge<IH extends InitialHandler, UC extends UserConnection<IH>> extends PacketHandler
 {
 
     private final ProxyServer bungee;
-    private final UserConnection con;
+    private final UC con;
 
-    public UpstreamBridge(ProxyServer bungee, UserConnection con)
+    public UpstreamBridge(ProxyServer bungee, UC con)
     {
         this.bungee = bungee;
         this.con = con;
@@ -231,7 +232,7 @@ public class UpstreamBridge extends PacketHandler
             if ( pluginMessage.getTag().equals( ForgeConstants.FML_HANDSHAKE_TAG ) )
             {
                 // Let our forge client handler deal with this packet.
-                con.getForgeClientHandler().handle( pluginMessage );
+                ((ModernUserConnection)con).getForgeClientHandler().handle( pluginMessage );
                 throw CancelSendSignal.INSTANCE;
             }
 
@@ -252,7 +253,7 @@ public class UpstreamBridge extends PacketHandler
         // TODO: Unregister as well?
         if ( PluginMessage.SHOULD_RELAY.apply( pluginMessage ) )
         {
-            con.getPendingConnection().getRelayMessages().add( pluginMessage );
+            ((ModernUserConnection)con).getPendingConnection().getRelayMessages().add( pluginMessage );
         }
     }
 

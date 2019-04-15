@@ -17,6 +17,7 @@ import lombok.Setter;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.BungeeServerInfo;
 import net.md_5.bungee.EncryptionUtil;
+import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.Util;
 import net.md_5.bungee.api.AbstractReconnectHandler;
 import net.md_5.bungee.api.Callback;
@@ -30,9 +31,13 @@ import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.PendingConnection;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.LoginEvent;
+import net.md_5.bungee.api.event.PostLoginEvent;
+import net.md_5.bungee.api.event.PreLoginEvent;
 import net.md_5.bungee.api.event.ProxyPingEvent;
+import net.md_5.bungee.api.event.ServerConnectEvent;
 import net.md_5.bungee.http.HttpClient;
 import net.md_5.bungee.netty.ChannelWrapper;
+import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.PacketWrapper;
@@ -42,9 +47,10 @@ import net.md_5.bungee.util.QuietException;
 
 @RequiredArgsConstructor
 public abstract class InitialHandler extends PacketHandler implements PendingConnection {
-	final BungeeCord bungee = BungeeCord.getInstance();
+	protected final BungeeCord bungee = BungeeCord.getInstance();
 	@Setter
 	@Getter
+	protected
 	boolean onlineMode = bungee.config.isOnlineMode();
 	protected ChannelWrapper ch;
 	@Getter
@@ -126,7 +132,7 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 		);
 	}
 
-	protected void loginAndFinish(EncryptionRequest request, SecretKey sharedKey) throws Exception {
+	protected void auth(EncryptionRequest request, SecretKey sharedKey, Runnable run) throws Exception {
 		String encName = URLEncoder.encode(getName(), "UTF-8");
 
 		MessageDigest sha = MessageDigest.getInstance("SHA-1");
@@ -144,7 +150,7 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 				if (obj != null && obj.getId() != null) {
 					loginProfile = obj;
 					uniqueId = Util.getUUID(loginProfile.getId());
-					finish();
+					run.run();
 					return;
 				}
 				disconnect(bungee.getTranslation("offline_mode_player"));
@@ -154,10 +160,46 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 			}
 		});
 	}
-
-	abstract protected void finish();
 	
-	final protected void checkPlayer(Callback<LoginEvent> cb) {
+	final protected void preLogin(Callback<PreLoginEvent> cb) {
+		if (getName().contains(".")) {
+			disconnect(bungee.getTranslation("name_invalid"));
+			return;
+		}
+
+		if (getName().length() > 16) {
+			disconnect(bungee.getTranslation("name_too_long"));
+			return;
+		}
+
+		int limit = BungeeCord.getInstance().config.getPlayerLimit();
+		if (limit > 0 && bungee.getOnlineCount() > limit) {
+			disconnect(bungee.getTranslation("proxy_full"));
+			return;
+		}
+
+		// If offline mode and they are already on, don't allow connect
+		// We can just check by UUID here as names are based on UUID
+		if (!isOnlineMode() && bungee.getPlayer(getUniqueId()) != null) {
+			disconnect(bungee.getTranslation("already_connected_proxy"));
+			return;
+		}
+
+
+		// fire pre login event
+		bungee.getPluginManager().callEvent(new PreLoginEvent(this, (PreLoginEvent result, Throwable error) -> {
+			if (ch.isClosed())
+				return;
+			if (result.isCancelled()) {
+				disconnect(result.getCancelReasonComponents());
+				return;
+			}
+			
+			cb.done(result, error);
+		}));
+	}
+	
+	final protected void login(Callback<LoginEvent> cb) {
 		offlineId = UUID.nameUUIDFromBytes(("OfflinePlayer:" + getName()).getBytes(Charsets.UTF_8));
 		uniqueId = uniqueId == null ? offlineId : uniqueId;
 				
@@ -186,7 +228,8 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 
 		}
 
-		Callback<LoginEvent> complete = (LoginEvent result, Throwable error) -> {
+		// fire login event
+		bungee.getPluginManager().callEvent(new LoginEvent(this, (LoginEvent result, Throwable error) -> {
 			if (ch.isClosed())
 				return;
 			if (result.isCancelled()) {
@@ -194,12 +237,25 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 				return;
 			}
 
-
 			cb.done(result, error);
-		};
+		}));
+	}
+	
+	protected <UC extends UserConnection<?>> void postLogin(UC userCon) {
+		ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new UpstreamBridge(bungee, userCon));
+		bungee.getPluginManager().callEvent(new PostLoginEvent(userCon));
+	
+		ServerInfo server;
+		
+		if (bungee.getReconnectHandler() != null)
+			server = bungee.getReconnectHandler().getServer(userCon);
+		else
+			server = AbstractReconnectHandler.getForcedHost(this);
+		
+		if (server == null)
+			server = bungee.getServerInfo(listener.getDefaultServer());
 
-		// fire login event
-		bungee.getPluginManager().callEvent(new LoginEvent(this, complete));
+		userCon.connect(server, null, true, ServerConnectEvent.Reason.JOIN_PROXY);
 	}
 
 	@Override

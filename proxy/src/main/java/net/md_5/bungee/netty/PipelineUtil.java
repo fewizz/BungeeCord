@@ -26,9 +26,9 @@ import net.md_5.bungee.protocol.Varint21FrameDecoder;
 import net.md_5.bungee.protocol.Varint21LengthFieldPrepender;
 
 public class PipelineUtil {
-    public static final AttributeKey<ListenerInfo> LISTENER = AttributeKey.valueOf( "ListerInfo" );
-    public static final AttributeKey<UserConnection> USER = AttributeKey.valueOf( "User" );
-    public static final AttributeKey<BungeeServerInfo> TARGET = AttributeKey.valueOf( "Target" );
+    public static final AttributeKey<ListenerInfo> LISTENER = AttributeKey.valueOf("ListerInfo");
+    public static final AttributeKey<UserConnection<?>> USER = AttributeKey.valueOf("User");
+    public static final AttributeKey<BungeeServerInfo> TARGET = AttributeKey.valueOf("Target");
     
     private static final int 
     	LOW_MARK = Integer.getInteger( "net.md_5.bungee.low_mark", 2 << 18 ), // 0.5 mb
@@ -89,7 +89,7 @@ public class PipelineUtil {
 		);
     }
     
-    public static void basicHandlers(@NonNull Channel ch, @NonNull PacketHandler ph) {
+    public static void basicConfig(Channel ch) {
     	try {
             ch.config().setOption(ChannelOption.IP_TOS, 0x18);
         } catch (ChannelException ex ) {/* IP_TOS is not supported (Windows XP / Windows Server 2003)*/}
@@ -97,12 +97,13 @@ public class PipelineUtil {
         ch.config().setAllocator(PooledByteBufAllocator.DEFAULT);
         ch.config().setWriteBufferWaterMark(MARK);
 
-        ch.pipeline().addLast(
+    }
+    
+    public static void readTimeoutHandler(Channel ch) {
+        ch.pipeline().addFirst(
     		TIMEOUT,
     		new ReadTimeoutHandler(BungeeCord.getInstance().config.getTimeout(), TimeUnit.MILLISECONDS)
     	);
-        
-    	ch.pipeline().addLast(PipelineUtil.BOSS, new HandlerBoss(ph));
     }
     
     public static void packetHandlers(@NonNull Channel ch, @NonNull Protocol pv, @NonNull Side side) {
@@ -118,7 +119,9 @@ public class PipelineUtil {
     }
     
     public static void addHandlers(Channel ch, Protocol pv, Side side, PacketHandler ph) {
-    	basicHandlers(ch, ph);
+    	basicConfig(ch);
     	packetHandlers(ch, pv, side);
+    	readTimeoutHandler(ch);
+    	ch.pipeline().addLast(BOSS, new HandlerBoss(ph));
     }
 }

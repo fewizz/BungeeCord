@@ -1,8 +1,10 @@
 package net.md_5.bungee.forge;
 
 import java.util.Map;
-import net.md_5.bungee.ModernServerConnector;
+
+import net.md_5.bungee.ServerConnector;
 import net.md_5.bungee.UserConnection;
+import net.md_5.bungee.modern.ModernUserConnection;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 
 /**
@@ -25,7 +27,7 @@ enum ForgeClientHandshakeState implements IForgeClientPacketHandler<ForgeClientH
     START
     {
         @Override
-        public ForgeClientHandshakeState handle(PluginMessage message, UserConnection con)
+        public ForgeClientHandshakeState handle(PluginMessage message, ModernUserConnection con)
         {
             ForgeLogger.logClient( ForgeLogger.LogDirection.RECEIVED, this.name(), message );
             con.unsafe().sendPacket( message );
@@ -34,7 +36,7 @@ enum ForgeClientHandshakeState implements IForgeClientPacketHandler<ForgeClientH
         }
 
         @Override
-        public ForgeClientHandshakeState send(PluginMessage message, UserConnection con)
+        public ForgeClientHandshakeState send(PluginMessage message, ModernUserConnection con)
         {
             return HELLO;
         }
@@ -54,7 +56,7 @@ enum ForgeClientHandshakeState implements IForgeClientPacketHandler<ForgeClientH
     HELLO
     {
         @Override
-        public ForgeClientHandshakeState handle(PluginMessage message, UserConnection con)
+        public ForgeClientHandshakeState handle(PluginMessage message, ModernUserConnection con)
         {
             ForgeLogger.logClient( ForgeLogger.LogDirection.RECEIVED, this.name(), message );
             // Server Hello.
@@ -67,7 +69,7 @@ enum ForgeClientHandshakeState implements IForgeClientPacketHandler<ForgeClientH
         }
 
         @Override
-        public ForgeClientHandshakeState send(PluginMessage message, UserConnection con)
+        public ForgeClientHandshakeState send(PluginMessage message, ModernUserConnection con)
         {
             // Client Hello.
             if ( message.getData()[0] == 1 )
@@ -97,7 +99,7 @@ enum ForgeClientHandshakeState implements IForgeClientPacketHandler<ForgeClientH
     {
 
         @Override
-        public ForgeClientHandshakeState handle(PluginMessage message, UserConnection con)
+        public ForgeClientHandshakeState handle(PluginMessage message, ModernUserConnection con)
         {
             ForgeLogger.logClient( ForgeLogger.LogDirection.RECEIVED, this.name(), message );
             // Mod list.
@@ -110,7 +112,7 @@ enum ForgeClientHandshakeState implements IForgeClientPacketHandler<ForgeClientH
         }
 
         @Override
-        public ForgeClientHandshakeState send(PluginMessage message, UserConnection con)
+        public ForgeClientHandshakeState send(PluginMessage message, ModernUserConnection con)
         {
             // ACK
             return WAITINGSERVERCOMPLETE;
@@ -120,7 +122,7 @@ enum ForgeClientHandshakeState implements IForgeClientPacketHandler<ForgeClientH
     {
 
         @Override
-        public ForgeClientHandshakeState handle(PluginMessage message, UserConnection con)
+        public ForgeClientHandshakeState handle(PluginMessage message, ModernUserConnection con)
         {
             ForgeLogger.logClient( ForgeLogger.LogDirection.RECEIVED, this.name(), message );
             // Mod ID's.
@@ -135,7 +137,7 @@ enum ForgeClientHandshakeState implements IForgeClientPacketHandler<ForgeClientH
         }
 
         @Override
-        public ForgeClientHandshakeState send(PluginMessage message, UserConnection con)
+        public ForgeClientHandshakeState send(PluginMessage message, ModernUserConnection con)
         {
             // Send ACK.
             return PENDINGCOMPLETE;
@@ -145,7 +147,7 @@ enum ForgeClientHandshakeState implements IForgeClientPacketHandler<ForgeClientH
     {
 
         @Override
-        public ForgeClientHandshakeState handle(PluginMessage message, UserConnection con)
+        public ForgeClientHandshakeState handle(PluginMessage message, ModernUserConnection con)
         {
             // Ack.
             if ( message.getData()[0] == -1 )
@@ -158,7 +160,7 @@ enum ForgeClientHandshakeState implements IForgeClientPacketHandler<ForgeClientH
         }
 
         @Override
-        public ForgeClientHandshakeState send(PluginMessage message, UserConnection con)
+        public ForgeClientHandshakeState send(PluginMessage message, ModernUserConnection con)
         {
             // Send an ACK
             return COMPLETE;
@@ -168,7 +170,7 @@ enum ForgeClientHandshakeState implements IForgeClientPacketHandler<ForgeClientH
     {
 
         @Override
-        public ForgeClientHandshakeState handle(PluginMessage message, UserConnection con)
+        public ForgeClientHandshakeState handle(PluginMessage message, ModernUserConnection con)
         {
             // Ack.
             if ( message.getData()[0] == -1 )
@@ -181,7 +183,7 @@ enum ForgeClientHandshakeState implements IForgeClientPacketHandler<ForgeClientH
         }
 
         @Override
-        public ForgeClientHandshakeState send(PluginMessage message, UserConnection con)
+        public ForgeClientHandshakeState send(PluginMessage message, ModernUserConnection con)
         {
             return DONE;
         }
@@ -193,14 +195,14 @@ enum ForgeClientHandshakeState implements IForgeClientPacketHandler<ForgeClientH
     {
 
         @Override
-        public ForgeClientHandshakeState handle(PluginMessage message, UserConnection con)
+        public ForgeClientHandshakeState handle(PluginMessage message, ModernUserConnection con)
         {
             ForgeLogger.logClient( ForgeLogger.LogDirection.RECEIVED, this.name(), message );
             return this;
         }
 
         @Override
-        public ForgeClientHandshakeState send(PluginMessage message, UserConnection con)
+        public ForgeClientHandshakeState send(PluginMessage message, ModernUserConnection con)
         {
             return this;
         }

@@ -1,4 +1,4 @@
-package net.md_5.bungee;
+package net.md_5.bungee.legacy;
 
 import java.io.DataInput;
 import java.security.PublicKey;
@@ -12,6 +12,11 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.SimpleChannelInboundHandler;
+import net.md_5.bungee.BungeeCord;
+import net.md_5.bungee.BungeeServerInfo;
+import net.md_5.bungee.EncryptionUtil;
+import net.md_5.bungee.ServerConnection;
+import net.md_5.bungee.ServerConnector;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.event.ServerConnectedEvent;
 import net.md_5.bungee.api.event.ServerSwitchEvent;
@@ -34,7 +39,6 @@ import net.md_5.bungee.protocol.PacketPreparer;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.protocol.packet.EncryptionResponse;
-import net.md_5.bungee.protocol.packet.Handshake;
 import net.md_5.bungee.protocol.packet.LegacyClientCommand;
 import net.md_5.bungee.protocol.packet.LegacyLoginRequest;
 import net.md_5.bungee.protocol.packet.Login;
@@ -44,7 +48,7 @@ import net.md_5.bungee.protocol.packet.ScoreboardObjective;
 import net.md_5.bungee.protocol.packet.ScoreboardScore;
 import net.md_5.bungee.util.QuietException;
 
-public class LegacyServerConnector extends ServerConnector<LegacyUserConnection> {
+public class LegacyServerConnector extends ServerConnector<LegacyInitialHandler, LegacyUserConnection> {
 	private int fmlVanillaCompatabilityLevel = 0;
 	private ChannelInboundHandler legacyFMLModlistCatcher = null;
 	private SecretKey secret;
@@ -127,9 +131,9 @@ public class LegacyServerConnector extends ServerConnector<LegacyUserConnection>
 				ch.write(packetQueue.poll());
 		}
 	
-		for (PluginMessage message : user.getPendingConnection().getRelayMessages()) {
+		/*for (PluginMessage message : user.getPendingConnection().getRelayMessages()) {
 			ch.write(message);
-		}
+		}*/
 	
 		if (user.getSettings() != null) 
 			ch.write(user.getSettings());

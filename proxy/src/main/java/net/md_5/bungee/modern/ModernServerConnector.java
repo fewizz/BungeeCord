@@ -1,4 +1,4 @@
-package net.md_5.bungee;
+package net.md_5.bungee.modern;
 
 import java.util.Arrays;
 import java.util.Queue;
@@ -10,6 +10,10 @@ import com.google.common.base.Preconditions;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import lombok.Getter;
+import net.md_5.bungee.BungeeCord;
+import net.md_5.bungee.BungeeServerInfo;
+import net.md_5.bungee.ServerConnection;
+import net.md_5.bungee.ServerConnector;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.event.ServerConnectedEvent;
 import net.md_5.bungee.api.event.ServerSwitchEvent;
@@ -42,7 +46,7 @@ import net.md_5.bungee.protocol.packet.ScoreboardScore;
 import net.md_5.bungee.protocol.packet.SetCompression;
 import net.md_5.bungee.util.QuietException;
 
-public class ModernServerConnector extends ServerConnector<ModernUserConnection> {
+public class ModernServerConnector extends ServerConnector<ModernInitialHandler, ModernUserConnection> {
 	private State thisState = State.UNDEF;
 	@Getter
 	private ForgeServerHandler handshakeHandler;
