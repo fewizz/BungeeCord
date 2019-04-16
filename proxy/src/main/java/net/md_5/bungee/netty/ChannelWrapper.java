@@ -79,6 +79,7 @@ public class ChannelWrapper {
 	}
 
 	public Protocol getProtocol() {
+		Preconditions.checkArgument(ch.isActive(), "Channel is closed already");
 		return ch
 				.pipeline()
 				.get(PacketEncoder.class)

@@ -213,7 +213,6 @@ public class UpstreamBridge<IH extends InitialHandler, UC extends UserConnection
     @Override
     public void handle(PluginMessage pluginMessage) throws Exception
     {
-    	//System.out.println("US PM: " + pluginMessage.getTag());
     	
         if ( pluginMessage.getTag().equals( "BungeeCord" ) )
         {
@@ -222,11 +221,6 @@ public class UpstreamBridge<IH extends InitialHandler, UC extends UserConnection
 
         if ( BungeeCord.getInstance().config.isForgeSupport() )
         {
-            // Hack around Forge race conditions
-            if (pluginMessage.getTag().equals( "FML" ) && pluginMessage.getData()[0] == 1 )
-            {	
-        		throw CancelSendSignal.INSTANCE;
-           	}
 
             // We handle forge handshake messages if forge support is enabled.
             if ( pluginMessage.getTag().equals( ForgeConstants.FML_HANDSHAKE_TAG ) )

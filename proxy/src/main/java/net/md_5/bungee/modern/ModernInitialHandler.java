@@ -1,6 +1,7 @@
 package net.md_5.bungee.modern;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -35,7 +36,6 @@ import net.md_5.bungee.protocol.packet.PingPacket;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 import net.md_5.bungee.protocol.packet.StatusRequest;
 import net.md_5.bungee.protocol.packet.StatusResponse;
-import net.md_5.bungee.util.BoundedArrayList;
 
 public class ModernInitialHandler extends InitialHandler {
 	@Getter
@@ -44,22 +44,26 @@ public class ModernInitialHandler extends InitialHandler {
 	private LoginRequest loginRequest;
 	private EncryptionRequest request;
 	@Getter
-	private final List<PluginMessage> relayMessages = new BoundedArrayList<>(128);
+	private final List<PluginMessage> relayMessages = new ArrayList<>();
 	private State thisState = State.HANDSHAKE;
 	@Getter
 	private String extraDataInHandshake = "";
-	
-	private enum State {
-		HANDSHAKE, STATUS, PING, USERNAME, ENCRYPT, FINISHED;
-	}
 	
 	public ModernInitialHandler(ListenerInfo listener) {
 		super(listener);
 	}
 	
+	enum State {
+		HANDSHAKE, STATUS, PING, USERNAME, ENCRYPT, FINISHED;
+		
+		public void shouldBe(State state) {
+			Preconditions.checkState(state == this, "Should be " + state.name() + ", but it's " + name());
+		}
+	}
+	
 	@Override
 	public void handle(Handshake handshake) throws Exception {
-		Preconditions.checkState(thisState == State.HANDSHAKE, "Not expecting HANDSHAKE");
+		thisState.shouldBe(State.HANDSHAKE);
 		this.handshake = handshake;
 		
 		Protocol protocol = Protocol.byNumber(handshake.getProtocolVersion(), ProtocolGen.POST_NETTY);
@@ -120,7 +124,7 @@ public class ModernInitialHandler extends InitialHandler {
 	
 	@Override
 	public void handle(StatusRequest statusRequest) throws Exception {
-		Preconditions.checkState(thisState == State.STATUS, "Not expecting STATUS");
+		thisState.shouldBe(State.STATUS);
 
 		ping((pingResult, error) -> {
 			boolean useGsonLegacy = getProtocol().isBetweenInclusive(Protocol.MC_1_7_2, Protocol.MC_1_7_6);
@@ -133,9 +137,8 @@ public class ModernInitialHandler extends InitialHandler {
 	
 	@Override
 	public void handle(PingPacket ping) throws Exception {
-		Preconditions.checkState(thisState == State.PING, "Not expecting PING");
-		unsafe.sendPacket(ping);
-		ch.close();
+		thisState.shouldBe(State.PING);
+		ch.close(ping);
 	}
 	
 	@Override
@@ -145,7 +148,7 @@ public class ModernInitialHandler extends InitialHandler {
 	
 	@Override
 	public void handle(LoginRequest loginRequest) throws Exception {
-		Preconditions.checkState(thisState == State.USERNAME, "Not expecting USERNAME");
+		thisState.shouldBe(State.USERNAME);
 		this.loginRequest = loginRequest;
 
 		preLogin((result, error) -> {
@@ -159,9 +162,7 @@ public class ModernInitialHandler extends InitialHandler {
 	
 	@Override
 	public void handle(final EncryptionResponse encryptResponse) throws Exception {
-		if(isLegacy() && thisState == State.USERNAME)
-			thisState = State.ENCRYPT;
-		Preconditions.checkState(thisState == State.ENCRYPT, "Not expecting ENCRYPT");
+		thisState.shouldBe(State.ENCRYPT);
 
 		SecretKey sharedKey = EncryptionUtil.getSecret(encryptResponse, request);
 
@@ -181,15 +182,10 @@ public class ModernInitialHandler extends InitialHandler {
 		else
 			ch.close();
 	}
-
-	@Override
-	public Protocol getProtocol() {
-		return ch.getProtocol();
-	}
 	
 	@Override
 	public void setOnlineMode(boolean onlineMode) {
-		Preconditions.checkState(thisState == State.USERNAME, "Can only set online mode status whilst state is username");
+		thisState.shouldBe(State.USERNAME);
 		this.onlineMode = onlineMode;
 	}
 	

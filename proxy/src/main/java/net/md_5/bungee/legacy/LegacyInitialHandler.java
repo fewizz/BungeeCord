@@ -10,8 +10,8 @@ import com.google.common.hash.Hashing;
 import lombok.Getter;
 import net.md_5.bungee.EncryptionUtil;
 import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ListenerInfo;
-import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.jni.cipher.BungeeCipher;
 import net.md_5.bungee.netty.PipelineUtil;
@@ -129,7 +129,6 @@ public class LegacyInitialHandler extends InitialHandler {
 
 		SecretKey sharedKey = EncryptionUtil.getSecret(encryptResponse, encryptionRequest);
 
-
 		ch.write(new EncryptionResponse());
 
 		BungeeCipher decrypt = EncryptionUtil.getCipher(false, sharedKey);
@@ -145,7 +144,7 @@ public class LegacyInitialHandler extends InitialHandler {
 
 	@Override
 	public void disconnect(BaseComponent... reason) {
-		ch.write(new Kick(ComponentSerializer.toString(reason)));
+		ch.close(new Kick(TextComponent.toLegacyText(reason)));
 	}
 
 	@Override

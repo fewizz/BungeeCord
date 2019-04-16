@@ -182,7 +182,6 @@ public abstract class ProxyServer
      *
      * @return the supported Minecraft version
      */
-    @Deprecated
     public abstract String getGameVersion();
 
     /**
@@ -190,7 +189,6 @@ public abstract class ProxyServer
      *
      * @return the Minecraft protocol version
      */
-    @Deprecated
     public abstract Protocol getProtocolVersion();
 
     /**
