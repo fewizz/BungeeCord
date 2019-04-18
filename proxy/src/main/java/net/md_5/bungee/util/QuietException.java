@@ -3,23 +3,20 @@ package net.md_5.bungee.util;
 /**
  * Exception without a stack trace component.
  */
-public class QuietException extends RuntimeException
-{
+public class QuietException extends RuntimeException {
+	private static final long serialVersionUID = 1L;
 
-    public QuietException(String message)
-    {
-        super( message );
-    }
+	public QuietException(String message) {
+		super(message);
+	}
 
-    @Override
-    public Throwable initCause(Throwable cause)
-    {
-        return this;
-    }
+	@Override
+	public Throwable initCause(Throwable cause) {
+		return this;
+	}
 
-    @Override
-    public Throwable fillInStackTrace()
-    {
-        return this;
-    }
+	@Override
+	public Throwable fillInStackTrace() {
+		return this;
+	}
 }

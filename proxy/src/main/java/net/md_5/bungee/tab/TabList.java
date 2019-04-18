@@ -31,7 +31,7 @@ public abstract class TabList
             {
                 continue;
             }
-            UserConnection player = BungeeCord.getInstance().getPlayerByOfflineUUID( item.getUuid() );
+            UserConnection<?> player = BungeeCord.getInstance().getPlayerByOfflineUUID( item.getUuid() );
             if ( player != null )
             {
                 item.setUuid( player.getUniqueId() );

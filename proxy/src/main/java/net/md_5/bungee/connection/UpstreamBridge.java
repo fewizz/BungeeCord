@@ -3,6 +3,7 @@ package net.md_5.bungee.connection;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
 
 import com.google.common.base.Preconditions;
 import com.mojang.brigadier.context.StringRange;
@@ -53,6 +54,7 @@ public class UpstreamBridge<IH extends InitialHandler, UC extends UserConnection
     @Override
     public void exception(Throwable t) throws Exception
     {
+    	bungee.getLogger().log(Level.WARNING, toString(), t);
         con.disconnect( Util.exception( t ) );
     }
 

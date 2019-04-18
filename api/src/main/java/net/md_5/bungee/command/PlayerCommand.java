@@ -11,9 +11,8 @@ import net.md_5.bungee.api.plugin.Command;
 import net.md_5.bungee.api.plugin.TabExecutor;
 
 /**
- * @deprecated internal use only
+ * Deprecated, internal use only
  */
-@Deprecated
 public abstract class PlayerCommand extends Command implements TabExecutor
 {
 

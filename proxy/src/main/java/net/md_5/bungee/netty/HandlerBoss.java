@@ -5,7 +5,6 @@ import java.util.logging.Level;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.haproxy.HAProxyMessage;
 import lombok.NonNull;
 import net.md_5.bungee.BungeeCord;
@@ -23,8 +22,9 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter {
 	private ChannelWrapper channel;
 	private PacketHandler handler;
 
-	public HandlerBoss(@NonNull PacketHandler handler) {
+	public HandlerBoss(@NonNull PacketHandler handler, ChannelWrapper cw) {
 		setHandler(handler);
+		this.channel = cw;
 	}
 	
 	public HandlerBoss setHandler(@NonNull PacketHandler handler) {
@@ -34,7 +34,7 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter {
 
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
-		channel = new ChannelWrapper(ctx);
+		//channel = new ChannelWrapper(ctx);
 		handler.connected(channel);
 	}
 
@@ -90,12 +90,12 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter {
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
 		try {
-			if(cause instanceof DecoderException) {
-				BungeeCord.getInstance().getLogger().log(Level.WARNING, "Exception while decoding packet", cause);
-			}
-			else {
+			//if(cause instanceof DecoderException) {
+			//	BungeeCord.getInstance().getLogger().log(Level.WARNING, "Exception while decoding packet", cause);
+			//}
+			//else {
 				BungeeCord.getInstance().getLogger().log(Level.WARNING, "Exception caught", cause);
-			}
+			//}
 			handler.exception(cause);
 		} catch (Exception ex) {
 			ProxyServer.getInstance().getLogger().log(Level.SEVERE, handler + " - exception processing exception", ex);

@@ -191,6 +191,8 @@ public class ModernInitialHandler extends InitialHandler {
 	
 	@Override
 	public String getName() {
+		String name = super.getName();
+		if(name != null) return name;
 		return (loginRequest == null) ? null : loginRequest.getData();
 	}
 

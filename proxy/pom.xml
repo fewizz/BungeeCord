@@ -61,14 +61,19 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+    		<groupId>org.fusesource.jansi</groupId>
+    		<artifactId>jansi</artifactId>
+    		<version>1.17.1</version>
+		</dependency>
+        <dependency>
             <groupId>net.md-5</groupId>
-            <artifactId>bungeecord-api</artifactId>
+            <artifactId>bungeecord-chat</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>net.md-5</groupId>
-            <artifactId>bungeecord-log</artifactId>
+            <artifactId>bungeecord-api</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>

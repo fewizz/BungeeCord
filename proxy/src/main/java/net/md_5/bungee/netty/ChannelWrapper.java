@@ -8,7 +8,6 @@ import com.google.common.base.Preconditions;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -22,7 +21,8 @@ import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.Kick;
 
 public class ChannelWrapper {
-
+	Protocol protocol;
+	NetworkState networkState;
 	private final Channel ch;
 	@Getter
 	@Setter
@@ -32,15 +32,19 @@ public class ChannelWrapper {
 	@Getter
 	private volatile boolean closing;
 
-	public ChannelWrapper(ChannelHandlerContext ctx) {
-		this.ch = ctx.channel();
+	public ChannelWrapper(Channel c, Protocol p, NetworkState ns) {
+		this.ch = c;
 		this.remoteAddress = (InetSocketAddress) this.ch.remoteAddress();
+		this.protocol = p;
+		this.networkState = ns;
 	}
 
 	public void setNetworkState(NetworkState state) {
 		if (getProtocol().isLegacy() && state != NetworkState.LEGACY)
 			throw new RuntimeException("You can't use NetworkState other than Legacy, when protocol is legacy itself");
 
+		this.networkState = state;
+		
 		(
 			(PacketDecoder) ch
 			.pipeline()
@@ -51,13 +55,6 @@ public class ChannelWrapper {
 			.pipeline()
 			.get(PipelineUtil.PACKET_ENC)
 		).setNetworkState(state);
-	}
-
-	public NetworkState getConnectionState() {
-		return ch
-				.pipeline()
-				.get(PacketEncoder.class)
-				.getNetworkState();
 	}
 
 	public void setProtocol(@NonNull Protocol protocol) {
@@ -72,24 +69,47 @@ public class ChannelWrapper {
 
 		dec.setProtocol(protocol);
 		enc.setProtocol(protocol);
+		
+		this.protocol = protocol;
 
 		if (BungeeCord.getInstance().getConfig().isProtocolChange())
 			BungeeCord.getInstance().getLogger().info("[" + getRemoteAddress() + "] "
 					+ "Done changing protocol of cw, from: " + was.name() + ", to: " + protocol.name());
 	}
-
+	
 	public Protocol getProtocol() {
-		Preconditions.checkArgument(ch.isActive(), "Channel is closed already");
-		return ch
+		/*PacketEncoder enc = ch
+			.pipeline()
+			.get(PacketEncoder.class);
+		
+		if(enc == null) {
+			if(ch.isActive())
+				throw new NullPointerException();
+			else 
+				throw new ChannelClosedException(this);
+		}
+		
+		return enc.getProtocol();*/
+		return protocol;
+	}
+	
+	public NetworkState getConnectionState() {
+		/*PacketEncoder enc = ch
 				.pipeline()
-				.get(PacketEncoder.class)
-				.getProtocol();
+				.get(PacketEncoder.class);
+			
+		if(enc == null) {
+			if(ch.isActive())
+				throw new NullPointerException();
+			else 
+				throw new ChannelClosedException(this);
+		}
+			
+		return enc.getNetworkState();*/
+		return networkState;
 	}
 
 	public void write(Object packet) {
-		if (closed)
-			return;
-
 		ch.writeAndFlush(packet, ch.voidPromise());
 	}
 

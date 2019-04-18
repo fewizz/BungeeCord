@@ -49,7 +49,6 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
-import io.netty.util.AttributeKey;
 import io.netty.util.ResourceLeakDetector;
 import lombok.Getter;
 import lombok.Setter;
@@ -93,10 +92,12 @@ import net.md_5.bungee.log.BungeeLogger;
 import net.md_5.bungee.log.LoggingOutputStream;
 import net.md_5.bungee.modern.ModernInitialHandler;
 import net.md_5.bungee.module.ModuleManager;
+import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.NettyUtil;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.NetworkState;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.Side;
@@ -109,652 +110,586 @@ import net.md_5.bungee.util.CaseInsensitiveMap;
 /**
  * Main BungeeCord proxy class.
  */
-public class BungeeCord extends ProxyServer
-{
+public class BungeeCord extends ProxyServer {
 
-    /**
-     * Current operation state.
-     */
-    public volatile boolean isRunning;
-    /**
-     * Configuration.
-     */
-    @Getter
-    public final Configuration config = new Configuration();
-    /**
-     * Localization bundle.
-     */
-    private ResourceBundle baseBundle;
-    private ResourceBundle customBundle;
-    public EventLoopGroup eventLoops;
-    /**
-     * locations.yml save thread.
-     */
-    //private final Timer saveThread = new Timer( "Reconnect Saver" );
-    private Timer metricsThread;
-    /**
-     * Server socket listener.
-     */
-    private final Collection<Channel> listeners = new HashSet<>();
-    /**
-     * Fully qualified connections.
-     */
-    private final Map<String, UserConnection<?>> connections = new CaseInsensitiveMap<>();
-    // Used to help with packet rewriting
-    private final Map<UUID, UserConnection<?>> connectionsByOfflineUUID = new HashMap<>();
-    private final Map<UUID, UserConnection<?>> connectionsByUUID = new HashMap<>();
-    private final ReadWriteLock connectionLock = new ReentrantReadWriteLock();
-    /**
-     * Plugin manager.
-     */
-    @Getter
-    public final PluginManager pluginManager;
-    @Getter
-    @Setter
-    private ReconnectHandler reconnectHandler;
-    @Getter
-    @Setter
-    private ConfigurationAdapter configurationAdapter = new YamlConfig();
-    private final Collection<String> pluginChannels = new HashSet<>();
-    @Getter
-    private final File pluginsFolder = new File( "plugins" );
-    @Getter
-    private final BungeeScheduler scheduler = new BungeeScheduler();
-    @Getter
-    private final Logger logger;
-    public final Gson gson = new GsonBuilder()
-            .registerTypeAdapter( BaseComponent.class, new ComponentSerializer() )
-            .registerTypeAdapter( TextComponent.class, new TextComponentSerializer() )
-            .registerTypeAdapter( TranslatableComponent.class, new TranslatableComponentSerializer() )
-            .registerTypeAdapter( KeybindComponent.class, new KeybindComponentSerializer() )
-            .registerTypeAdapter( ScoreComponent.class, new ScoreComponentSerializer() )
-            .registerTypeAdapter( SelectorComponent.class, new SelectorComponentSerializer() )
-            .registerTypeAdapter( ServerPing.PlayerInfo.class, new PlayerInfoSerializer( Protocol.MC_1_7_6 ) )
-            .registerTypeAdapter( Favicon.class, Favicon.getFaviconTypeAdapter() ).create();
-    public final Gson gsonLegacy = new GsonBuilder()
-            .registerTypeAdapter( BaseComponent.class, new ComponentSerializer() )
-            .registerTypeAdapter( TextComponent.class, new TextComponentSerializer() )
-            .registerTypeAdapter( TranslatableComponent.class, new TranslatableComponentSerializer() )
-            .registerTypeAdapter( KeybindComponent.class, new KeybindComponentSerializer() )
-            .registerTypeAdapter( ScoreComponent.class, new ScoreComponentSerializer() )
-            .registerTypeAdapter( SelectorComponent.class, new SelectorComponentSerializer() )
-            .registerTypeAdapter( ServerPing.PlayerInfo.class, new PlayerInfoSerializer( Protocol.MC_1_7_2 ) )
-            .registerTypeAdapter( Favicon.class, Favicon.getFaviconTypeAdapter() ).create();
-    @Getter
-    private ConnectionThrottle connectionThrottle;
-    private final ModuleManager moduleManager = new ModuleManager();
-    public static final AttributeKey<ListenerInfo> LISTENER = AttributeKey.valueOf( "ListerInfo" );
-    
-    {
-        // TODO: Proper fallback when we interface the manager
-        registerChannel( "BungeeCord" );
-    }
+	/**
+	 * Current operation state.
+	 */
+	public volatile boolean isRunning;
+	/**
+	 * Configuration.
+	 */
+	@Getter
+	public final Configuration config = new Configuration();
+	/**
+	 * Localization bundle.
+	 */
+	private ResourceBundle baseBundle;
+	private ResourceBundle customBundle;
+	public EventLoopGroup eventLoops;
+	/**
+	 * locations.yml save thread.
+	 */
+	// private final Timer saveThread = new Timer( "Reconnect Saver" );
+	private Timer metricsThread;
+	/**
+	 * Server socket listener.
+	 */
+	private final Collection<Channel> listeners = new HashSet<>();
+	/**
+	 * Fully qualified connections.
+	 */
+	private final Map<String, UserConnection<?>> connections = new CaseInsensitiveMap<>();
+	// Used to help with packet rewriting
+	private final Map<UUID, UserConnection<?>> connectionsByOfflineUUID = new HashMap<>();
+	private final Map<UUID, UserConnection<?>> connectionsByUUID = new HashMap<>();
+	private final ReadWriteLock connectionLock = new ReentrantReadWriteLock();
+	/**
+	 * Plugin manager.
+	 */
+	@Getter
+	public final PluginManager pluginManager;
+	@Getter
+	@Setter
+	private ReconnectHandler reconnectHandler;
+	@Getter
+	@Setter
+	private ConfigurationAdapter configurationAdapter = new YamlConfig();
+	private final Collection<String> pluginChannels = new HashSet<>();
+	@Getter
+	private final File pluginsFolder = new File("plugins");
+	@Getter
+	private final BungeeScheduler scheduler = new BungeeScheduler();
+	@Getter
+	private final Logger logger;
+	public final Gson gson = new GsonBuilder().registerTypeAdapter(BaseComponent.class, new ComponentSerializer())
+			.registerTypeAdapter(TextComponent.class, new TextComponentSerializer())
+			.registerTypeAdapter(TranslatableComponent.class, new TranslatableComponentSerializer())
+			.registerTypeAdapter(KeybindComponent.class, new KeybindComponentSerializer())
+			.registerTypeAdapter(ScoreComponent.class, new ScoreComponentSerializer())
+			.registerTypeAdapter(SelectorComponent.class, new SelectorComponentSerializer())
+			.registerTypeAdapter(ServerPing.PlayerInfo.class, new PlayerInfoSerializer(Protocol.MC_1_7_6))
+			.registerTypeAdapter(Favicon.class, Favicon.getFaviconTypeAdapter()).create();
+	public final Gson gsonLegacy = new GsonBuilder().registerTypeAdapter(BaseComponent.class, new ComponentSerializer())
+			.registerTypeAdapter(TextComponent.class, new TextComponentSerializer())
+			.registerTypeAdapter(TranslatableComponent.class, new TranslatableComponentSerializer())
+			.registerTypeAdapter(KeybindComponent.class, new KeybindComponentSerializer())
+			.registerTypeAdapter(ScoreComponent.class, new ScoreComponentSerializer())
+			.registerTypeAdapter(SelectorComponent.class, new SelectorComponentSerializer())
+			.registerTypeAdapter(ServerPing.PlayerInfo.class, new PlayerInfoSerializer(Protocol.MC_1_7_2))
+			.registerTypeAdapter(Favicon.class, Favicon.getFaviconTypeAdapter()).create();
+	@Getter
+	private ConnectionThrottle connectionThrottle;
+	private final ModuleManager moduleManager = new ModuleManager();
 
-    public static BungeeCord getInstance()
-    {
-        return (BungeeCord) ProxyServer.getInstance();
-    }
+	{
+		// TODO: Proper fallback when we interface the manager
+		registerChannel("BungeeCord");
+	}
 
-    @SuppressFBWarnings("DM_DEFAULT_ENCODING")
-    public BungeeCord() throws IOException
-    {
-        // Java uses ! to indicate a resource inside of a jar/zip/other container. Running Bungee from within a directory that has a ! will cause this to muck up.
-        Preconditions.checkState( new File( "." ).getAbsolutePath().indexOf( '!' ) == -1, "Cannot use BungeeCord in directory with ! in path." );
+	public static BungeeCord getInstance() {
+		return (BungeeCord) ProxyServer.getInstance();
+	}
 
-        System.setSecurityManager( new BungeeSecurityManager() );
+	@SuppressFBWarnings("DM_DEFAULT_ENCODING")
+	public BungeeCord() throws IOException {
+		// Java uses ! to indicate a resource inside of a jar/zip/other container.
+		// Running Bungee from within a directory that has a ! will cause this to muck
+		// up.
+		Preconditions.checkState(new File(".").getAbsolutePath().indexOf('!') == -1,
+				"Cannot use BungeeCord in directory with ! in path.");
 
-        try {
-            baseBundle = ResourceBundle.getBundle( "messages" );
-        } catch ( MissingResourceException ex ) {
-            baseBundle = ResourceBundle.getBundle( "messages", Locale.ENGLISH );
-        }
-        reloadMessages();
+		System.setSecurityManager(new BungeeSecurityManager());
 
-        // This is a workaround for quite possibly the weirdest bug I have ever encountered in my life!
-        // When jansi attempts to extract its natives, by default it tries to extract a specific version,
-        // using the loading class's implementation version. Normally this works completely fine,
-        // however when on Windows certain characters such as - and : can trigger special behaviour.
-        // Furthermore this behaviour only occurs in specific combinations due to the parsing done by jansi.
-        // For example test-test works fine, but test-test-test does not! In order to avoid this all together but
-        // still keep our versions the same as they were, we set the override property to the essentially garbage version
-        // BungeeCord. This version is only used when extracting the libraries to their temp folder.
-        System.setProperty( "library.jansi.version", "BungeeCord" );
+		try {
+			baseBundle = ResourceBundle.getBundle("messages");
+		} catch (MissingResourceException ex) {
+			baseBundle = ResourceBundle.getBundle("messages", Locale.ENGLISH);
+		}
+		reloadMessages();
 
-        AnsiConsole.systemInstall();
+		// This is a workaround for quite possibly the weirdest bug I have ever
+		// encountered in my life!
+		// When jansi attempts to extract its natives, by default it tries to extract a
+		// specific version,
+		// using the loading class's implementation version. Normally this works
+		// completely fine,
+		// however when on Windows certain characters such as - and : can trigger
+		// special behaviour.
+		// Furthermore this behaviour only occurs in specific combinations due to the
+		// parsing done by jansi.
+		// For example test-test works fine, but test-test-test does not! In order to
+		// avoid this all together but
+		// still keep our versions the same as they were, we set the override property
+		// to the essentially garbage version
+		// BungeeCord. This version is only used when extracting the libraries to their
+		// temp folder.
+		System.setProperty("library.jansi.version", "BungeeCord");
 
-        logger = new BungeeLogger( "BungeeCord", "proxy.log" );
-        System.setErr( new PrintStream( new LoggingOutputStream( logger, Level.SEVERE ), true ) );
-        System.setOut( new PrintStream( new LoggingOutputStream( logger, Level.INFO ), true ) );
+		AnsiConsole.systemInstall();
 
-        pluginManager = new PluginManager( this );
-        getPluginManager().registerCommand( null, new CommandReload() );
-        getPluginManager().registerCommand( null, new CommandEnd() );
-        getPluginManager().registerCommand( null, new CommandIP() );
-        getPluginManager().registerCommand( null, new CommandBungee() );
-        getPluginManager().registerCommand( null, new CommandPerms() );
+		logger = new BungeeLogger("BungeeCord", "proxy.log");
+		System.setErr(new PrintStream(new LoggingOutputStream(logger, Level.SEVERE), true));
+		System.setOut(new PrintStream(new LoggingOutputStream(logger, Level.INFO), true));
 
-        if ( !Boolean.getBoolean( "net.md_5.bungee.native.disable" ) ) {
-            if ( EncryptionUtil.nativeFactory.load() )
-            	logger.info( "Using mbed TLS based native cipher." );
-            else
-                logger.info( "Using standard Java JCE cipher." );
-            if ( CompressFactory.zlib.load() )
-                logger.info( "Using zlib based native compressor." );
-            else
-                logger.info( "Using standard Java compressor." );
-        }
-    }
+		pluginManager = new PluginManager(this);
+		getPluginManager().registerCommand(null, new CommandReload());
+		getPluginManager().registerCommand(null, new CommandEnd());
+		getPluginManager().registerCommand(null, new CommandIP());
+		getPluginManager().registerCommand(null, new CommandBungee());
+		getPluginManager().registerCommand(null, new CommandPerms());
 
-    /**
-     * Start this proxy instance by loading the configuration, plugins and
-     * starting the connect thread.
-     *
-     * @throws Exception
-     */
-    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
-    public void start() throws Exception {
-        System.setProperty( "io.netty.selectorAutoRebuildThreshold", "0" ); // Seems to cause Bungee to stop accepting connections
-        if ( System.getProperty( "io.netty.leakDetectionLevel" ) == null )
-            ResourceLeakDetector.setLevel( ResourceLeakDetector.Level.DISABLED ); // Eats performance
-        
-        ThreadFactory tf = new ThreadFactoryBuilder().setNameFormat( "Netty IO Thread #%1$d" ).build();
-        eventLoops = NettyUtil.bestEventLoopGroup(0, tf);
+		if (!Boolean.getBoolean("net.md_5.bungee.native.disable")) {
+			if (EncryptionUtil.nativeFactory.load())
+				logger.info("Using mbed TLS based native cipher.");
+			else
+				logger.info("Using standard Java JCE cipher.");
+			if (CompressFactory.zlib.load())
+				logger.info("Using zlib based native compressor.");
+			else
+				logger.info("Using standard Java compressor.");
+		}
+	}
 
-        File moduleDirectory = new File( "modules" );
-        moduleManager.load( this, moduleDirectory );
-        pluginManager.detectPlugins( moduleDirectory );
+	/**
+	 * Start this proxy instance by loading the configuration, plugins and starting
+	 * the connect thread.
+	 *
+	 * @throws Exception
+	 */
+	@SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
+	public void start() throws Exception {
+		System.setProperty("io.netty.selectorAutoRebuildThreshold", "0"); // Seems to cause Bungee to stop accepting
+																			// connections
+		if (System.getProperty("io.netty.leakDetectionLevel") == null)
+			ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED); // Eats performance
 
-        pluginsFolder.mkdir();
-        pluginManager.detectPlugins( pluginsFolder );
+		ThreadFactory tf = new ThreadFactoryBuilder().setNameFormat("Netty IO Thread #%1$d").build();
+		eventLoops = NettyUtil.bestEventLoopGroup(0, tf);
 
-        pluginManager.loadPlugins();
-        config.load();
+		File moduleDirectory = new File("modules");
+		moduleManager.load(this, moduleDirectory);
+		pluginManager.detectPlugins(moduleDirectory);
 
-        if ( config.isForgeSupport() ) {
-            registerChannel( ForgeConstants.FML_TAG );
-            registerChannel( ForgeConstants.FML_HANDSHAKE_TAG );
-            registerChannel( ForgeConstants.FORGE_REGISTER );
+		pluginsFolder.mkdir();
+		pluginManager.detectPlugins(pluginsFolder);
 
-            getLogger().warning( "MinecraftForge support is currently unmaintained and may have unresolved issues. Please use at your own risk." );
-        }
+		pluginManager.loadPlugins();
+		config.load();
 
-        isRunning = true;
+		if (config.isForgeSupport()) {
+			registerChannel(ForgeConstants.FML_TAG);
+			registerChannel(ForgeConstants.FML_HANDSHAKE_TAG);
+			registerChannel(ForgeConstants.FORGE_REGISTER);
 
-        pluginManager.enablePlugins();
+			getLogger().warning(
+					"MinecraftForge support is currently unmaintained and may have unresolved issues. Please use at your own risk.");
+		}
 
-        if ( config.getThrottle() > 0 )
-            connectionThrottle = new ConnectionThrottle( config.getThrottle(), config.getThrottleLimit() );
-        
-        startListeners();
+		isRunning = true;
 
-        /*saveThread.scheduleAtFixedRate( new TimerTask() {
-            @Override
-            public void run() {
-                if ( getReconnectHandler() != null )
-                    getReconnectHandler().save();
-            }
-        }, 0, TimeUnit.MINUTES.toMillis( 5 ) );*/
-        
-        if(config.isMetrics()) {
-        	metricsThread = new Timer( "Metrics Thread" );
-        	metricsThread.scheduleAtFixedRate( new Metrics(), 0, TimeUnit.MINUTES.toMillis( Metrics.PING_INTERVAL ) );
-        }
-    }
+		pluginManager.enablePlugins();
 
-    public void startListeners()
-    {
-        for ( final ListenerInfo info : config.getListeners() )
-            listenTo(info);
-    }
-    
-    private void listenTo(final ListenerInfo info) {
-    	if (info.isProxyProtocol()) {
-            getLogger().log(Level.WARNING, "Using PROXY protocol for listener {0}, please ensure this listener is adequately firewalled.", info.getHost());
-            
-            if(connectionThrottle != null) {
-                connectionThrottle = null;
-                getLogger().log(Level.WARNING, "Since PROXY protocol is in use, internal connection throttle has been disabled.");
-            }
-    	}
-        new ServerBootstrap()
-            .channel(NettyUtil.bestServerSocketChannel())
-            .option(ChannelOption.SO_REUSEADDR, true) // TODO: Move this elsewhere!
-            .childAttr(LISTENER, info)
-            .childHandler(new ChannelInitializer<Channel>() {
-				@Override
-				protected void initChannel(Channel ch) throws Exception {
-					PipelineUtil.basicConfig(ch);
-					
-					ch.pipeline().addFirst(new ChannelInboundHandlerAdapter() {
-						public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-							ByteBuf in = (ByteBuf) msg;
-					        if (!in.isReadable() )
-					            return;
+		if (config.getThrottle() > 0)
+			connectionThrottle = new ConnectionThrottle(config.getThrottle(), config.getThrottleLimit());
 
-					        ProtocolGen gen = ProtocolGen.POST_NETTY;
-					    	// modern's handshake size is not eq. to these numbers, so that's ok
-					        short packetID = in.getUnsignedByte(in.readerIndex());
-					        if(packetID == 0xFE || packetID == 0x02) { // Legacy status request
-					        	gen = ProtocolGen.PRE_NETTY;
-					        }
-					        
-					        Protocol pv = gen == ProtocolGen.POST_NETTY ? getProtocolVersion() : Protocol.MC_1_6_4;
-					        
-					        if(config.isInitialProtocol())
-								logger.info("[" + ctx.channel().remoteAddress() + "] Connected to Bungee, identified as " + pv.name() );
-							PipelineUtil.packetHandlers(ch, pv, Side.CLIENT);
-							HandlerBoss boss = new HandlerBoss(
-									pv.isModern() ? new ModernInitialHandler(info)
-											:
-											new LegacyInitialHandler(info)
-										);
-							boss.channelActive(ctx);
-							
-							ch.pipeline().addLast(PipelineUtil.BOSS, boss); 
-							PipelineUtil.readTimeoutHandler(ch);
-					        
-					        ctx.pipeline().remove(this);
-					        ctx.channel().pipeline().fireChannelRead(msg);
-						};
-					});
-				}
-            } )
-        	.group(eventLoops)
-            .localAddress(info.getHost())
-            .bind()
-            .addListener((ChannelFuture future) -> {
-                if (future.isSuccess()) {
-                    listeners.add( future.channel() );
-                    getLogger().log( Level.INFO, "Listening on {0}", info.getHost());
-                } 
-                else
-                    getLogger().log( Level.WARNING, "Could not bind to host " + info.getHost(), future.cause());
-            });
+		startListeners();
 
-        if (!info.isQueryEnabled())
-        	return;
-        
-        new RemoteQuery(this, info).start(
-			NettyUtil.bestDatagramChannel(),
-			new InetSocketAddress( info.getHost().getAddress(), info.getQueryPort()),
-			eventLoops,
-			(ChannelFuture future) -> {
-				if ( future.isSuccess() ) {
-                    listeners.add( future.channel() );
-                    getLogger().log( Level.INFO, "Started query on {0}", future.channel().localAddress());
-				} 
-                else
-                	getLogger().log( Level.WARNING, "Could not bind to host " + info.getHost(), future.cause());
+		if (config.isMetrics()) {
+			metricsThread = new Timer("Metrics Thread");
+			metricsThread.scheduleAtFixedRate(new Metrics(), 0, TimeUnit.MINUTES.toMillis(Metrics.PING_INTERVAL));
+		}
+	}
+
+	public void startListeners() {
+		for (final ListenerInfo info : config.getListeners())
+			listenTo(info);
+	}
+
+	private void listenTo(final ListenerInfo info) {
+		if (info.isProxyProtocol()) {
+			getLogger().log(Level.WARNING,
+					"Using PROXY protocol for listener {0}, please ensure this listener is adequately firewalled.",
+					info.getHost());
+
+			if (connectionThrottle != null) {
+				connectionThrottle = null;
+				getLogger().log(Level.WARNING,
+						"Since PROXY protocol is in use, internal connection throttle has been disabled.");
 			}
-		);
-    }
+		}
+		new ServerBootstrap().channel(NettyUtil.bestServerSocketChannel()).option(ChannelOption.SO_REUSEADDR, true) // TODO:
+																													// Move
+																													// this
+																													// elsewhere!
+				.childAttr(PipelineUtil.LISTENER, info).childHandler(new ChannelInitializer<Channel>() {
+					@Override
+					protected void initChannel(Channel ch) throws Exception {
+						PipelineUtil.basicConfig(ch);
 
-    public void stopListeners()
-    {
-        for ( Channel listener : listeners ) {
-            getLogger().log( Level.INFO, "Closing listener {0}", listener );
-            try {
-                listener.close().syncUninterruptibly();
-            } catch ( ChannelException ex ) {
-                getLogger().severe( "Could not close listen thread" );
-            }
-        }
-        listeners.clear();
-    }
+						ch.pipeline().addFirst(new ChannelInboundHandlerAdapter() {
+							public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+								ByteBuf in = (ByteBuf) msg;
+								if (!in.isReadable())
+									return;
 
-    @Override
-    public void stop()
-    {
-        stop( getTranslation( "restart" ) );
-    }
+								ProtocolGen gen = ProtocolGen.POST_NETTY;
+								// modern's handshake size is not eq. to these numbers, so that's ok
+								short packetID = in.getUnsignedByte(in.readerIndex());
+								if (packetID == 0xFE || packetID == 0x02) { // Legacy status request
+									gen = ProtocolGen.PRE_NETTY;
+								}
 
-    @Override
-    public synchronized void stop(final String reason)
-    {
-        if ( !isRunning )
-            return;
-        isRunning = false;
+								Protocol pv = gen == ProtocolGen.POST_NETTY ? getProtocolVersion() : Protocol.MC_1_6_4;
 
-        new Thread(() -> {
-            stopListeners();
-            getLogger().info( "Closing pending connections" );
+								if (config.isInitialProtocol())
+									logger.info("[" + ctx.channel().remoteAddress()
+											+ "] Connected to Bungee, identified as " + pv.name());
+								PipelineUtil.packetHandlers(ch, pv, Side.CLIENT);
+								HandlerBoss boss = new HandlerBoss(
+										pv.isModern() ? new ModernInitialHandler(info) : new LegacyInitialHandler(info),
+										new ChannelWrapper(ctx.channel(), pv,
+												pv.isModern() ? NetworkState.HANDSHAKE : NetworkState.LEGACY));
+								boss.channelActive(ctx);
 
-            connectionLock.readLock().lock();
-            try
-            {
-                getLogger().log( Level.INFO, "Disconnecting {0} connections", connections.size() );
-                for ( UserConnection<?> user : connections.values() )
-                {
-                    user.disconnect( reason );
-                }
-            } finally
-            {
-                connectionLock.readLock().unlock();
-            }
+								ch.pipeline().addLast(PipelineUtil.BOSS, boss);
+								PipelineUtil.readTimeoutHandler(ch);
 
-            try
-            {
-                Thread.sleep( 500 );
-            } catch ( InterruptedException ex )
-            {
-            }
+								ctx.pipeline().remove(this);
+								ctx.channel().pipeline().fireChannelRead(msg);
+							};
+						});
+					}
+				}).group(eventLoops).localAddress(info.getHost()).bind().addListener((ChannelFuture future) -> {
+					if (future.isSuccess()) {
+						listeners.add(future.channel());
+						getLogger().log(Level.INFO, "Listening on {0}", info.getHost());
+					} else
+						getLogger().log(Level.WARNING, "Could not bind to host " + info.getHost(), future.cause());
+				});
 
-            if ( reconnectHandler != null )
-            {
-                getLogger().info( "Saving reconnect locations" );
-                reconnectHandler.save();
-                reconnectHandler.close();
-            }
-            //saveThread.cancel();
-            if(metricsThread != null)
-            	metricsThread.cancel();
+		if (!info.isQueryEnabled())
+			return;
 
-            // TODO: Fix this shit
-            getLogger().info( "Disabling plugins" );
-            for ( Plugin plugin : Lists.reverse( new ArrayList<>( pluginManager.getPlugins() ) ) )
-            {
-                try
-                {
-                    plugin.onDisable();
-                    for ( Handler handler : plugin.getLogger().getHandlers() )
-                    {
-                        handler.close();
-                    }
-                } catch ( Throwable t )
-                {
-                    getLogger().log( Level.SEVERE, "Exception disabling plugin " + plugin.getDescription().getName(), t );
-                }
-                getScheduler().cancel( plugin );
-                plugin.getExecutorService().shutdownNow();
-            }
+		new RemoteQuery(this, info).start(NettyUtil.bestDatagramChannel(),
+				new InetSocketAddress(info.getHost().getAddress(), info.getQueryPort()), eventLoops,
+				(ChannelFuture future) -> {
+					if (future.isSuccess()) {
+						listeners.add(future.channel());
+						getLogger().log(Level.INFO, "Started query on {0}", future.channel().localAddress());
+					} else
+						getLogger().log(Level.WARNING, "Could not bind to host " + info.getHost(), future.cause());
+				});
+	}
 
-            getLogger().info( "Closing IO threads" );
-            
-            try
-            {
-            	eventLoops.shutdownGracefully().await();
-            } catch ( InterruptedException ex ) {}
+	public void stopListeners() {
+		for (Channel listener : listeners) {
+			getLogger().log(Level.INFO, "Closing listener {0}", listener);
+			try {
+				listener.close().syncUninterruptibly();
+			} catch (ChannelException ex) {
+				getLogger().severe("Could not close listen thread");
+			}
+		}
+		listeners.clear();
+	}
 
-            getLogger().info( "Thank you and goodbye" );
-            // Need to close loggers after last message!
-            for ( Handler handler : getLogger().getHandlers() )
-                handler.close();
-            
-            System.exit( 0 );
-        }, "Shutdown Thread").start();
-    }
+	@Override
+	public void stop() {
+		stop(getTranslation("restart"));
+	}
 
-    /**
-     * Broadcasts a packet to all clients that is connected to this instance.
-     *
-     * @param packet the packet to send
-     */
-    public void broadcast(DefinedPacket packet)
-    {
-        connectionLock.readLock().lock();
-        try
-        {
-            for ( UserConnection<?> con : connections.values() )
-            {
-                con.unsafe().sendPacket( packet );
-            }
-        } finally
-        {
-            connectionLock.readLock().unlock();
-        }
-    }
+	@Override
+	public synchronized void stop(final String reason) {
+		if (!isRunning)
+			return;
+		isRunning = false;
 
-    @Override
-    public String getName()
-    {
-        return config.getCustomServerName();
-    }
+		new Thread(() -> {
+			stopListeners();
+			getLogger().info("Closing pending connections");
 
-    @Override
-    public String getVersion()
-    {
-        return ( BungeeCord.class.getPackage().getImplementationVersion() == null ) ? "unknown" : BungeeCord.class.getPackage().getImplementationVersion();
-    }
+			connectionLock.readLock().lock();
+			try {
+				getLogger().log(Level.INFO, "Disconnecting {0} connections", connections.size());
+				for (UserConnection<?> user : connections.values()) {
+					user.disconnect(reason);
+				}
+			} finally {
+				connectionLock.readLock().unlock();
+			}
 
-    public void reloadMessages()
-    {
-        File file = new File( "messages.properties" );
-        if ( file.isFile() )
-        {
-            try ( FileReader rd = new FileReader( file ) )
-            {
-                customBundle = new PropertyResourceBundle( rd );
-            } catch ( IOException ex )
-            {
-                getLogger().log( Level.SEVERE, "Could not load custom messages.properties", ex );
-            }
-        }
-    }
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException ex) {
+			}
 
-    @Override
-    public String getTranslation(String name, Object... args)
-    {
-        String translation = "<translation '" + name + "' missing>";
-        try
-        {
-            translation = MessageFormat.format( customBundle != null && customBundle.containsKey( name ) ? customBundle.getString( name ) : baseBundle.getString( name ), args );
-        } catch ( MissingResourceException ex )
-        {
-        }
-        return translation;
-    }
+			if (reconnectHandler != null) {
+				getLogger().info("Saving reconnect locations");
+				reconnectHandler.save();
+				reconnectHandler.close();
+			}
+			// saveThread.cancel();
+			if (metricsThread != null)
+				metricsThread.cancel();
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public Collection<ProxiedPlayer> getPlayers()
-    {
-        connectionLock.readLock().lock();
-        try
-        {
-            return Collections.unmodifiableCollection( new HashSet( connections.values() ) );
-        } finally
-        {
-            connectionLock.readLock().unlock();
-        }
-    }
+			// TODO: Fix this shit
+			getLogger().info("Disabling plugins");
+			for (Plugin plugin : Lists.reverse(new ArrayList<>(pluginManager.getPlugins()))) {
+				try {
+					plugin.onDisable();
+					for (Handler handler : plugin.getLogger().getHandlers()) {
+						handler.close();
+					}
+				} catch (Throwable t) {
+					getLogger().log(Level.SEVERE, "Exception disabling plugin " + plugin.getDescription().getName(), t);
+				}
+				getScheduler().cancel(plugin);
+				plugin.getExecutorService().shutdownNow();
+			}
 
-    @Override
-    public int getOnlineCount()
-    {
-        return connections.size();
-    }
+			getLogger().info("Closing IO threads");
 
-    @Override
-    public ProxiedPlayer getPlayer(String name)
-    {
-        connectionLock.readLock().lock();
-        try
-        {
-            return connections.get( name );
-        } finally
-        {
-            connectionLock.readLock().unlock();
-        }
-    }
+			try {
+				eventLoops.shutdownGracefully().await();
+			} catch (InterruptedException ex) {
+			}
 
-    public UserConnection<?> getPlayerByOfflineUUID(UUID name)
-    {
-        connectionLock.readLock().lock();
-        try
-        {
-            return connectionsByOfflineUUID.get( name );
-        } finally
-        {
-            connectionLock.readLock().unlock();
-        }
-    }
+			getLogger().info("Thank you and goodbye");
+			// Need to close loggers after last message!
+			for (Handler handler : getLogger().getHandlers())
+				handler.close();
 
-    @Override
-    public ProxiedPlayer getPlayer(UUID uuid)
-    {
-        connectionLock.readLock().lock();
-        try
-        {
-            return connectionsByUUID.get( uuid );
-        } finally
-        {
-            connectionLock.readLock().unlock();
-        }
-    }
+			System.exit(0);
+		}, "Shutdown Thread").start();
+	}
 
-    @Override
-    public Map<String, ServerInfo> getServers()
-    {
-        return config.getServers();
-    }
+	/**
+	 * Broadcasts a packet to all clients that is connected to this instance.
+	 *
+	 * @param packet the packet to send
+	 */
+	public void broadcast(DefinedPacket packet) {
+		connectionLock.readLock().lock();
+		try {
+			for (UserConnection<?> con : connections.values()) {
+				con.unsafe().sendPacket(packet);
+			}
+		} finally {
+			connectionLock.readLock().unlock();
+		}
+	}
 
-    @Override
-    public ServerInfo getServerInfo(String name)
-    {
-        return getServers().get( name );
-    }
+	@Override
+	public String getName() {
+		return config.getCustomServerName();
+	}
 
-    @Override
-    @Synchronized("pluginChannels")
-    public void registerChannel(String channel)
-    {
-        pluginChannels.add( channel );
-    }
+	@Override
+	public String getVersion() {
+		return (BungeeCord.class.getPackage().getImplementationVersion() == null) ? "unknown"
+				: BungeeCord.class.getPackage().getImplementationVersion();
+	}
 
-    @Override
-    @Synchronized("pluginChannels")
-    public void unregisterChannel(String channel)
-    {
-        pluginChannels.remove( channel );
-    }
+	public void reloadMessages() {
+		File file = new File("messages.properties");
+		if (file.isFile()) {
+			try (FileReader rd = new FileReader(file)) {
+				customBundle = new PropertyResourceBundle(rd);
+			} catch (IOException ex) {
+				getLogger().log(Level.SEVERE, "Could not load custom messages.properties", ex);
+			}
+		}
+	}
 
-    @Override
-    @Synchronized("pluginChannels")
-    public Collection<String> getChannels()
-    {
-        return Collections.unmodifiableCollection( pluginChannels );
-    }
+	@Override
+	public String getTranslation(String name, Object... args) {
+		String translation = "<translation '" + name + "' missing>";
+		try {
+			translation = MessageFormat
+					.format(customBundle != null && customBundle.containsKey(name) ? customBundle.getString(name)
+							: baseBundle.getString(name), args);
+		} catch (MissingResourceException ex) {
+		}
+		return translation;
+	}
 
-    public PluginMessage registerChannels(Protocol protocolVersion)
-    {
-        if ( protocolVersion.newerOrEqual(Protocol.MC_1_13_0) )
-        {
-            return new PluginMessage( "minecraft:register", Util.format( Iterables.transform( pluginChannels, PluginMessage.MODERNISE ), "\00" ).getBytes( Charsets.UTF_8 ), false );
-        }
+	@Override
+	@SuppressWarnings("unchecked")
+	public Collection<ProxiedPlayer> getPlayers() {
+		connectionLock.readLock().lock();
+		try {
+			return Collections.unmodifiableCollection(new HashSet(connections.values()));
+		} finally {
+			connectionLock.readLock().unlock();
+		}
+	}
 
-        return new PluginMessage( "REGISTER", Util.format( pluginChannels, "\00" ).getBytes( Charsets.UTF_8 ), false );
-    }
+	@Override
+	public int getOnlineCount() {
+		return connections.size();
+	}
 
-    @Override
-    public Protocol getProtocolVersion()
-    {
-    	return Protocol.VALUES[Protocol.VALUES.length - 1];
-    }
+	@Override
+	public ProxiedPlayer getPlayer(String name) {
+		connectionLock.readLock().lock();
+		try {
+			return connections.get(name);
+		} finally {
+			connectionLock.readLock().unlock();
+		}
+	}
 
-    @Override
-    public String getGameVersion()
-    {
-        String first = Protocol.VALUES[0].versions.get(0);
-        Protocol lastP = Protocol.VALUES[Protocol.VALUES.length - 1];
-        String last = lastP.versions.get(lastP.versions.size() - 1);
-        return first + " - " + last;
-    }
+	public UserConnection<?> getPlayerByOfflineUUID(UUID name) {
+		connectionLock.readLock().lock();
+		try {
+			return connectionsByOfflineUUID.get(name);
+		} finally {
+			connectionLock.readLock().unlock();
+		}
+	}
 
-    @Override
-    public ServerInfo constructServerInfo(String name, InetSocketAddress address, String motd, boolean restricted, Boolean ipForward, Boolean forgeSupport)
-    {
-        return new BungeeServerInfo( name, address, motd, restricted, ipForward, forgeSupport );
-    }
+	@Override
+	public ProxiedPlayer getPlayer(UUID uuid) {
+		connectionLock.readLock().lock();
+		try {
+			return connectionsByUUID.get(uuid);
+		} finally {
+			connectionLock.readLock().unlock();
+		}
+	}
 
-    @Override
-    public CommandSender getConsole()
-    {
-        return ConsoleCommandSender.getInstance();
-    }
+	@Override
+	public Map<String, ServerInfo> getServers() {
+		return config.getServers();
+	}
 
-    @Override
-    public void broadcast(String message)
-    {
-        broadcast( TextComponent.fromLegacyText( message ) );
-    }
+	@Override
+	public ServerInfo getServerInfo(String name) {
+		return getServers().get(name);
+	}
 
-    @Override
-    public void broadcast(BaseComponent... message)
-    {
-        getConsole().sendMessage( BaseComponent.toLegacyText( message ) );
-        broadcast( new Chat( ComponentSerializer.toString( message ) ) );
-    }
+	@Override
+	@Synchronized("pluginChannels")
+	public void registerChannel(String channel) {
+		pluginChannels.add(channel);
+	}
 
-    @Override
-    public void broadcast(BaseComponent message)
-    {
-        getConsole().sendMessage( message.toLegacyText() );
-        broadcast( new Chat( ComponentSerializer.toString( message ) ) );
-    }
+	@Override
+	@Synchronized("pluginChannels")
+	public void unregisterChannel(String channel) {
+		pluginChannels.remove(channel);
+	}
 
-    public void addConnection(UserConnection<?> con)
-    {
-        connectionLock.writeLock().lock();
-        try
-        {
-            connections.put( con.getName(), con );
-            connectionsByUUID.put( con.getUniqueId(), con );
-            connectionsByOfflineUUID.put( con.getPendingConnection().getOfflineId(), con );
-        } finally
-        {
-            connectionLock.writeLock().unlock();
-        }
-    }
+	@Override
+	@Synchronized("pluginChannels")
+	public Collection<String> getChannels() {
+		return Collections.unmodifiableCollection(pluginChannels);
+	}
 
-    public void removeConnection(UserConnection<?> con)
-    {
-        connectionLock.writeLock().lock();
-        try
-        {
-            // TODO See #1218
-            if ( connections.get( con.getName() ) == con )
-            {
-                connections.remove( con.getName() );
-                connectionsByUUID.remove( con.getUniqueId() );
-                connectionsByOfflineUUID.remove( con.getPendingConnection().getOfflineId() );
-            }
-        } finally
-        {
-            connectionLock.writeLock().unlock();
-        }
-    }
+	public PluginMessage registerChannels(Protocol protocolVersion) {
+		if (protocolVersion.newerOrEqual(Protocol.MC_1_13_0)) {
+			return new PluginMessage("minecraft:register",
+					Util.format(Iterables.transform(pluginChannels, PluginMessage.MODERNISE), "\00")
+							.getBytes(Charsets.UTF_8),
+					false);
+		}
 
-    @Override
-    public Collection<String> getDisabledCommands()
-    {
-        return config.getDisabledCommands();
-    }
+		return new PluginMessage("REGISTER", Util.format(pluginChannels, "\00").getBytes(Charsets.UTF_8), false);
+	}
 
-    @Override
-    public Collection<ProxiedPlayer> matchPlayer(final String partialName)
-    {
-        Preconditions.checkNotNull( partialName, "partialName" );
+	@Override
+	public Protocol getProtocolVersion() {
+		return Protocol.VALUES[Protocol.VALUES.length - 1];
+	}
 
-        ProxiedPlayer exactMatch = getPlayer( partialName );
-        if ( exactMatch != null )
-        {
-            return Collections.singleton( exactMatch );
-        }
+	@Override
+	public String getGameVersion() {
+		String first = Protocol.VALUES[0].versions.get(0);
+		Protocol lastP = Protocol.VALUES[Protocol.VALUES.length - 1];
+		String last = lastP.versions.get(lastP.versions.size() - 1);
+		return first + " - " + last;
+	}
 
-        return Sets.newHashSet( Iterables.filter( getPlayers(), new Predicate<ProxiedPlayer>()
-        {
+	@Override
+	public ServerInfo constructServerInfo(String name, InetSocketAddress address, String motd, boolean restricted,
+			Boolean ipForward, Boolean forgeSupport) {
+		return new BungeeServerInfo(name, address, motd, restricted, ipForward, forgeSupport);
+	}
 
-            @Override
-            public boolean apply(ProxiedPlayer input)
-            {
-                return ( input == null ) ? false : input.getName().toLowerCase( Locale.ROOT ).startsWith( partialName.toLowerCase( Locale.ROOT ) );
-            }
-        } ) );
-    }
+	@Override
+	public CommandSender getConsole() {
+		return ConsoleCommandSender.getInstance();
+	}
 
-    @Override
-    public Title createTitle()
-    {
-        return new BungeeTitle();
-    }
+	@Override
+	public void broadcast(String message) {
+		broadcast(TextComponent.fromLegacyText(message));
+	}
+
+	@Override
+	public void broadcast(BaseComponent... message) {
+		getConsole().sendMessage(BaseComponent.toLegacyText(message));
+		broadcast(new Chat(ComponentSerializer.toString(message)));
+	}
+
+	@Override
+	public void broadcast(BaseComponent message) {
+		getConsole().sendMessage(message.toLegacyText());
+		broadcast(new Chat(ComponentSerializer.toString(message)));
+	}
+
+	public void addConnection(UserConnection<?> con) {
+		connectionLock.writeLock().lock();
+		try {
+			connections.put(con.getName(), con);
+			connectionsByUUID.put(con.getUniqueId(), con);
+			connectionsByOfflineUUID.put(con.getPendingConnection().getOfflineId(), con);
+		} finally {
+			connectionLock.writeLock().unlock();
+		}
+	}
+
+	public void removeConnection(UserConnection<?> con) {
+		connectionLock.writeLock().lock();
+		try {
+			// TODO See #1218
+			if (connections.get(con.getName()) == con) {
+				connections.remove(con.getName());
+				connectionsByUUID.remove(con.getUniqueId());
+				connectionsByOfflineUUID.remove(con.getPendingConnection().getOfflineId());
+			}
+		} finally {
+			connectionLock.writeLock().unlock();
+		}
+	}
+
+	@Override
+	public Collection<String> getDisabledCommands() {
+		return config.getDisabledCommands();
+	}
+
+	@Override
+	public Collection<ProxiedPlayer> matchPlayer(final String partialName) {
+		Preconditions.checkNotNull(partialName, "partialName");
+
+		ProxiedPlayer exactMatch = getPlayer(partialName);
+		if (exactMatch != null) {
+			return Collections.singleton(exactMatch);
+		}
+
+		return Sets.newHashSet(Iterables.filter(getPlayers(), new Predicate<ProxiedPlayer>() {
+
+			@Override
+			public boolean apply(ProxiedPlayer input) {
+				return (input == null) ? false
+						: input.getName().toLowerCase(Locale.ROOT).startsWith(partialName.toLowerCase(Locale.ROOT));
+			}
+		}));
+	}
+
+	@Override
+	public Title createTitle() {
+		return new BungeeTitle();
+	}
 }

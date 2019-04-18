@@ -191,9 +191,8 @@ public interface ProxiedPlayer extends Connection, CommandSender
      * Get this connection's UUID, if set.
      *
      * @return the UUID
-     * @deprecated In favour of {@link #getUniqueId()}
+     * deprecated In favour of {@link #getUniqueId()}
      */
-    @Deprecated
     String getUUID();
 
     /**

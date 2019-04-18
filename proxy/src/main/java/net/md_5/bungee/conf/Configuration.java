@@ -107,7 +107,7 @@ public class Configuration implements ProxyConfig
         metrics = adapter.getBoolean( "metrics", metrics );
         logQueryErrors = adapter.getBoolean("log_query_errors", logQueryErrors);
 
-        disabledCommands = new CaseInsensitiveSet( (Collection<String>) adapter.getList( "disabled_commands", Arrays.asList( "disabledcommandhere" ) ) );
+        disabledCommands = new CaseInsensitiveSet(adapter.getList( "disabled_commands", Arrays.asList( "disabledcommandhere" ) ) );
         
         initialProtocol = adapter.getBoolean( "debug.initial_protocol", initialProtocol);
         protocolChange = adapter.getBoolean("debug.protocol_change", protocolChange);

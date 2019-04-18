@@ -130,7 +130,7 @@ public class BungeeServerInfo implements ServerInfo
         ping( callback, ProxyServer.getInstance().getProtocolVersion() );
     }
 
-    public void ping(final Callback<ServerPing> callback, final Protocol protocolVersion) {
+    public void ping(final Callback<ServerPing> callback, final Protocol protocol) {
         Preconditions.checkNotNull( callback, "callback" );
 
         new Bootstrap()
@@ -139,7 +139,16 @@ public class BungeeServerInfo implements ServerInfo
             .handler(new ChannelInitializer<Channel>() {
 				@Override
 				protected void initChannel(Channel ch) throws Exception {
-					PipelineUtil.addHandlers(ch, protocolVersion, Side.SERVER, new PingHandler( BungeeServerInfo.this, callback, protocolVersion ));
+					PipelineUtil.addHandlers(
+						ch,
+						protocol,
+						Side.SERVER,
+						new PingHandler(
+							BungeeServerInfo.this,
+							callback,
+							protocol
+						)
+					);
 				}
 			})
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000) // TODO: Configurable

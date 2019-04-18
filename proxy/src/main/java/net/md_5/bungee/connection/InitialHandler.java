@@ -51,8 +51,7 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 	protected final BungeeCord bungee = BungeeCord.getInstance();
 	@Setter
 	@Getter
-	protected
-	boolean onlineMode = bungee.config.isOnlineMode();
+	protected boolean onlineMode = bungee.config.isOnlineMode();
 	protected ChannelWrapper ch;
 	@Getter
 	protected final ListenerInfo listener;
@@ -289,7 +288,7 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 		String str = "[" + getAddress();
 		if(getName() != null)
 			str += "/" + getName();
-		str += "][IH]";
+		str += "] [IH]";
 		return str;
 	}
 
@@ -301,5 +300,10 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 	@Override
 	public Protocol getProtocol() {
 		return ch.getProtocol();
+	}
+	
+	@Override
+	public String getName() {
+		return loginProfile != null ? loginProfile.getName() : null;
 	}
 }

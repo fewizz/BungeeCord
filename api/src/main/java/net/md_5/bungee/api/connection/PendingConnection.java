@@ -100,4 +100,8 @@ public interface PendingConnection extends Connection
     default boolean isLegacy() {
     	return getProtocol().isLegacy();
     }
+    
+    default boolean isModern() {
+    	return getProtocol().isModern();
+    }
 }

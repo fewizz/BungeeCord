@@ -48,7 +48,7 @@ public class PacketEncoder extends MessageToByteEncoder<DefinedPacket> {
 		} catch (Exception e) {
 			throw new RuntimeException("Error while retrieving id of packet " + msg.getClass().getName(), e);
 		}
-		// System.out.println("ENC, id: " + packetID + ", dir: " + direction.name());
+		//System.out.println("ENC, id: " + packetID + ", dir: " + direction.name());
 
 		if (protocol.isModern())
 			DefinedPacket.writeVarInt(packetID, out);

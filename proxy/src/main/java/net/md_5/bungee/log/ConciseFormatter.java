@@ -35,7 +35,7 @@ public class ConciseFormatter extends Formatter {
 		formatted.append('\n');
 		if (ansi)
 			formatted.append(Ansi.ansi().reset());
-
+		
 		if (record.getThrown() != null) {
 			StringWriter writer = new StringWriter();
 			record.getThrown().printStackTrace(new PrintWriter(writer));

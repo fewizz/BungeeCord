@@ -29,6 +29,7 @@ import net.md_5.bungee.protocol.packet.LegacyStatusRequest;
 import net.md_5.bungee.protocol.packet.Login;
 
 public class LegacyInitialHandler extends InitialHandler {
+	LegacyStatusRequest statusRequest;
 	@Getter
 	private LegacyLoginRequest loginRequest;
 	@Getter
@@ -40,6 +41,7 @@ public class LegacyInitialHandler extends InitialHandler {
 	
 	@Override
 	public void handle(final LegacyStatusRequest request) throws Exception {
+		this.statusRequest = request;
 		Protocol protocol = null;
 		Protocol possibleProtocol = null;
 		
@@ -139,6 +141,8 @@ public class LegacyInitialHandler extends InitialHandler {
 
 	@Override
 	public String getName() {
+		String name = super.getName();
+		if(name != null) return name;
 		return loginRequest.getUserName();
 	}
 
@@ -149,8 +153,11 @@ public class LegacyInitialHandler extends InitialHandler {
 
 	@Override
 	public InetSocketAddress getVirtualHost() {
-		if(loginRequest == null || loginRequest.getHost() == null) return null;
-		return InetSocketAddress.createUnresolved(loginRequest.getHost(), loginRequest.getPort());
+		if(statusRequest != null && statusRequest.getHost() != null)
+			return InetSocketAddress.createUnresolved(statusRequest.getHost(), statusRequest.getPort());
+		else if(loginRequest != null && loginRequest.getHost() != null)
+			return InetSocketAddress.createUnresolved(loginRequest.getHost(), loginRequest.getPort());
+		return null;
 	}
 
 }

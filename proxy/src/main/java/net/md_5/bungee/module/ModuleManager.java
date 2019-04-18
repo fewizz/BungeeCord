@@ -32,7 +32,8 @@ public class ModuleManager
         knownSources.put( "travis-ci", new TravisCiModuleSource() );
     }
 
-    @SuppressFBWarnings(
+    @SuppressWarnings("unchecked")
+	@SuppressFBWarnings(
             {
                 "SF_SWITCH_FALLTHROUGH", "SF_SWITCH_NO_DEFAULT"
             })
@@ -59,7 +60,7 @@ public class ModuleManager
         configFile.createNewFile();
         try ( InputStream is = new FileInputStream( configFile ) )
         {
-            config = (Map) yaml.load( is );
+            config = yaml.load( is );
         }
 
         if ( config == null )
@@ -75,7 +76,7 @@ public class ModuleManager
         Object readModules = config.get( "modules" );
         if ( readModules != null )
         {
-            defaults.addAll( (Collection) readModules );
+            defaults.addAll( (Collection<String>) readModules );
         }
         int version = ( config.containsKey( "version" ) ) ? (int) config.get( "version" ) : 0;
         switch ( version )

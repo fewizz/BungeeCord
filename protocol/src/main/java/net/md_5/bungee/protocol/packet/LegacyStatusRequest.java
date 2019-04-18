@@ -1,6 +1,8 @@
 package net.md_5.bungee.protocol.packet;
 
 import io.netty.buffer.ByteBuf;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -13,6 +15,8 @@ import net.md_5.bungee.protocol.Protocol;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@AllArgsConstructor
+@Builder
 public class LegacyStatusRequest extends DefinedPacket {
 	String branding;
 	int protocolVersion;
@@ -23,8 +27,6 @@ public class LegacyStatusRequest extends DefinedPacket {
 	public void read(ByteBuf buf) {
 		try {
 			protocolVersion = buf.readByte();
-			//if(!buf.isReadable())
-				//return;
 			buf.skipBytes(1);
 			branding = readLegacyString(buf, 255);
 			buf.skipBytes(2); //len

@@ -2,11 +2,12 @@ package net.md_5.bungee.connection;
 
 import com.google.gson.Gson;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.api.Callback;
-import net.md_5.bungee.api.Favicon;
 import net.md_5.bungee.api.ServerPing;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PacketHandler;
@@ -23,9 +24,11 @@ import net.md_5.bungee.util.QuietException;
 
 @RequiredArgsConstructor
 public class PingHandler extends PacketHandler {
-
+	@NonNull
 	private final ServerInfo target;
+	@NonNull
 	private final Callback<ServerPing> callback;
+	@NonNull
 	private final Protocol protocol;
 	private ChannelWrapper channel;
 
@@ -34,18 +37,24 @@ public class PingHandler extends PacketHandler {
 		this.channel = channel;
 
 		if (protocol.isModern()) {
-			channel.write( new Handshake( protocol.version, target.getAddress().getHostString(), target.getAddress().getPort(), NetworkState.STATUS ) );
+			channel.write(Handshake.builder()
+				.protocolVersion(protocol.version)
+				.host(target.getAddress().getHostString())
+				.port(target.getAddress().getPort())
+				.requestedNetworkState(NetworkState.STATUS)
+				.build()
+			);
 			channel.setNetworkState(NetworkState.STATUS);
 			channel.write(new StatusRequest());
 		} 
 		else {
-			LegacyStatusRequest lsr = new LegacyStatusRequest();
-			if(protocol.newerThan(Protocol.MC_1_5_2)) {
-				lsr.setBranding("MC|PingHost");
-				lsr.setHost("");
-				lsr.setProtocolVersion(protocol.version);
-			}
-			channel.write(lsr);
+			channel.write(LegacyStatusRequest.builder()
+				.branding("MC|PingHost")
+				.host(target.getAddress().getHostString())
+				.port(target.getAddress().getPort())
+				.protocolVersion(protocol.version)
+				.build()
+			);
 		}
 	}
 
@@ -64,7 +73,6 @@ public class PingHandler extends PacketHandler {
 	public void handle(StatusResponse statusResponse) throws Exception {
 		Gson gson = protocol == Protocol.MC_1_7_2 ? BungeeCord.getInstance().gsonLegacy : BungeeCord.getInstance().gson;
 		callback.done(gson.fromJson(statusResponse.getResponse(), ServerPing.class), null);
-		
 		channel.close();
 	}
 
@@ -73,12 +81,12 @@ public class PingHandler extends PacketHandler {
 		Kick.StatusResponce responce = new Kick.StatusResponce(kick.getMessage());
 
 		callback.done(
-			new ServerPing(
-				new ServerPing.Protocol("", responce.protocolVersion),
-				new ServerPing.Players(responce.max, responce.players, new ServerPing.PlayerInfo[0]),
-				responce.motd,
-				(Favicon) null
-			),
+			ServerPing.builder()
+				.version(new ServerPing.Protocol("", responce.protocolVersion))
+				.players(new ServerPing.Players(responce.max, responce.players, new ServerPing.PlayerInfo[0]))
+				.description(new TextComponent(TextComponent.fromLegacyText(responce.motd)))
+				.build()
+			,
 			null
 		);
 		
@@ -87,6 +95,6 @@ public class PingHandler extends PacketHandler {
 
 	@Override
 	public String toString() {
-		return "[Ping Handler] -> " + target.getName();
+		return "[Ping Handler] [-> " + target.getName() + "]";
 	}
 }
