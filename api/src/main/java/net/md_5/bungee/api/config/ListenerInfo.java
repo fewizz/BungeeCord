@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.ToString;
 
 /**
  * Class representing the configuration of a server listener. Used for allowing
@@ -12,6 +13,7 @@ import lombok.Data;
  */
 @Data
 @AllArgsConstructor
+@ToString(of = {"host"})
 public class ListenerInfo
 {
 

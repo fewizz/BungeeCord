@@ -16,19 +16,16 @@ import net.md_5.bungee.ServerConnection;
 import net.md_5.bungee.ServerConnector;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.event.ServerConnectedEvent;
-import net.md_5.bungee.api.event.ServerSwitchEvent;
 import net.md_5.bungee.api.score.Objective;
 import net.md_5.bungee.api.score.Score;
 import net.md_5.bungee.api.score.Scoreboard;
 import net.md_5.bungee.api.score.Team;
 import net.md_5.bungee.connection.CancelSendSignal;
-import net.md_5.bungee.connection.DownstreamBridge;
 import net.md_5.bungee.connection.LoginResult;
 import net.md_5.bungee.forge.ForgeConstants;
 import net.md_5.bungee.forge.ForgeServerHandler;
 import net.md_5.bungee.forge.ForgeUtils;
 import net.md_5.bungee.netty.ChannelWrapper;
-import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.MinecraftOutput;
 import net.md_5.bungee.protocol.NetworkState;
@@ -46,13 +43,13 @@ import net.md_5.bungee.protocol.packet.ScoreboardScore;
 import net.md_5.bungee.protocol.packet.SetCompression;
 import net.md_5.bungee.util.QuietException;
 
-public class ModernServerConnector extends ServerConnector<ModernInitialHandler, ModernUserConnection> {
+public class ModernServerConnector extends ServerConnector<ModernUserConnection> {
 	private State thisState = State.UNDEF;
 	@Getter
 	private ForgeServerHandler handshakeHandler;
 	
-	public ModernServerConnector(ModernUserConnection user, BungeeServerInfo target) {
-		super(user, target);
+	public ModernServerConnector(ChannelWrapper ch, ModernUserConnection user, BungeeServerInfo target) {
+		super(ch, user, target);
 	}
 
 	private enum State {
@@ -60,9 +57,7 @@ public class ModernServerConnector extends ServerConnector<ModernInitialHandler,
 	}
 
 	@Override
-	public void connected(ChannelWrapper channel) throws Exception {
-		super.connected(channel);
-
+	public void connected() throws Exception {
 		this.handshakeHandler = new ForgeServerHandler(user, ch, target);
 		Handshake originalHandshake = user.getPendingConnection().getHandshake();
 		Handshake copiedHandshake = new Handshake(originalHandshake.getProtocolVersion(), originalHandshake.getHost(), originalHandshake.getPort(), NetworkState.LOGIN);
@@ -100,12 +95,12 @@ public class ModernServerConnector extends ServerConnector<ModernInitialHandler,
 			copiedHandshake.setHost(copiedHandshake.getHost() + user.getExtraDataInHandshake());
 		}
 
-		channel.write(copiedHandshake);
-		channel.setNetworkState(NetworkState.LOGIN);
+		ch.write(copiedHandshake);
+		ch.setNetworkState(NetworkState.LOGIN);
 		thisState = State.LOGIN_SUCCESS;
-		channel.write(new LoginRequest(user.getName()));
+		ch.write(new LoginRequest(user.getName()));
 		
-		server = new ServerConnection(ch, target);
+		server = new ServerConnection(user, ch, target);
 	}
 
 	@Override
@@ -235,25 +230,7 @@ public class ModernServerConnector extends ServerConnector<ModernInitialHandler,
 			user.getServer().disconnect("Quitting");
 		}
 		
-		// TODO: Fix this?
-		if (!user.isActive()) {
-			user.getServer().disconnect("Quitting");
-			// Silly server admins see stack trace and die
-			ProxyServer.getInstance().getLogger().warning("No client connected for pending server!");
-			return;
-		}
-
-		// Add to new server
-		// TODO: Move this to the connected() method of DownstreamBridge
-		target.addPlayer(user);
-		user.getPendingConnects().remove(target);
-		user.setServerJoinQueue(null);
-		user.setDimensionChange(false);
-		
-		user.setServer(server);
-		ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new DownstreamBridge(user, user.getServer()));
-
-		ProxyServer.getInstance().getPluginManager().callEvent(new ServerSwitchEvent(user));
+		finish();
 
 		thisState = State.FINISHED;
 

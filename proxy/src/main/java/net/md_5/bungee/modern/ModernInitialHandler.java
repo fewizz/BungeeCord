@@ -3,13 +3,13 @@ package net.md_5.bungee.modern;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 
 import javax.crypto.SecretKey;
 
 import com.google.common.base.Preconditions;
 import com.google.gson.Gson;
 
+import io.netty.channel.Channel;
 import lombok.Getter;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.EncryptionUtil;
@@ -19,6 +19,7 @@ import net.md_5.bungee.api.event.PlayerHandshakeEvent;
 import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.jni.cipher.BungeeCipher;
+import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.netty.cipher.CipherDecoder;
 import net.md_5.bungee.netty.cipher.CipherEncoder;
@@ -49,8 +50,8 @@ public class ModernInitialHandler extends InitialHandler {
 	@Getter
 	private String extraDataInHandshake = "";
 	
-	public ModernInitialHandler(ListenerInfo listener) {
-		super(listener);
+	public ModernInitialHandler(Channel ch, Protocol p, ListenerInfo listener) {
+		super(new ChannelWrapper(ch, p, NetworkState.HANDSHAKE), listener);
 	}
 	
 	enum State {
@@ -90,9 +91,6 @@ public class ModernInitialHandler extends InitialHandler {
 		// SRV records can end with a . depending on DNS / client.
 		if (handshake.getHost().endsWith("."))
 			handshake.setHost(handshake.getHost().substring(0, handshake.getHost().length() - 1));
-			
-		if (bungee.getConfig().isLogPings())
-			bungee.getLogger().log(Level.INFO, "{0} has connected", this);
 		
 		bungee.getPluginManager().callEvent(new PlayerHandshakeEvent(this, handshake));
 
@@ -105,9 +103,6 @@ public class ModernInitialHandler extends InitialHandler {
 			break;
 		case LOGIN:
 			// Login
-			if (!bungee.getConfig().isLogPings()) {
-				bungee.getLogger().log(Level.INFO, "{0} has connected", this);
-			}
 			thisState = State.USERNAME;
 			
 			if (undefinedProtocol)

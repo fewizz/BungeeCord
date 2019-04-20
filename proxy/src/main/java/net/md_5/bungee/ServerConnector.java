@@ -2,8 +2,11 @@ package net.md_5.bungee;
 
 import java.util.Locale;
 
+import com.google.common.base.Preconditions;
+
+import io.netty.util.concurrent.DefaultPromise;
+import io.netty.util.concurrent.Promise;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -12,25 +15,25 @@ import net.md_5.bungee.api.event.ServerConnectEvent;
 import net.md_5.bungee.api.event.ServerKickEvent;
 import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.connection.CancelSendSignal;
-import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.packet.Kick;
 import net.md_5.bungee.util.QuietException;
 
-@RequiredArgsConstructor
-public abstract class ServerConnector<IH extends InitialHandler, UC extends UserConnection<IH>> extends PacketHandler {
+public abstract class ServerConnector<UC extends UserConnection<?>> extends PacketHandler {
 	protected final UC user;
 	protected ServerConnection server;
-	protected ChannelWrapper ch;
 	@Getter
 	protected final BungeeServerInfo target;
+	@Getter
+	private final Promise<ServerConnection> loginFuture;
 	
-	@Override
-	public void connected(ChannelWrapper channel) throws Exception {
-		this.ch = channel;
-		ProxyServer.getInstance().getLogger().info("[" + user.getName() + "] Connected to [" + target.getName() + "]");
+	public ServerConnector(ChannelWrapper channel, UC user, BungeeServerInfo info) {
+		super(channel);
+		this.user = user;
+		this.target = info;
+		this.loginFuture = new DefaultPromise<>(ch.getHandle().eventLoop());
 	}
 	
 	protected boolean ipForward() {
@@ -53,7 +56,7 @@ public abstract class ServerConnector<IH extends InitialHandler, UC extends User
 	
 	@Override
 	public String toString() {
-		return "[" + user.getName() + "] <-> ServerConnector [" + target.getName() + "]";
+		return "["+user.getAddress()+"/"+user.getName()+"] [SC]";
 	}
 	
 	@Override
@@ -92,12 +95,7 @@ public abstract class ServerConnector<IH extends InitialHandler, UC extends User
 	public void handle(PacketWrapper packet) throws Exception {
 		if (packet.packet == null)
 			throw new QuietException("Unexpected packet received during server login process!\n" +
-				", cs: " + ch.getConnectionState().name());
-	}
-	
-	@Override
-	public void disconnected(ChannelWrapper channel) throws Exception {
-		user.getPendingConnects().remove(target);
+				"id, cs: " + ch.getConnectionState().name());
 	}
 	
 	@Override
@@ -108,6 +106,11 @@ public abstract class ServerConnector<IH extends InitialHandler, UC extends User
 			user.disconnect(message);
 		else
 			user.sendMessage(ChatColor.RED + message);
+	}
+	
+	protected void finish() {
+		Preconditions.checkNotNull(server);
+		loginFuture.setSuccess(server);
 	}
 
 }

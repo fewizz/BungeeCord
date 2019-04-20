@@ -3,7 +3,6 @@ package net.md_5.bungee.connection;
 import com.google.gson.Gson;
 
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.api.Callback;
 import net.md_5.bungee.api.ServerPing;
@@ -22,20 +21,21 @@ import net.md_5.bungee.protocol.packet.StatusResponse;
 import net.md_5.bungee.util.BufUtil;
 import net.md_5.bungee.util.QuietException;
 
-@RequiredArgsConstructor
 public class PingHandler extends PacketHandler {
 	@NonNull
 	private final ServerInfo target;
 	@NonNull
 	private final Callback<ServerPing> callback;
-	@NonNull
-	private final Protocol protocol;
-	private ChannelWrapper channel;
+	
+	public PingHandler(ChannelWrapper ch, ServerInfo info, Callback<ServerPing> cb) {
+		super(ch);
+		this.target = info;
+		this.callback = cb;
+	}
 
 	@Override
 	public void connected(ChannelWrapper channel) throws Exception {
-		this.channel = channel;
-
+		Protocol protocol = channel.getProtocol();
 		if (protocol.isModern()) {
 			channel.write(Handshake.builder()
 				.protocolVersion(protocol.version)
@@ -71,9 +71,9 @@ public class PingHandler extends PacketHandler {
 
 	@Override
 	public void handle(StatusResponse statusResponse) throws Exception {
-		Gson gson = protocol == Protocol.MC_1_7_2 ? BungeeCord.getInstance().gsonLegacy : BungeeCord.getInstance().gson;
+		Gson gson = ch.getProtocol() == Protocol.MC_1_7_2 ? BungeeCord.getInstance().gsonLegacy : BungeeCord.getInstance().gson;
 		callback.done(gson.fromJson(statusResponse.getResponse(), ServerPing.class), null);
-		channel.close();
+		ch.close();
 	}
 
 	@Override
@@ -90,7 +90,7 @@ public class PingHandler extends PacketHandler {
 			null
 		);
 		
-		channel.close();
+		ch.close();
 	}
 
 	@Override

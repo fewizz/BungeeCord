@@ -29,8 +29,10 @@ import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.connection.Server;
 import net.md_5.bungee.connection.PingHandler;
+import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.NetworkState;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.Side;
 import net.md_5.bungee.protocol.packet.PluginMessage;
@@ -140,13 +142,12 @@ public class BungeeServerInfo implements ServerInfo
 				@Override
 				protected void initChannel(Channel ch) throws Exception {
 					PipelineUtil.addHandlers(
-						ch,
 						protocol,
 						Side.SERVER,
 						new PingHandler(
+							new ChannelWrapper(ch, protocol, NetworkState.UNKNOWN),
 							BungeeServerInfo.this,
-							callback,
-							protocol
+							callback
 						)
 					);
 				}

@@ -118,13 +118,12 @@ public class PipelineUtil {
 		}
     }
     
-    public static void addHandlers(Channel ch, Protocol pv, Side side, PacketHandler ph) {
+    public static void addHandlers(Protocol pv, Side side, PacketHandler ph) {
+    	Channel ch = ph.getCh().getHandle();
     	basicConfig(ch);
     	packetHandlers(ch, pv, side);
     	readTimeoutHandler(ch);
     	
-    	ChannelWrapper w = new ChannelWrapper(ch, pv, pv.isModern() ? NetworkState.HANDSHAKE : NetworkState.LEGACY);
-    	
-    	ch.pipeline().addLast(BOSS, new HandlerBoss(ph, w));
+    	ch.pipeline().addLast(BOSS, new HandlerBoss(ph));
     }
 }

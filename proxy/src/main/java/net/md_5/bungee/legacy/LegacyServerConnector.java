@@ -19,17 +19,14 @@ import net.md_5.bungee.ServerConnection;
 import net.md_5.bungee.ServerConnector;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.event.ServerConnectedEvent;
-import net.md_5.bungee.api.event.ServerSwitchEvent;
 import net.md_5.bungee.api.score.Objective;
 import net.md_5.bungee.api.score.Score;
 import net.md_5.bungee.api.score.Scoreboard;
 import net.md_5.bungee.api.score.Team;
 import net.md_5.bungee.connection.CancelSendSignal;
-import net.md_5.bungee.connection.DownstreamBridge;
 import net.md_5.bungee.forge.ForgeConstants;
 import net.md_5.bungee.jni.cipher.BungeeCipher;
 import net.md_5.bungee.netty.ChannelWrapper;
-import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.netty.cipher.CipherDecoder;
 import net.md_5.bungee.netty.cipher.CipherEncoder;
@@ -48,19 +45,17 @@ import net.md_5.bungee.protocol.packet.ScoreboardObjective;
 import net.md_5.bungee.protocol.packet.ScoreboardScore;
 import net.md_5.bungee.util.QuietException;
 
-public class LegacyServerConnector extends ServerConnector<LegacyInitialHandler, LegacyUserConnection> {
+public class LegacyServerConnector extends ServerConnector<LegacyUserConnection> {
 	private int fmlVanillaCompatabilityLevel = 0;
 	private ChannelInboundHandler legacyFMLModlistCatcher = null;
 	private SecretKey secret;
 	
-	public LegacyServerConnector(LegacyUserConnection user, BungeeServerInfo target) {
-		super(user, target);
+	public LegacyServerConnector(ChannelWrapper ch, LegacyUserConnection user, BungeeServerInfo target) {
+		super(ch, user, target);
 	}
 	
 	@Override
-	public void connected(ChannelWrapper channel) throws Exception {
-		super.connected(channel);
-		
+	public void connected() throws Exception {
 		LegacyLoginRequest lr = new LegacyLoginRequest(user.getPendingConnection().getLoginRequest());
 		
 		if(ipForward())
@@ -88,12 +83,12 @@ public class LegacyServerConnector extends ServerConnector<LegacyInitialHandler,
 			p.addBefore(PipelineUtil.BOSS, "legacy_fml_modlist_catcher", legacyFMLModlistCatcher);
 		}
 		
-		channel.write(lr);
+		ch.write(lr);
 		
 		if(forgeSupport() && user.isForgeUser())
 			ch.write(user.getPendingConnection().getForgeLogin());
 		
-		server = new ServerConnection(ch, target);
+		server = new ServerConnection(user, ch, target);
 	}
 	
 	@Override
@@ -186,26 +181,8 @@ public class LegacyServerConnector extends ServerConnector<LegacyInitialHandler,
 			// Remove from old servers
 			user.getServer().disconnect("Quitting");
 		}
-			
-		// TODO: Fix this?
-		if (!user.isActive()) {
-			user.getServer().disconnect("Quitting");
-			// Silly server admins see stack trace and die
-			ProxyServer.getInstance().getLogger().warning("No client connected for pending server!");
-			return;
-		}
-
-		// Add to new server
-		// TODO: Move this to the connected() method of DownstreamBridge
-		target.addPlayer(user);
-		user.getPendingConnects().remove(target);
-		user.setServerJoinQueue(null);
-		user.setDimensionChange(false);
 		
-		user.setServer(server);
-		ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new DownstreamBridge(user, user.getServer()));
-
-		ProxyServer.getInstance().getPluginManager().callEvent(new ServerSwitchEvent(user));
+		finish();
 		
 		throw CancelSendSignal.INSTANCE;
 	}

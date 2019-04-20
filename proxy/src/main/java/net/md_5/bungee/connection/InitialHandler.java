@@ -12,7 +12,6 @@ import javax.crypto.SecretKey;
 import com.google.common.base.Charsets;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.BungeeServerInfo;
@@ -46,13 +45,11 @@ import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.util.BufUtil;
 import net.md_5.bungee.util.QuietException;
 
-@RequiredArgsConstructor
 public abstract class InitialHandler extends PacketHandler implements PendingConnection {
 	protected final BungeeCord bungee = BungeeCord.getInstance();
 	@Setter
 	@Getter
 	protected boolean onlineMode = bungee.config.isOnlineMode();
-	protected ChannelWrapper ch;
 	@Getter
 	protected final ListenerInfo listener;
 	@Getter
@@ -61,6 +58,11 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 	@Getter
 	@Setter
 	private UUID offlineId = null;
+	
+	public InitialHandler(ChannelWrapper ch, ListenerInfo info) {
+		super(ch);
+		this.listener = info;
+	}
 	
 	protected final Unsafe unsafe = new Unsafe() {
 		@Override
@@ -74,11 +76,6 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 	@Override
 	public boolean shouldHandle(PacketWrapper packet) throws Exception {
 		return !ch.isClosing();
-	}
-
-	@Override
-	public void connected(ChannelWrapper channel) throws Exception {
-		this.ch = channel;
 	}
 
 	@Override
@@ -242,8 +239,10 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 	}
 	
 	protected <IH extends InitialHandler, UC extends UserConnection<IH>> void postLogin(UC userCon) {
-		ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new UpstreamBridge<IH, UC>(bungee, userCon));
+		ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new UpstreamBridge<IH, UC>(ch, bungee, userCon));
 		bungee.getPluginManager().callEvent(new PostLoginEvent(userCon));
+		
+		bungee.getLogger().info(toString() + " Connected to listener(" + listener.getHost()+")");
 	
 		ServerInfo server;
 		

@@ -65,9 +65,10 @@ public class DownstreamBridge extends PacketHandler {
 	private final UserConnection<?> con;
 	private final ServerConnection server;
 
-	public DownstreamBridge(UserConnection<?> uc, ServerConnection s) {
+	public DownstreamBridge(ChannelWrapper ch, UserConnection<?> uc) {
+		super(ch);
 		this.con = uc;
-		this.server = s;
+		this.server = uc.getServer();
 	}
 
 	@Override

@@ -97,7 +97,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 						ctx.channel().pipeline().fireChannelRead(omtBuf);
 						omtBuf.release();
 						omtBuf = null;
-					}, 100, TimeUnit.MILLISECONDS);
+					}, 50, TimeUnit.MILLISECONDS);
 				}
 				if(!scheduledRead) {
 					if(omtBuf != null)

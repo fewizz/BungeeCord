@@ -66,10 +66,9 @@ public class ModernUserConnection extends UserConnection<ModernInitialHandler> {
 		return getPendingConnection().getExtraDataInHandshake();
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	protected ModernServerConnector createServerConnector(
+	protected ModernServerConnector createServerConnector(ChannelWrapper ch,
 			BungeeServerInfo target) {
-		return new ModernServerConnector(this, target);
+		return new ModernServerConnector(ch, this, target);
 	}
 }

@@ -78,34 +78,10 @@ public class ChannelWrapper {
 	}
 	
 	public Protocol getProtocol() {
-		/*PacketEncoder enc = ch
-			.pipeline()
-			.get(PacketEncoder.class);
-		
-		if(enc == null) {
-			if(ch.isActive())
-				throw new NullPointerException();
-			else 
-				throw new ChannelClosedException(this);
-		}
-		
-		return enc.getProtocol();*/
 		return protocol;
 	}
 	
 	public NetworkState getConnectionState() {
-		/*PacketEncoder enc = ch
-				.pipeline()
-				.get(PacketEncoder.class);
-			
-		if(enc == null) {
-			if(ch.isActive())
-				throw new NullPointerException();
-			else 
-				throw new ChannelClosedException(this);
-		}
-			
-		return enc.getNetworkState();*/
 		return networkState;
 	}
 
@@ -157,6 +133,10 @@ public class ChannelWrapper {
 
 	public Channel getHandle() {
 		return ch;
+	}
+	
+	public void setPacketHandler(@NonNull PacketHandler ph) {
+		ch.pipeline().get(HandlerBoss.class).setHandler(ph);
 	}
 
 	public void setCompressionThreshold(int compressionThreshold) {

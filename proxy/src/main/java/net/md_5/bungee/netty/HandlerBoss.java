@@ -19,12 +19,10 @@ import net.md_5.bungee.protocol.PacketWrapper;
  * methods when the channel is connected.
  */
 public class HandlerBoss extends ChannelInboundHandlerAdapter {
-	private ChannelWrapper channel;
 	private PacketHandler handler;
 
-	public HandlerBoss(@NonNull PacketHandler handler, ChannelWrapper cw) {
+	public HandlerBoss(@NonNull PacketHandler handler) {
 		setHandler(handler);
-		this.channel = cw;
 	}
 	
 	public HandlerBoss setHandler(@NonNull PacketHandler handler) {
@@ -35,18 +33,18 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter {
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
 		//channel = new ChannelWrapper(ctx);
-		handler.connected(channel);
+		handler.connected();
 	}
 
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-		channel.markClosed();
-		handler.disconnected(channel);
+		handler.getCh().markClosed();
+		handler.disconnected();
 	}
 
 	@Override
 	public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
-		handler.writabilityChanged(channel);
+		handler.writabilityChanged();
 	}
 
 	@Override
@@ -55,9 +53,9 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter {
 			HAProxyMessage proxy = (HAProxyMessage) msg;
 			InetSocketAddress newAddress = new InetSocketAddress(proxy.sourceAddress(), proxy.sourcePort());
 
-			ProxyServer.getInstance().getLogger().log(Level.FINE, "Set remote address via PROXY {0} -> {1}", new Object[] { channel.getRemoteAddress(), newAddress });
+			ProxyServer.getInstance().getLogger().log(Level.FINE, "Set remote address via PROXY {0} -> {1}", new Object[] { handler.getCh().getRemoteAddress(), newAddress });
 
-			channel.setRemoteAddress(newAddress);
+			handler.getCh().setRemoteAddress(newAddress);
 			return;
 		}
 		

@@ -1,8 +1,6 @@
 package net.md_5.bungee;
 
 
-import java.io.BufferedInputStream;
-import java.io.Console;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;

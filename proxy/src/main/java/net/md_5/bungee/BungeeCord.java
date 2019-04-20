@@ -92,12 +92,10 @@ import net.md_5.bungee.log.BungeeLogger;
 import net.md_5.bungee.log.LoggingOutputStream;
 import net.md_5.bungee.modern.ModernInitialHandler;
 import net.md_5.bungee.module.ModuleManager;
-import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.NettyUtil;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.NetworkState;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.Side;
@@ -347,9 +345,11 @@ public class BungeeCord extends ProxyServer {
 											+ "] Connected to Bungee, identified as " + pv.name());
 								PipelineUtil.packetHandlers(ch, pv, Side.CLIENT);
 								HandlerBoss boss = new HandlerBoss(
-										pv.isModern() ? new ModernInitialHandler(info) : new LegacyInitialHandler(info),
-										new ChannelWrapper(ctx.channel(), pv,
-												pv.isModern() ? NetworkState.HANDSHAKE : NetworkState.LEGACY));
+									pv.isModern() ?
+									new ModernInitialHandler(ch, pv, info)
+									:
+									new LegacyInitialHandler(ch, pv, info)
+								);
 								boss.channelActive(ctx);
 
 								ch.pipeline().addLast(PipelineUtil.BOSS, boss);

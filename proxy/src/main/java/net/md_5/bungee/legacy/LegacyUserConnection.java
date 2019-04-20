@@ -25,10 +25,9 @@ public class LegacyUserConnection extends UserConnection<LegacyInitialHandler> {
 		return null;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	protected LegacyServerConnector createServerConnector(BungeeServerInfo target) {
-		return new LegacyServerConnector(this, target);
+	protected LegacyServerConnector createServerConnector(ChannelWrapper ch, BungeeServerInfo target) {
+		return new LegacyServerConnector(ch, this, target);
 	}
 
 }

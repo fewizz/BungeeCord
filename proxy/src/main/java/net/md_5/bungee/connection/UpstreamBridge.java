@@ -41,14 +41,15 @@ public class UpstreamBridge<IH extends InitialHandler, UC extends UserConnection
     private final ProxyServer bungee;
     private final UC con;
 
-    public UpstreamBridge(ProxyServer bungee, UC con)
+    public UpstreamBridge(ChannelWrapper ch, ProxyServer bungee, UC con)
     {
+    	super(ch);
         this.bungee = bungee;
         this.con = con;
 
-        BungeeCord.getInstance().addConnection( con );
+        BungeeCord.getInstance().addConnection(con);
         con.getTabListHandler().onConnect();
-        con.unsafe().sendPacket( BungeeCord.getInstance().registerChannels( con.getPendingConnection().getProtocol() ) );
+        con.unsafe().sendPacket( BungeeCord.getInstance().registerChannels(con.getPendingConnection().getProtocol()));
     }
 
     @Override

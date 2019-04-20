@@ -5,6 +5,7 @@ import lombok.Getter;
 
 @AllArgsConstructor
 public enum NetworkState {
+	UNKNOWN(Integer.MIN_VALUE),
 	HANDSHAKE(-1),
 	GAME(0),
 	STATUS(1),

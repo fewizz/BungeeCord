@@ -7,6 +7,7 @@ import javax.crypto.SecretKey;
 import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
 
+import io.netty.channel.Channel;
 import lombok.Getter;
 import net.md_5.bungee.EncryptionUtil;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -14,9 +15,11 @@ import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ListenerInfo;
 import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.jni.cipher.BungeeCipher;
+import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.netty.cipher.CipherDecoder;
 import net.md_5.bungee.netty.cipher.CipherEncoder;
+import net.md_5.bungee.protocol.NetworkState;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
@@ -35,8 +38,8 @@ public class LegacyInitialHandler extends InitialHandler {
 	@Getter
 	private Login forgeLogin;
 
-	public LegacyInitialHandler(ListenerInfo listener) {
-		super(listener);
+	public LegacyInitialHandler(Channel ch, Protocol p, ListenerInfo listener) {
+		super(new ChannelWrapper(ch, p, NetworkState.LEGACY), listener);
 	}
 	
 	@Override

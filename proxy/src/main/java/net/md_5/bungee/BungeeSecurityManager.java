@@ -7,6 +7,7 @@ import java.security.Permission;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
+
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.scheduler.GroupedThreadFactory;
 
@@ -18,7 +19,7 @@ public class BungeeSecurityManager extends SecurityManager
 
     private void checkRestricted(String text)
     {
-        Class[] context = getClassContext();
+        Class<?>[] context = getClassContext();
         for ( int i = 2; i < context.length; i++ )
         {
             ClassLoader loader = context[i].getClassLoader();
