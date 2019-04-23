@@ -6,6 +6,8 @@ import java.util.logging.Level;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.haproxy.HAProxyMessage;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.api.ProxyServer;
@@ -18,33 +20,33 @@ import net.md_5.bungee.protocol.PacketWrapper;
  * channels to maintain simple states, and only call the required, adapted
  * methods when the channel is connected.
  */
+@AllArgsConstructor
+@NoArgsConstructor
 public class HandlerBoss extends ChannelInboundHandlerAdapter {
-	private PacketHandler handler;
-
-	public HandlerBoss(@NonNull PacketHandler handler) {
-		setHandler(handler);
-	}
+	private PacketHandler ph;
 	
 	public HandlerBoss setHandler(@NonNull PacketHandler handler) {
-		this.handler = handler;
+		ph = handler;
 		return this;
 	}
 
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
-		//channel = new ChannelWrapper(ctx);
-		handler.connected();
+		ph.connected();
 	}
 
+	private ChannelWrapper cw(ChannelHandlerContext ctx) {
+		return ctx.channel().attr(PipelineUtil.CHANNEL_WRAPPER).get();
+	}
+	
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-		handler.getCh().markClosed();
-		handler.disconnected();
+		ph.disconnected();
 	}
 
 	@Override
 	public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
-		handler.writabilityChanged();
+		ph.writabilityChanged();
 	}
 
 	@Override
@@ -53,30 +55,30 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter {
 			HAProxyMessage proxy = (HAProxyMessage) msg;
 			InetSocketAddress newAddress = new InetSocketAddress(proxy.sourceAddress(), proxy.sourcePort());
 
-			ProxyServer.getInstance().getLogger().log(Level.FINE, "Set remote address via PROXY {0} -> {1}", new Object[] { handler.getCh().getRemoteAddress(), newAddress });
+			ProxyServer.getInstance().getLogger().log(Level.FINE, "Set remote address via PROXY {0} -> {1}", new Object[] { cw(ctx).getRemoteAddress(), newAddress });
 
-			handler.getCh().setRemoteAddress(newAddress);
+			cw(ctx).setRemoteAddress(newAddress);
 			return;
 		}
 		
 		if(msg instanceof PacketPreparer) {
-			handler.prepare((PacketPreparer)msg);
+			ph.prepare((PacketPreparer)msg);
 			return;
 		}
 			
 		PacketWrapper wrapper = (PacketWrapper) msg;
-		boolean shouldHandle = handler.shouldHandle(wrapper);
+		boolean shouldHandle = ph.shouldHandle(wrapper);
 		try {
 			if(wrapper.packet != null && shouldHandle) {
 				try {
-					wrapper.packet.handle(handler);
+					wrapper.packet.handle(ph);
 				} catch (CancelSendSignal ex) {
 					shouldHandle = false;
 				}
 			}
 			
 			if (shouldHandle)
-				handler.handle(wrapper);
+				ph.handle(wrapper);
 		} catch(Exception e) {
 			String msg0 = "Error occured during packet handling.";
 			if(wrapper.packet != null)
@@ -94,9 +96,9 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter {
 			//else {
 				BungeeCord.getInstance().getLogger().log(Level.WARNING, "Exception caught", cause);
 			//}
-			handler.exception(cause);
+			ph.exception(cause);
 		} catch (Exception ex) {
-			ProxyServer.getInstance().getLogger().log(Level.SEVERE, handler + " - exception processing exception", ex);
+			ProxyServer.getInstance().getLogger().log(Level.SEVERE, ph + " - exception processing exception", ex);
 		}
 	}
 }

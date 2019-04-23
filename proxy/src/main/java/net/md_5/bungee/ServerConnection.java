@@ -14,7 +14,6 @@ import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 
 public class ServerConnection implements Server {
-
 	@NonNull
 	private final UserConnection<?> user;
 	@Getter
@@ -22,10 +21,7 @@ public class ServerConnection implements Server {
 	private final ChannelWrapper ch;
 	@Getter
 	@NonNull
-	private final BungeeServerInfo info;
-	@Getter
-	@Setter
-	private boolean isObsolete;
+	public final BungeeServerInfo info;
 	@Getter
 	private final boolean forgeServer = false;
 	@Getter
@@ -37,8 +33,10 @@ public class ServerConnection implements Server {
 		this.ch = ch;
 		this.info = info;
 		
+		info.addPlayer(uc);
 		ch.getHandle().closeFuture().addListener(future -> {
 			BungeeCord.getInstance().getLogger().info("["+user.getAddress()+"/"+user.getName()+"] Disconnected from ["+info.getName()+"]");
+			info.removePlayer(user);
 		});
 	}
 	private final Unsafe unsafe = new Unsafe() {
@@ -61,7 +59,7 @@ public class ServerConnection implements Server {
 	@Override
 	public void disconnect(BaseComponent... reason) {
 		Preconditions.checkArgument(reason.length == 0, "Server cannot have disconnect reason");
-		ch.delayedClose(null);
+		ch.close();
 	}
 
 	@Override
@@ -76,7 +74,7 @@ public class ServerConnection implements Server {
 
 	@Override
 	public boolean isConnected() {
-		return !ch.isClosed();
+		return ch.handle.isActive();
 	}
 
 	@Override

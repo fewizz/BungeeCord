@@ -29,6 +29,7 @@ public class PipelineUtil {
     public static final AttributeKey<ListenerInfo> LISTENER = AttributeKey.valueOf("ListerInfo");
     public static final AttributeKey<UserConnection<?>> USER = AttributeKey.valueOf("User");
     public static final AttributeKey<BungeeServerInfo> TARGET = AttributeKey.valueOf("Target");
+    public static final AttributeKey<ChannelWrapper> CHANNEL_WRAPPER = AttributeKey.valueOf("ChannelWrapper");
     
     private static final int 
     	LOW_MARK = Integer.getInteger( "net.md_5.bungee.low_mark", 2 << 18 ), // 0.5 mb
@@ -118,12 +119,15 @@ public class PipelineUtil {
 		}
     }
     
-    public static void addHandlers(Protocol pv, Side side, PacketHandler ph) {
-    	Channel ch = ph.getCh().getHandle();
+    public static void addHandlers(Channel ch, Protocol pv, Side side) {
+    	ch.attr(CHANNEL_WRAPPER).set(new ChannelWrapper(ch, pv));
     	basicConfig(ch);
     	packetHandlers(ch, pv, side);
     	readTimeoutHandler(ch);
-    	
-    	ch.pipeline().addLast(BOSS, new HandlerBoss(ph));
+    	ch.pipeline().addLast(BOSS, new HandlerBoss());
+    }
+    
+    public static ChannelWrapper getChannelWrapper(Channel ch) {
+    	return ch.attr(CHANNEL_WRAPPER).get();
     }
 }

@@ -10,7 +10,6 @@ import com.google.common.base.Preconditions;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import lombok.Getter;
-import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.BungeeServerInfo;
 import net.md_5.bungee.ServerConnection;
 import net.md_5.bungee.ServerConnector;
@@ -54,13 +53,17 @@ public class ModernServerConnector extends ServerConnector<ModernUserConnection>
 
 	private enum State {
 		UNDEF, LOGIN_REQUEST, LOGIN_SUCCESS, ENCRYPT_RESPONSE, LOGIN, FINISHED;
+		
+		void shouldBe(State s) {
+			Preconditions.checkState(s == this);
+		}
 	}
 
 	@Override
 	public void connected() throws Exception {
-		this.handshakeHandler = new ForgeServerHandler(user, ch, target);
-		Handshake originalHandshake = user.getPendingConnection().getHandshake();
-		Handshake copiedHandshake = new Handshake(originalHandshake.getProtocolVersion(), originalHandshake.getHost(), originalHandshake.getPort(), NetworkState.LOGIN);
+		this.handshakeHandler = new ForgeServerHandler(user, channel, target);
+		Handshake originalHandshake = user.pendingConnection.getHandshake();
+		Handshake copiedHandshake = new Handshake(originalHandshake);
 
 		if (ipForward()) {
 			String newHost = copiedHandshake.getHost() + "\00" + user.getAddress().getHostString() + "\00" + user.getUUID();
@@ -68,12 +71,12 @@ public class ModernServerConnector extends ServerConnector<ModernUserConnection>
 			// Handle properties.
 			LoginResult.Property[] properties = new LoginResult.Property[0];
 
-			LoginResult profile = user.getPendingConnection().getLoginProfile();
+			LoginResult profile = user.pendingConnection.getLoginProfile();
 			if (profile != null && profile.getProperties() != null && profile.getProperties().length > 0) {
 				properties = profile.getProperties();
 			}
 
-			if (user.getForgeClientHandler().isFmlTokenInHandshake()) {
+			if (user.forgeClientHandler.isFmlTokenInHandshake()) {
 				// Get the current properties and copy them into a slightly bigger array.
 				LoginResult.Property[] newp = Arrays.copyOf(properties, properties.length + 2);
 				// Add a new profile property that specifies that this user is a Forge user.
@@ -86,7 +89,7 @@ public class ModernServerConnector extends ServerConnector<ModernUserConnection>
 			}
 			// If we touched any properties, then append them
 			if (properties.length > 0) {
-				newHost += "\00" + BungeeCord.getInstance().gson.toJson(properties);
+				newHost += "\00" + bungee.gson.toJson(properties);
 			}
 
 			copiedHandshake.setHost(newHost);
@@ -95,18 +98,17 @@ public class ModernServerConnector extends ServerConnector<ModernUserConnection>
 			copiedHandshake.setHost(copiedHandshake.getHost() + user.getExtraDataInHandshake());
 		}
 
-		ch.write(copiedHandshake);
-		ch.setNetworkState(NetworkState.LOGIN);
+		channel.write(copiedHandshake);
+		channel.setNetworkState(NetworkState.LOGIN);
 		thisState = State.LOGIN_SUCCESS;
-		ch.write(new LoginRequest(user.getName()));
-		
-		server = new ServerConnection(user, ch, target);
+		channel.write(new LoginRequest(user.getName()));
 	}
 
 	@Override
 	public void handle(LoginSuccess loginSuccess) throws Exception {
-		Preconditions.checkState(thisState == State.LOGIN_SUCCESS, "Not expecting LOGIN_SUCCESS");
-		ch.setNetworkState(NetworkState.GAME);
+		thisState.shouldBe(State.LOGIN_SUCCESS);
+		
+		channel.setNetworkState(NetworkState.GAME);
 		thisState = State.LOGIN;
 
 		// Only reset the Forge client when:
@@ -123,41 +125,41 @@ public class ModernServerConnector extends ServerConnector<ModernUserConnection>
 		// the
 		// connection when we have a modded server regardless of where we go - doing it
 		// here makes sense.
-		if (user.getServer() != null && user.getForgeClientHandler().isHandshakeComplete() && user.getServer().isForgeServer())
-			user.getForgeClientHandler().resetHandshake();
+		if (user.getServer() != null && user.forgeClientHandler.isHandshakeComplete() && user.getServer().isForgeServer())
+			user.forgeClientHandler.resetHandshake();
 
 		throw CancelSendSignal.INSTANCE;
 	}
 
 	@Override
 	public void handle(SetCompression setCompression) throws Exception {
-		ch.setCompressionThreshold(setCompression.getThreshold());
+		channel.setCompressionThreshold(setCompression.getThreshold());
 	}
 
 	@Override
 	public void handle(Login login) throws Exception {	
-		Preconditions.checkState(thisState == State.LOGIN, "Not expecting " + thisState.name());
+		thisState.shouldBe(State.LOGIN);
 		
-		ServerConnectedEvent event = new ServerConnectedEvent(user, server);
-		ProxyServer.getInstance().getPluginManager().callEvent(event);
+		ServerConnection server = new ServerConnection(user, channel, target);
+		bungee.pluginManager.callEvent(new ServerConnectedEvent(user, server));
 
-		ch.write(BungeeCord.getInstance().registerChannels(user.getPendingConnection().getProtocol()));
+		channel.write(bungee.registerChannels(user.pendingConnection.getProtocol()));
 
 		Queue<DefinedPacket> packetQueue = target.getPacketQueue();
 		synchronized (packetQueue) {
 			while (!packetQueue.isEmpty())
-				ch.write(packetQueue.poll());
+				channel.write(packetQueue.poll());
 		}
 
-		for (PluginMessage message : user.getPendingConnection().getRelayMessages()) {
-			ch.write(message);
+		for (PluginMessage message : user.pendingConnection.getRelayMessages()) {
+			channel.write(message);
 		}
 
 		if (user.getSettings() != null) 
-			ch.write(user.getSettings());
+			channel.write(user.getSettings());
 
-		if (user.getForgeClientHandler().getClientModList() == null && !user.getForgeClientHandler().isHandshakeComplete()) // Vanilla
-			user.getForgeClientHandler().setHandshakeComplete();
+		if (user.forgeClientHandler.getClientModList() == null && !user.forgeClientHandler.isHandshakeComplete()) // Vanilla
+			user.forgeClientHandler.setHandshakeComplete();
 		
 		if (user.getServer() == null) {
 			// Once again, first connection
@@ -169,9 +171,9 @@ public class ModernServerConnector extends ServerConnector<ModernUserConnection>
 			// Forge allows dimension ID's > 127
 			user.unsafe().sendPacket(login.clone().setMaxPlayers(user.getPendingConnection().getListener().getTabListSize()));
 
-			if (user.getPendingConnection().getProtocol().olderThan(Protocol.MC_1_8_0)) {
+			if (user.pendingConnection.getProtocol().olderThan(Protocol.MC_1_8_0)) {
 				MinecraftOutput out = new MinecraftOutput();
-				out.writeStringUTF8WithoutLengthHeaderBecauseDinnerboneStuffedUpTheMCBrandPacket(ProxyServer.getInstance().getName() + " (" + ProxyServer.getInstance().getVersion() + ")");
+				out.writeStringUTF8WithoutLengthHeaderBecauseDinnerboneStuffedUpTheMCBrandPacket(bungee.getName() + " (" + bungee.getVersion() + ")");
 				user.unsafe().sendPacket(new PluginMessage("MC|Brand", out.toArray(), handshakeHandler.isServerForge()));
 			} else {
 				ByteBuf brand = ByteBufAllocator.DEFAULT.heapBuffer();
@@ -181,7 +183,7 @@ public class ModernServerConnector extends ServerConnector<ModernUserConnection>
 				);
 				user.unsafe().sendPacket(
 					new PluginMessage(
-							user.getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_13_0) ?
+							user.pendingConnection.getProtocol().newerOrEqual(Protocol.MC_1_13_0) ?
 									"minecraft:brand"
 									:
 									"MC|Brand"
@@ -194,7 +196,6 @@ public class ModernServerConnector extends ServerConnector<ModernUserConnection>
 
 			user.setDimension(login.getDimension());
 		} else {
-			user.getServer().setObsolete(true);
 			user.getTabListHandler().onServerChange();
 
 			Scoreboard serverScoreboard = user.getServerSentScoreboard();
@@ -218,7 +219,7 @@ public class ModernServerConnector extends ServerConnector<ModernUserConnection>
 			// Update debug info from login packet
 			user.unsafe().sendPacket(new EntityStatus(user.getClientEntityId(), login.isReducedDebugInfo() ? EntityStatus.DEBUG_INFO_REDUCED : EntityStatus.DEBUG_INFO_NORMAL));
 
-			user.setDimensionChange(true);
+			//user.setDimensionChange(true);
 			if (login.getDimension() == user.getDimension())
 				user.unsafe().sendPacket(new Respawn((login.getDimension() >= 0 ? -1 : 0), login.getDifficulty(), login.getGameMode(), login.getWorldHeight(), login.getLevelType()));
 
@@ -230,7 +231,7 @@ public class ModernServerConnector extends ServerConnector<ModernUserConnection>
 			user.getServer().disconnect("Quitting");
 		}
 		
-		finish();
+		finish(server);
 
 		thisState = State.FINISHED;
 
@@ -255,7 +256,7 @@ public class ModernServerConnector extends ServerConnector<ModernUserConnection>
 						// sending.
 						// The handshake will not be complete if we reset this earlier.
 						if (user.getServer() != null && user.getForgeClientHandler().isHandshakeComplete()) {
-							user.getForgeClientHandler().resetHandshake();
+							user.forgeClientHandler.resetHandshake();
 						}
 
 						isForgeServer = true;

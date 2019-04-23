@@ -61,6 +61,9 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 	
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+		if(!ctx.channel().isActive())
+			return;
+		
 		int begin = in.readerIndex();
 
 		try {

@@ -2,6 +2,7 @@ package net.md_5.bungee.protocol.packet;
 
 import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
@@ -11,6 +12,7 @@ import net.md_5.bungee.protocol.Protocol;
 
 @Data
 @AllArgsConstructor
+@Builder
 @EqualsAndHashCode(callSuper = false)
 public class EncryptionResponse extends DefinedPacket
 {

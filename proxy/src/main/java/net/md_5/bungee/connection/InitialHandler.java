@@ -11,6 +11,7 @@ import javax.crypto.SecretKey;
 
 import com.google.common.base.Charsets;
 
+import io.netty.channel.Channel;
 import lombok.Getter;
 import lombok.Setter;
 import net.md_5.bungee.BungeeCord;
@@ -38,12 +39,12 @@ import net.md_5.bungee.http.HttpClient;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.PacketHandler;
+import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.util.BufUtil;
-import net.md_5.bungee.util.QuietException;
 
 public abstract class InitialHandler extends PacketHandler implements PendingConnection {
 	protected final BungeeCord bungee = BungeeCord.getInstance();
@@ -51,18 +52,14 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 	@Getter
 	protected boolean onlineMode = bungee.config.isOnlineMode();
 	@Getter
-	protected final ListenerInfo listener;
+	public final ListenerInfo listener;
 	@Getter
 	@Setter
 	private UUID uniqueId = null;
 	@Getter
 	@Setter
 	private UUID offlineId = null;
-	
-	public InitialHandler(ChannelWrapper ch, ListenerInfo info) {
-		super(ch);
-		this.listener = info;
-	}
+	public final ChannelWrapper ch;
 	
 	protected final Unsafe unsafe = new Unsafe() {
 		@Override
@@ -75,7 +72,12 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 
 	@Override
 	public boolean shouldHandle(PacketWrapper packet) throws Exception {
-		return !ch.isClosing();
+		return ch.handle.isActive();
+	}
+	
+	public InitialHandler(Channel ch, ListenerInfo info) {
+		this.ch = ch.attr(PipelineUtil.CHANNEL_WRAPPER).get();
+		this.listener = info;
 	}
 
 	@Override
@@ -86,7 +88,7 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 	@Override
 	public void handle(PacketWrapper packet) throws Exception {
 		if (packet.packet == null)
-			throw new QuietException("Unexpected packet received during login process! " + BufUtil.dump(packet.content(), 16));
+			throw new RuntimeException("Unexpected packet received during login process! " + BufUtil.dump(packet.content(), 16));
 	}
 
 	protected void ping(Callback<ProxyPingEvent> cb) {
@@ -141,9 +143,9 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 		String preventProxy = ((BungeeCord.getInstance().config.isPreventProxyConnections()) ? "&ip=" + URLEncoder.encode(getAddress().getAddress().getHostAddress(), "UTF-8") : "");
 		String authURL = "https://sessionserver.mojang.com/session/minecraft/hasJoined?username=" + encName + "&serverId=" + encodedHash + preventProxy;
 
-		HttpClient.get(authURL, ch.getHandle().eventLoop(), (result, error) -> {
+		HttpClient.get(authURL, ch.handle.eventLoop(), (result, error) -> {
 			if (error == null) {
-				LoginResult obj = BungeeCord.getInstance().gson.fromJson(result, LoginResult.class);
+				LoginResult obj = bungee.gson.fromJson(result, LoginResult.class);
 				if (obj != null && obj.getId() != null) {
 					loginProfile = obj;
 					uniqueId = Util.getUUID(loginProfile.getId());
@@ -185,7 +187,7 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 
 		// fire pre login event
 		bungee.getPluginManager().callEvent(new PreLoginEvent(this, (PreLoginEvent result, Throwable error) -> {
-			if (ch.isClosed())
+			if (!ch.handle.isActive())
 				return;
 			if (result.isCancelled()) {
 				disconnect(result.getCancelReasonComponents());
@@ -227,7 +229,7 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 
 		// fire login event
 		bungee.getPluginManager().callEvent(new LoginEvent(this, (LoginEvent result, Throwable error) -> {
-			if (ch.isClosed())
+			if (!ch.handle.isActive())
 				return;
 			if (result.isCancelled()) {
 				disconnect(result.getCancelReasonComponents());
@@ -239,7 +241,7 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 	}
 	
 	protected <IH extends InitialHandler, UC extends UserConnection<IH>> void postLogin(UC userCon) {
-		ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new UpstreamBridge<IH, UC>(ch, bungee, userCon));
+		ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new UpstreamBridge<IH, UC>(userCon));
 		bungee.getPluginManager().callEvent(new PostLoginEvent(userCon));
 		
 		bungee.getLogger().info(toString() + " Connected to listener(" + listener.getHost()+")");
@@ -293,7 +295,7 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 
 	@Override
 	public boolean isConnected() {
-		return !ch.isClosed();
+		return ch.handle.isActive();
 	}
 	
 	@Override

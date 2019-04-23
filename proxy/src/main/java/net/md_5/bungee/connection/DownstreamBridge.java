@@ -4,7 +4,6 @@ import java.io.DataInput;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -21,17 +20,16 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.ServerConnection;
 import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.Util;
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.PluginMessageEvent;
 import net.md_5.bungee.api.event.ServerConnectEvent;
-import net.md_5.bungee.api.event.ServerDisconnectEvent;
 import net.md_5.bungee.api.event.ServerKickEvent;
 import net.md_5.bungee.api.event.TabCompleteResponseEvent;
 import net.md_5.bungee.api.plugin.Command;
@@ -41,7 +39,6 @@ import net.md_5.bungee.api.score.Score;
 import net.md_5.bungee.api.score.Scoreboard;
 import net.md_5.bungee.api.score.Team;
 import net.md_5.bungee.chat.ComponentSerializer;
-import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.PacketWrapper;
@@ -61,19 +58,18 @@ import net.md_5.bungee.protocol.packet.TabCompleteResponse;
 import net.md_5.bungee.tab.TabList;
 
 public class DownstreamBridge extends PacketHandler {
-	private final ProxyServer bungee = ProxyServer.getInstance();
+	private final BungeeCord bungee = BungeeCord.getInstance();
 	private final UserConnection<?> con;
 	private final ServerConnection server;
 
-	public DownstreamBridge(ChannelWrapper ch, UserConnection<?> uc) {
-		super(ch);
+	public DownstreamBridge(UserConnection<?> uc) {
 		this.con = uc;
 		this.server = uc.getServer();
 	}
 
 	@Override
 	public void exception(Throwable t) throws Exception {
-		bungee.getLogger().log(Level.WARNING, this.toString(), t);
+		/*bungee.logger.log(Level.WARNING, this.toString(), t);
 
 		if (server.isObsolete())
 			// do not perform any actions if the user has already moved
@@ -86,13 +82,13 @@ public class DownstreamBridge extends PacketHandler {
 			con.sendMessage(bungee.getTranslation("server_went_down"));
 		} else {
 			con.disconnect(Util.exception(t));
-		}
+		}*/
 	}
 
 	@Override
-	public void disconnected(ChannelWrapper channel) throws Exception {
+	public void disconnected() throws Exception {
 		// We lost connection to the server
-		server.getInfo().removePlayer(con);
+		/*server.getInfo().removePlayer(con);
 		if (bungee.getReconnectHandler() != null)
 			bungee.getReconnectHandler().setServer(con);
 
@@ -100,17 +96,18 @@ public class DownstreamBridge extends PacketHandler {
 			con.disconnect(bungee.getTranslation("lost_connection"));
 
 		ServerDisconnectEvent serverDisconnectEvent = new ServerDisconnectEvent(con, server.getInfo());
-		bungee.getPluginManager().callEvent(serverDisconnectEvent);
+		bungee.getPluginManager().callEvent(serverDisconnectEvent);*/
+		
 	}
 
 	@Override
 	public boolean shouldHandle(PacketWrapper packet) throws Exception {
-		return !server.isObsolete();
+		return !server.isConnected();
 	}
 
 	@Override
 	public void handle(PacketWrapper packet) throws Exception {
-		con.getEntityRewrite().rewriteClientbound(packet.content(), con.getServerEntityId(), con.getClientEntityId(), con.getPendingConnection().getProtocol());
+		con.entityRewrite.rewriteClientbound(packet.content(), con.getServerEntityId(), con.getClientEntityId(), con.getPendingConnection().getProtocol());
 		packet.retain();
 		con.getCh().write(packet.content());
 	}
@@ -146,10 +143,7 @@ public class DownstreamBridge extends PacketHandler {
 			if (oldObjective != null) {
 				oldObjective.setValue(objective.getValue());
 				// oldObjective.setType( objective.getType().toString() );
-				oldObjective.setType(objective.getType() != null ? objective.getType().toString() : null); // Travertine
-																											// - 1.7
-																											// protocol
-																											// support
+				oldObjective.setType(objective.getType() != null ? objective.getType().toString() : null);
 			}
 			break;
 		default:
@@ -232,9 +226,9 @@ public class DownstreamBridge extends PacketHandler {
 		}
 
 		if (pluginMessage.getTag()
-				.equals(con.getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_13_0) ? "minecraft:brand"
+				.equals(con.pendingConnection.getProtocol().newerOrEqual(Protocol.MC_1_13_0) ? "minecraft:brand"
 						: "MC|Brand")) {
-			if (con.getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_8_0)) {
+			if (con.pendingConnection.getProtocol().newerOrEqual(Protocol.MC_1_8_0)) {
 				ByteBuf brand = Unpooled.wrappedBuffer(pluginMessage.getData());
 				String serverBrand = DefinedPacket.readString(brand);
 				brand.release();
@@ -448,7 +442,6 @@ public class DownstreamBridge extends PacketHandler {
 		} else {
 			con.disconnect0(event.getKickReasonComponent()); // TODO: Prefix our own stuff.
 		}
-		server.setObsolete(true);
 		throw CancelSendSignal.INSTANCE;
 	}
 

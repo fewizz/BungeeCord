@@ -9,7 +9,6 @@ import lombok.NonNull;
 import lombok.Setter;
 import net.md_5.bungee.BungeeServerInfo;
 import net.md_5.bungee.UserConnection;
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.forge.ForgeClientHandler;
 import net.md_5.bungee.forge.ForgeConstants;
 import net.md_5.bungee.forge.ForgeServerHandler;
@@ -18,20 +17,13 @@ import net.md_5.bungee.protocol.packet.PluginMessage;
 
 public class ModernUserConnection extends UserConnection<ModernInitialHandler> {
 	@Getter
-	@Setter
-	private ForgeClientHandler forgeClientHandler;
+	public final ForgeClientHandler forgeClientHandler;
 	@Getter
 	@Setter
 	private ForgeServerHandler forgeServerHandler;
 	
-	public ModernUserConnection(@NonNull ProxyServer bungee, @NonNull ChannelWrapper ch, @NonNull String name,
-			ModernInitialHandler pendingConnection) {
-		super(bungee, ch, name, pendingConnection);
-	}
-	
-	@Override
-	public void init() {
-		super.init();
+	public ModernUserConnection(ChannelWrapper ch, ModernInitialHandler pendingConnection) {
+		super(ch, pendingConnection);
 		
 		forgeClientHandler = new ForgeClientHandler(this);
 
@@ -63,12 +55,11 @@ public class ModernUserConnection extends UserConnection<ModernInitialHandler> {
 	}
 
 	public @NonNull String getExtraDataInHandshake() {
-		return getPendingConnection().getExtraDataInHandshake();
+		return pendingConnection.getExtraDataInHandshake();
 	}
 
 	@Override
-	protected ModernServerConnector createServerConnector(ChannelWrapper ch,
-			BungeeServerInfo target) {
+	protected ModernServerConnector createServerConnector(ChannelWrapper ch, BungeeServerInfo target) {
 		return new ModernServerConnector(ch, this, target);
 	}
 }

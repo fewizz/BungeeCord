@@ -2,17 +2,14 @@ package net.md_5.bungee.legacy;
 
 import java.util.Map;
 
-import lombok.NonNull;
 import net.md_5.bungee.BungeeServerInfo;
 import net.md_5.bungee.UserConnection;
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.netty.ChannelWrapper;
 
 public class LegacyUserConnection extends UserConnection<LegacyInitialHandler> {
 
-	public LegacyUserConnection(@NonNull ProxyServer bungee, @NonNull ChannelWrapper ch, @NonNull String name,
-			LegacyInitialHandler pendingConnection) {
-		super(bungee, ch, name, pendingConnection);
+	public LegacyUserConnection(ChannelWrapper ch, LegacyInitialHandler pendingConnection) {
+		super(ch, pendingConnection);
 	}
 
 	@Override

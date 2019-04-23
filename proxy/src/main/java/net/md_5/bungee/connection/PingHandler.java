@@ -2,6 +2,7 @@ package net.md_5.bungee.connection;
 
 import com.google.gson.Gson;
 
+import io.netty.channel.Channel;
 import lombok.NonNull;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.api.Callback;
@@ -10,6 +11,7 @@ import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PacketHandler;
+import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.NetworkState;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
@@ -26,29 +28,30 @@ public class PingHandler extends PacketHandler {
 	private final ServerInfo target;
 	@NonNull
 	private final Callback<ServerPing> callback;
+	final ChannelWrapper ch;
 	
-	public PingHandler(ChannelWrapper ch, ServerInfo info, Callback<ServerPing> cb) {
-		super(ch);
+	public PingHandler(Channel ch, ServerInfo info, Callback<ServerPing> cb) {
+		this.ch = PipelineUtil.getChannelWrapper(ch);
 		this.target = info;
 		this.callback = cb;
 	}
 
 	@Override
-	public void connected(ChannelWrapper channel) throws Exception {
-		Protocol protocol = channel.getProtocol();
+	public void connected() throws Exception {
+		Protocol protocol = ch.getProtocol();
 		if (protocol.isModern()) {
-			channel.write(Handshake.builder()
+			ch.write(Handshake.builder()
 				.protocolVersion(protocol.version)
 				.host(target.getAddress().getHostString())
 				.port(target.getAddress().getPort())
 				.requestedNetworkState(NetworkState.STATUS)
 				.build()
 			);
-			channel.setNetworkState(NetworkState.STATUS);
-			channel.write(new StatusRequest());
+			ch.setNetworkState(NetworkState.STATUS);
+			ch.write(new StatusRequest());
 		} 
 		else {
-			channel.write(LegacyStatusRequest.builder()
+			ch.write(LegacyStatusRequest.builder()
 				.branding("MC|PingHost")
 				.host(target.getAddress().getHostString())
 				.port(target.getAddress().getPort())

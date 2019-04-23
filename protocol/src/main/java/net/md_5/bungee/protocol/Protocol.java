@@ -553,6 +553,10 @@ public enum Protocol {
 		return newerOrEqual(p1) && olderOrEqual(p2);
 	}
 	
+	public NetworkState initialNetworkState() {
+		return isModern() ? NetworkState.HANDSHAKE : NetworkState.LEGACY;
+	}
+	
 	public static Protocol byNumber(int num, ProtocolGen gen) {
 		for(Protocol v : VALUES)
 			if(v.version == num && gen == v.generation)

@@ -14,7 +14,6 @@ import io.netty.channel.Channel;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.Util;
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.ChatEvent;
 import net.md_5.bungee.api.event.PlayerDisconnectEvent;
@@ -38,18 +37,14 @@ import net.md_5.bungee.protocol.packet.TabCompleteResponse;
 public class UpstreamBridge<IH extends InitialHandler, UC extends UserConnection<IH>> extends PacketHandler
 {
 
-    private final ProxyServer bungee;
+    private final BungeeCord bungee = BungeeCord.getInstance();
     private final UC con;
 
-    public UpstreamBridge(ChannelWrapper ch, ProxyServer bungee, UC con)
+    public UpstreamBridge(UC con)
     {
-    	super(ch);
-        this.bungee = bungee;
         this.con = con;
-
-        BungeeCord.getInstance().addConnection(con);
         con.getTabListHandler().onConnect();
-        con.unsafe().sendPacket( BungeeCord.getInstance().registerChannels(con.getPendingConnection().getProtocol()));
+        con.unsafe().sendPacket( bungee.registerChannels(con.pendingConnection.getProtocol()));
     }
 
     @Override
@@ -60,13 +55,13 @@ public class UpstreamBridge<IH extends InitialHandler, UC extends UserConnection
     }
 
     @Override
-    public void disconnected(ChannelWrapper channel) throws Exception
+    public void disconnected() throws Exception
     {
         // We lost connection to the client
         PlayerDisconnectEvent event = new PlayerDisconnectEvent( con );
         bungee.getPluginManager().callEvent( event );
         con.getTabListHandler().onDisconnect();
-        BungeeCord.getInstance().removeConnection( con );
+        bungee.removeConnection( con );
 
         if ( con.getServer() != null )
         {
@@ -100,7 +95,7 @@ public class UpstreamBridge<IH extends InitialHandler, UC extends UserConnection
     {
         if ( con.getServer() != null )
         {
-            Channel server = con.getServer().getCh().getHandle();
+            Channel server = con.getServer().getCh().handle;
             if ( channel.getHandle().isWritable() )
             {
                 server.config().setAutoRead( true );
@@ -114,7 +109,7 @@ public class UpstreamBridge<IH extends InitialHandler, UC extends UserConnection
     @Override
     public boolean shouldHandle(PacketWrapper packet) throws Exception
     {
-        return bungee.getConfig().getAlwaysHandlePackets() || con.getServer() != null || packet.packet instanceof PluginMessage;
+        return bungee.config.getAlwaysHandlePackets() || con.getServer() != null || packet.packet instanceof PluginMessage;
     }
 
     @Override
@@ -208,7 +203,6 @@ public class UpstreamBridge<IH extends InitialHandler, UC extends UserConnection
     public void handle(ClientSettings settings) throws Exception
     {
         con.setSettings( settings );
-
         SettingsChangedEvent settingsEvent = new SettingsChangedEvent( con );
         bungee.getPluginManager().callEvent( settingsEvent );
     }
@@ -222,7 +216,7 @@ public class UpstreamBridge<IH extends InitialHandler, UC extends UserConnection
             throw CancelSendSignal.INSTANCE;
         }
 
-        if ( BungeeCord.getInstance().config.isForgeSupport() )
+        if ( bungee.config.isForgeSupport() )
         {
 
             // We handle forge handshake messages if forge support is enabled.

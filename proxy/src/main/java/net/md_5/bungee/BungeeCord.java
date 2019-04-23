@@ -92,7 +92,6 @@ import net.md_5.bungee.log.BungeeLogger;
 import net.md_5.bungee.log.LoggingOutputStream;
 import net.md_5.bungee.modern.ModernInitialHandler;
 import net.md_5.bungee.module.ModuleManager;
-import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.NettyUtil;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.DefinedPacket;
@@ -159,7 +158,7 @@ public class BungeeCord extends ProxyServer {
 	@Getter
 	private final BungeeScheduler scheduler = new BungeeScheduler();
 	@Getter
-	private final Logger logger;
+	public final Logger logger;
 	public final Gson gson = new GsonBuilder().registerTypeAdapter(BaseComponent.class, new ComponentSerializer())
 			.registerTypeAdapter(TextComponent.class, new TextComponentSerializer())
 			.registerTypeAdapter(TranslatableComponent.class, new TranslatableComponentSerializer())
@@ -316,70 +315,74 @@ public class BungeeCord extends ProxyServer {
 						"Since PROXY protocol is in use, internal connection throttle has been disabled.");
 			}
 		}
-		new ServerBootstrap().channel(NettyUtil.bestServerSocketChannel()).option(ChannelOption.SO_REUSEADDR, true) // TODO:
-																													// Move
-																													// this
-																													// elsewhere!
-				.childAttr(PipelineUtil.LISTENER, info).childHandler(new ChannelInitializer<Channel>() {
-					@Override
-					protected void initChannel(Channel ch) throws Exception {
-						PipelineUtil.basicConfig(ch);
+		new ServerBootstrap()
+			.channel(NettyUtil.bestServerSocketChannel())
+			.option(ChannelOption.SO_REUSEADDR, true)
+			.childAttr(PipelineUtil.LISTENER, info)
+			.childHandler(new ChannelInitializer<Channel>() {
+				@Override
+				protected void initChannel(Channel ch) throws Exception {
+					PipelineUtil.basicConfig(ch);
 
-						ch.pipeline().addFirst(new ChannelInboundHandlerAdapter() {
-							public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-								ByteBuf in = (ByteBuf) msg;
-								if (!in.isReadable())
-									return;
+					ch.pipeline().addFirst(new ChannelInboundHandlerAdapter() {
+						public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+							ByteBuf in = (ByteBuf) msg;
+							if (!in.isReadable())
+								return;
 
-								ProtocolGen gen = ProtocolGen.POST_NETTY;
-								// modern's handshake size is not eq. to these numbers, so that's ok
-								short packetID = in.getUnsignedByte(in.readerIndex());
-								if (packetID == 0xFE || packetID == 0x02) { // Legacy status request
-									gen = ProtocolGen.PRE_NETTY;
-								}
+							ProtocolGen gen = ProtocolGen.POST_NETTY;
+							// modern's handshake size is not eq. to these numbers, so that's ok
+							short packetID = in.getUnsignedByte(in.readerIndex());
+							if (packetID == 0xFE || packetID == 0x02) { // Legacy status request
+								gen = ProtocolGen.PRE_NETTY;
+							}
 
-								Protocol pv = gen == ProtocolGen.POST_NETTY ? getProtocolVersion() : Protocol.MC_1_6_4;
+							Protocol pv = gen == ProtocolGen.POST_NETTY ? getProtocolVersion() : Protocol.MC_1_6_4;
 
-								if (config.isInitialProtocol())
-									logger.info("[" + ctx.channel().remoteAddress()
-											+ "] Connected to Bungee, identified as " + pv.name());
-								PipelineUtil.packetHandlers(ch, pv, Side.CLIENT);
-								HandlerBoss boss = new HandlerBoss(
-									pv.isModern() ?
-									new ModernInitialHandler(ch, pv, info)
-									:
-									new LegacyInitialHandler(ch, pv, info)
-								);
-								boss.channelActive(ctx);
+							if (config.isInitialProtocol())
+								logger.info("[" + ctx.channel().remoteAddress()
+									+ "] Connected to Bungee, identified as " + pv.name());
+							
+							PipelineUtil.addHandlers(ch, pv, Side.CLIENT);
+							
+							if(pv.isModern())
+								PipelineUtil.getChannelWrapper(ch).setPacketHandler(new ModernInitialHandler(ch, info));
+							else
+								PipelineUtil.getChannelWrapper(ch).setPacketHandler(new LegacyInitialHandler(ch, info));
 
-								ch.pipeline().addLast(PipelineUtil.BOSS, boss);
-								PipelineUtil.readTimeoutHandler(ch);
-
-								ctx.pipeline().remove(this);
-								ctx.channel().pipeline().fireChannelRead(msg);
-							};
-						});
-					}
-				}).group(eventLoops).localAddress(info.getHost()).bind().addListener((ChannelFuture future) -> {
-					if (future.isSuccess()) {
-						listeners.add(future.channel());
-						getLogger().log(Level.INFO, "Listening on {0}", info.getHost());
-					} else
-						getLogger().log(Level.WARNING, "Could not bind to host " + info.getHost(), future.cause());
-				});
+							ctx.pipeline().remove(this);
+							ctx.channel().pipeline().fireChannelRead(msg);
+						};
+					});
+				}
+			})
+			.group(eventLoops)
+			.localAddress(info.getHost())
+			.bind()
+			.addListener((ChannelFuture future) -> {
+				if (future.isSuccess()) {
+					listeners.add(future.channel());
+					logger.log(Level.INFO, "Listening on {0}", info.getHost());
+				} else
+					logger.log(Level.WARNING, "Could not bind to host " + info.getHost(), future.cause());
+			}
+		);
 
 		if (!info.isQueryEnabled())
 			return;
 
-		new RemoteQuery(this, info).start(NettyUtil.bestDatagramChannel(),
-				new InetSocketAddress(info.getHost().getAddress(), info.getQueryPort()), eventLoops,
+		new RemoteQuery(this, info)
+			.start(NettyUtil.bestDatagramChannel(),
+				new InetSocketAddress(info.getHost().getAddress(), info.getQueryPort()),
+				eventLoops,
 				(ChannelFuture future) -> {
 					if (future.isSuccess()) {
 						listeners.add(future.channel());
-						getLogger().log(Level.INFO, "Started query on {0}", future.channel().localAddress());
+						logger.log(Level.INFO, "Started query on {0}", future.channel().localAddress());
 					} else
-						getLogger().log(Level.WARNING, "Could not bind to host " + info.getHost(), future.cause());
-				});
+						logger.log(Level.WARNING, "Could not bind to host " + info.getHost(), future.cause());
+				}
+			);
 	}
 
 	public void stopListeners() {

@@ -15,11 +15,9 @@ import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ListenerInfo;
 import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.jni.cipher.BungeeCipher;
-import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.netty.cipher.CipherDecoder;
 import net.md_5.bungee.netty.cipher.CipherEncoder;
-import net.md_5.bungee.protocol.NetworkState;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolGen;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
@@ -38,8 +36,8 @@ public class LegacyInitialHandler extends InitialHandler {
 	@Getter
 	private Login forgeLogin;
 
-	public LegacyInitialHandler(Channel ch, Protocol p, ListenerInfo listener) {
-		super(new ChannelWrapper(ch, p, NetworkState.LEGACY), listener);
+	public LegacyInitialHandler(Channel ch, ListenerInfo listener) {
+		super(ch, listener);
 	}
 	
 	@Override
@@ -81,7 +79,8 @@ public class LegacyInitialHandler extends InitialHandler {
 				.max(result.getResponse().getPlayers().getMax())
 				.build()
 				.toString();
-			ch.close(new Kick(message));
+			ch.write(new Kick(message));
+			ch.close();
 		});
 	}
 
@@ -111,8 +110,7 @@ public class LegacyInitialHandler extends InitialHandler {
 	
 	private void login() {
 		login((res, error) -> {
-			LegacyUserConnection con = new LegacyUserConnection(bungee, ch, getName(), this);
-			con.init();
+			LegacyUserConnection con = new LegacyUserConnection(ch, this);
 			postLogin(con);
 		});
 	}
@@ -137,9 +135,9 @@ public class LegacyInitialHandler extends InitialHandler {
 		ch.write(new EncryptionResponse());
 
 		BungeeCipher decrypt = EncryptionUtil.getCipher(false, sharedKey);
-		ch.addBefore(PipelineUtil.PACKET_DEC, PipelineUtil.DECRYPT, new CipherDecoder(decrypt));
+		ch.handle.pipeline().addBefore(PipelineUtil.PACKET_DEC, PipelineUtil.DECRYPT, new CipherDecoder(decrypt));
 		BungeeCipher encrypt = EncryptionUtil.getCipher(true, sharedKey);
-		ch.addBefore(PipelineUtil.PACKET_ENC, PipelineUtil.ENCRYPT, new CipherEncoder(encrypt));
+		ch.handle.pipeline().addBefore(PipelineUtil.PACKET_ENC, PipelineUtil.ENCRYPT, new CipherEncoder(encrypt));
 	}
 
 	@Override
@@ -151,7 +149,8 @@ public class LegacyInitialHandler extends InitialHandler {
 
 	@Override
 	public void disconnect(BaseComponent... reason) {
-		ch.close(new Kick(TextComponent.toLegacyText(reason)));
+		ch.write(new Kick(TextComponent.toLegacyText(reason)));
+		ch.close();
 	}
 
 	@Override

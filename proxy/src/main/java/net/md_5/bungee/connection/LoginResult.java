@@ -14,7 +14,6 @@ public class LoginResult {
 	@Data
 	@AllArgsConstructor
 	public static class Property {
-
 		private String name;
 		private String value;
 		private String signature;

@@ -19,7 +19,6 @@ import net.md_5.bungee.api.event.PlayerHandshakeEvent;
 import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.jni.cipher.BungeeCipher;
-import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.netty.cipher.CipherDecoder;
 import net.md_5.bungee.netty.cipher.CipherEncoder;
@@ -50,8 +49,8 @@ public class ModernInitialHandler extends InitialHandler {
 	@Getter
 	private String extraDataInHandshake = "";
 	
-	public ModernInitialHandler(Channel ch, Protocol p, ListenerInfo listener) {
-		super(new ChannelWrapper(ch, p, NetworkState.HANDSHAKE), listener);
+	public ModernInitialHandler(Channel ch, ListenerInfo listener) {
+		super(ch, listener);
 	}
 	
 	enum State {
@@ -133,7 +132,8 @@ public class ModernInitialHandler extends InitialHandler {
 	@Override
 	public void handle(PingPacket ping) throws Exception {
 		thisState.shouldBe(State.PING);
-		ch.close(ping);
+		ch.write(ping);
+		ch.close();
 	}
 	
 	@Override
@@ -162,9 +162,9 @@ public class ModernInitialHandler extends InitialHandler {
 		SecretKey sharedKey = EncryptionUtil.getSecret(encryptResponse, request);
 
 		BungeeCipher decrypt = EncryptionUtil.getCipher(false, sharedKey);
-		ch.addBefore(PipelineUtil.FRAME_DEC, PipelineUtil.DECRYPT, new CipherDecoder(decrypt));
+		ch.handle.pipeline().addBefore(PipelineUtil.FRAME_DEC, PipelineUtil.DECRYPT, new CipherDecoder(decrypt));
 		BungeeCipher encrypt = EncryptionUtil.getCipher(true, sharedKey);
-		ch.addBefore(PipelineUtil.FRAME_ENC, PipelineUtil.ENCRYPT, new CipherEncoder(encrypt));
+		ch.handle.pipeline().addBefore(PipelineUtil.FRAME_ENC, PipelineUtil.ENCRYPT, new CipherEncoder(encrypt));
 
 		if(isOnlineMode())
 			auth(request, sharedKey, () -> login());
@@ -173,9 +173,8 @@ public class ModernInitialHandler extends InitialHandler {
 	@Override
 	public void disconnect(final BaseComponent... reason) {
 		if (thisState != State.STATUS && thisState != State.PING)
-			ch.delayedClose(new Kick(ComponentSerializer.toString(reason)));
-		else
-			ch.close();
+			ch.write(new Kick(ComponentSerializer.toString(reason)));
+		ch.close();
 	}
 	
 	@Override
@@ -193,9 +192,8 @@ public class ModernInitialHandler extends InitialHandler {
 
 	protected void login() {
 		login((result, error) -> {
-			ModernUserConnection userCon = new ModernUserConnection(bungee, ch, getName(), this);
+			ModernUserConnection userCon = new ModernUserConnection(ch, this);
 			userCon.setCompressionThreshold(BungeeCord.getInstance().config.getCompressionThreshold());
-			userCon.init();
 
 			if (getProtocol().newerOrEqual(Protocol.MC_1_7_6))
 				unsafe.sendPacket(new LoginSuccess(getUniqueId().toString(), getName())); // With dashes in between

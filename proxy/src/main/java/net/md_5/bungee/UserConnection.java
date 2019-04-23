@@ -15,18 +15,16 @@ import com.google.common.base.Preconditions;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
+import io.netty.util.concurrent.Future;
 import io.netty.util.internal.PlatformDependent;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.val;
 import net.md_5.bungee.api.Callback;
 import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.ServerConnectRequest;
 import net.md_5.bungee.api.SkinConfiguration;
 import net.md_5.bungee.api.Title;
@@ -59,34 +57,20 @@ import net.md_5.bungee.tab.TabList;
 import net.md_5.bungee.util.CaseInsensitiveSet;
 import net.md_5.bungee.util.ChatComponentTransformer;
 
-@RequiredArgsConstructor
 public abstract class UserConnection<IH extends InitialHandler> implements ProxiedPlayer {
 
 	/* ======================================================================== */
-	@NonNull
-	private final ProxyServer bungee;
-	@NonNull
+	private final BungeeCord bungee = BungeeCord.getInstance();
 	@Getter
 	private final ChannelWrapper ch;
 	@Getter
-	@NonNull
-	private final String name;
-	@Getter
-	private final IH pendingConnection;
+	public final IH pendingConnection;
 	/* ======================================================================== */
 	@Getter
-	@Setter
 	private ServerConnection server;
 	@Getter
 	@Setter
 	private int dimension;
-	@Getter
-	@Setter
-	private boolean dimensionChange = true;
-	//private final AtomicReference<Future<V>> connector;
-	//@Getter
-	//private final Collection<ServerInfo> pendingConnects = new HashSet<>();
-	
 	/* ======================================================================== */
 	@Getter
 	@Setter
@@ -127,7 +111,7 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 	@Getter
 	private String displayName;
 	@Getter
-	private EntityMap entityRewrite;
+	public final EntityMap entityRewrite;
 	private Locale locale;
 
 	/* ======================================================================== */
@@ -137,28 +121,29 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 			ch.write(packet);
 		}
 	};
-
-	public void init() {
-		this.entityRewrite = EntityMap.getEntityMap(getPendingConnection().getProtocol());
-
-		this.displayName = name;
-
+	
+	public UserConnection(ChannelWrapper cw, IH pendingConnection) {
+		this.ch = cw;
+		this.pendingConnection = pendingConnection;
+		this.entityRewrite = EntityMap.getEntityMap(pendingConnection.getProtocol());
+		this.displayName = pendingConnection.getName();
+		
 		tabListHandler = new ServerUnique(this);
 
-		Collection<String> g = bungee.getConfigurationAdapter().getGroups(name);
+		Collection<String> g = bungee.getConfigurationAdapter().getGroups(pendingConnection.getName());
 		g.addAll(bungee.getConfigurationAdapter().getGroups(getUniqueId().toString()));
 		for (String s : g) {
 			addGroups(s);
 		}
-	}
-
-	public boolean isActive() {
-		return !ch.isClosed();
+		
+		bungee.addConnection(this);
+		ch.handle.closeFuture().addListener(v -> {
+			bungee.removeConnection(this);
+		});
 	}
 
 	@Override
-	public void setDisplayName(String name) {
-		Preconditions.checkNotNull(name, "displayName");
+	public void setDisplayName(@NonNull String name) {
 		if (pendingConnection.getProtocol().olderOrEqual(Protocol.MC_1_7_6))
 			Preconditions.checkArgument(name.length() <= 16, "Display name cannot be longer than 16 characters");
 
@@ -191,25 +176,20 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 	}
 
 	public void connectNow(ServerInfo target, ServerConnectEvent.Reason reason) {
-		dimensionChange = true;
 		connect(target, reason);
 	}
 
 	public ServerInfo updateAndGetNextServer(ServerInfo currentTarget) {
-		if (serverJoinQueue == null) {
-			serverJoinQueue = new LinkedList<>(getPendingConnection().getListener().getServerPriority());
-		}
+		if (serverJoinQueue == null)
+			serverJoinQueue = new LinkedList<>(pendingConnection.listener.getServerPriority());
+		
 
-		ServerInfo next = null;
 		while (!serverJoinQueue.isEmpty()) {
-			ServerInfo candidate = ProxyServer.getInstance().getServerInfo(serverJoinQueue.remove());
-			if (!Objects.equals(currentTarget, candidate)) {
-				next = candidate;
-				break;
-			}
+			ServerInfo candidate = bungee.getServerInfo(serverJoinQueue.poll());
+			if (!Objects.equals(currentTarget, candidate))
+				return candidate;
 		}
-
-		return next;
+		return null;
 	}
 
 	public void connect(ServerInfo info, final Callback<Boolean> callback, final boolean retry) {
@@ -219,7 +199,12 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 	public void connect(ServerInfo info, final Callback<Boolean> callback, final boolean retry, ServerConnectEvent.Reason reason) {
 		Preconditions.checkNotNull(info, "info");
 
-		ServerConnectRequest.Builder builder = ServerConnectRequest.builder().retry(retry).reason(reason).target(info);
+		ServerConnectRequest.Builder builder =
+			ServerConnectRequest.builder()
+			.retry(retry)
+			.reason(reason)
+			.target(info);
+		
 		if (callback != null) {
 			builder.callback((result, error) ->
 				callback.done(result == ServerConnectRequest.Result.SUCCESS, error)
@@ -234,26 +219,26 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 	ServerConnector<?> serverConnector;
 	
 	@Override
-	public void connect(final @NonNull ServerConnectRequest request) {
-		ch.getHandle().eventLoop().execute(() -> connect0(request));
+	public void connect(@NonNull ServerConnectRequest request) {
+		ch.handle.eventLoop().execute(() -> connect0(request));
 	}
 	
 	private void connect0(final @NonNull ServerConnectRequest request) {
 		final val callback = request.getCallback();
 		
 		ServerConnectEvent event = new ServerConnectEvent(this, request.getTarget(), request.getReason());
-		if (bungee.getPluginManager().callEvent(event).isCancelled()) {
+		if (bungee.pluginManager.callEvent(event).isCancelled()) {
 			if (callback != null)
 				callback.done(ServerConnectRequest.Result.EVENT_CANCEL, null);
 
-			if (getServer() == null && !ch.isClosing())
+			if (server == null)
 				throw new IllegalStateException("Cancelled ServerConnectEvent with no server or disconnect.");
 			return;
 		}
 
 		final BungeeServerInfo target = (BungeeServerInfo) event.getTarget(); // Update in case the event changed target
 
-		if (getServer() != null && Objects.equals(getServer().getInfo(), target)) {
+		if (server != null && Objects.equals(server.info, target)) {
 			if (callback != null)
 				callback.done(ServerConnectRequest.Result.ALREADY_CONNECTED, null);
 
@@ -262,7 +247,7 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 		}
 		
 		if(serverConnector != null) {
-			serverConnector.getCh().close();
+			serverConnector.channel.close();
 			serverConnector = null;
 		}
 		
@@ -273,61 +258,60 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 		final val callback = request.getCallback();
 		final BungeeServerInfo target = (BungeeServerInfo) request.getTarget();
 		
-		Bootstrap b = 
-			new Bootstrap()
-			.channel(NettyUtil.bestSocketChannel())
-			.group(ch.getHandle().eventLoop())
-			.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, request.getConnectTimeout())
-			.remoteAddress(target.getAddress())
-			.handler(new ChannelInitializer<Channel>() {
-				@Override
-				protected void initChannel(Channel ch) throws Exception {
-					serverConnector = createServerConnector(getCh(), target);
-					serverConnector.getLoginFuture().addListener(serverConnection -> {
-						UserConnection.this.getCh().getHandle().eventLoop().execute(() -> onLoggedIn((ServerConnection) serverConnection));
-					});
-					PipelineUtil.addHandlers(pendingConnection.getProtocol(), Side.SERVER, serverConnector);
-				}
-			});
+		Runnable onFail = () -> {
+			bungee.getLogger().info("["+ch.getRemoteAddress()+"/"+getName()+"] Couldn't connect to ["+target.getName()+"]");
+
+			ServerInfo def = updateAndGetNextServer(target);
+			if (request.isRetry() && def != null && (getServer() == null || def != getServer().getInfo())) {
+				sendMessage(bungee.getTranslation("fallback_lobby"));
+				connect(def, null, true, ServerConnectEvent.Reason.LOBBY_FALLBACK);
+			} 
+			else disconnect();
+		};
+		
+		Bootstrap b = new Bootstrap();
+		b.channel(NettyUtil.bestSocketChannel());
+		b.group(ch.getHandle().eventLoop());
+		b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, request.getConnectTimeout());
+		b.remoteAddress(target.getAddress());
 		
 		// Windows is bugged, multi homed users will just have to live with random
 		// connecting IPs
-		if (getPendingConnection().getListener().isSetLocalAddress() && !PlatformDependent.isWindows())
-			b.localAddress(getPendingConnection().getListener().getHost().getHostString(), 0);
+		if (pendingConnection.getListener().isSetLocalAddress() && !PlatformDependent.isWindows())
+			b.localAddress(pendingConnection.getListener().getHost().getHostString(), 0);
 		
-		b.connect().addListener((ChannelFuture future) -> {
+		b.handler(new ChannelInitializer<Channel>() {
+			@Override
+			protected void initChannel(Channel ch) throws Exception {
+				PipelineUtil.addHandlers(ch, pendingConnection.getProtocol(), Side.SERVER);
+				serverConnector = createServerConnector(PipelineUtil.getChannelWrapper(ch), target);
+				serverConnector.loginFuture.addListener((Future<ServerConnection> future) -> {
+					if(!future.isSuccess())
+						onFail.run();
+					else
+						UserConnection.this.ch.handle.eventLoop().execute(() -> onLoggedIn(future.getNow()));
+				});
+				PipelineUtil.getChannelWrapper(ch).setPacketHandler(serverConnector);
+			}
+		});
+		b.connect().addListener(future -> {
 			if (callback != null)
 				callback.done((future.isSuccess()) ? ServerConnectRequest.Result.SUCCESS : ServerConnectRequest.Result.FAIL, future.cause());
 
-			if (!future.isSuccess()) {
-				future.channel().close();
-				
-				//if(BungeeCord.getInstance().config.isServerChange())
-				bungee.getLogger().info("["+ch.getRemoteAddress()+"/"+getName()+"] Couldn't connect to ["+target.getName()+"]");
-
-				ServerInfo def = updateAndGetNextServer(target);
-				if (request.isRetry() && def != null && (getServer() == null || def != getServer().getInfo())) {
-					sendMessage(bungee.getTranslation("fallback_lobby"));
-					connect(def, null, true, ServerConnectEvent.Reason.LOBBY_FALLBACK);
-				} 
-				else if (dimensionChange)
-					disconnect(bungee.getTranslation("fallback_kick", future.cause().getClass().getName()));
-				else
-					sendMessage(bungee.getTranslation("fallback_kick", future.cause().getClass().getName()));
-			}
+			if (!future.isSuccess())
+				onFail.run();
 		});
 	}
 	
 	private void onLoggedIn(ServerConnection con) {
-		con.getInfo().addPlayer(this);
 		setServerJoinQueue(null);
-		setDimensionChange(false);
-		setServer(server);
-		ch.setPacketHandler(new DownstreamBridge(ch, this));
-		ProxyServer.getInstance().getPluginManager().callEvent(new ServerSwitchEvent(this));
-		ProxyServer.getInstance().getLogger().info(toString()+" Connected to ["+con.getInfo().getName()+"]");
+		server = con;
+		ch.setPacketHandler(new DownstreamBridge(this));
+		con.getInfo().addPlayer(this);
+		bungee.pluginManager.callEvent(new ServerSwitchEvent(this));
+		bungee.logger.info(toString()+" Connected to ["+con.getInfo().getName()+"]");
 	}
-
+	
 	@Override
 	public void disconnect(String reason) {
 		disconnect0(TextComponent.fromLegacyText(reason));
@@ -344,25 +328,25 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 	}
 
 	public void disconnect0(final BaseComponent... reason) {
-		if (!ch.isClosing()) {
-			bungee.getLogger().log(Level.INFO, "[{0}] disconnected with: {1}", new Object[] { getName(), BaseComponent.toLegacyText(reason) });
+		if(!ch.isActive())
+			return;
+		
+		bungee.logger.log(Level.INFO, "[{0}] disconnected with: {1}", new Object[] { getName(), BaseComponent.toLegacyText(reason) });
 
-			ch.delayedClose(
-				new Kick(
-					getPendingConnection().isLegacy() ? 
-					BaseComponent.toLegacyText(reason)
-					:
-					ComponentSerializer.toString(reason)
-				)
-			);
+		ch.write(
+			new Kick(
+				pendingConnection.isLegacy() ? 
+				BaseComponent.toLegacyText(reason)
+				:
+				ComponentSerializer.toString(reason)
+			)
+		);
+		ch.close();
 
-			if (serverConnector != null)
-				serverConnector.getCh().close();
-			if (server != null) {
-				server.setObsolete(true);
-				server.disconnect("Quitting");
-			}
-		}
+		if (serverConnector != null)
+			serverConnector.channel.close();
+		if (server != null)
+			server.disconnect("Quitting");
 	}
 
 	@Override
@@ -482,7 +466,12 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 
 	@Override
 	public String toString() {
-		return name;
+		return pendingConnection.getName();
+	}
+	
+	@Override
+	public String getName() {
+		return pendingConnection.getName();
 	}
 
 	@Override
@@ -562,7 +551,6 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 		if (pendingConnection.getProtocol().newerOrEqual(Protocol.MC_1_8_0)) {
 			header = ChatComponentTransformer.getInstance().transform(this, header);
 			footer = ChatComponentTransformer.getInstance().transform(this, footer);
-
 			unsafe().sendPacket(new PlayerListHeaderFooter(ComponentSerializer.toString(header), ComponentSerializer.toString(footer)));
 		}
 	}
@@ -580,7 +568,7 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 	}
 
 	public void setCompressionThreshold(int compressionThreshold) {
-		if (!ch.isClosing() && this.compressionThreshold == -1 && getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_8_0) && compressionThreshold >= 0) {
+		if (this.compressionThreshold == -1 && getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_8_0) && compressionThreshold >= 0) {
 			this.compressionThreshold = compressionThreshold;
 			unsafe.sendPacket(new SetCompression(compressionThreshold));
 			ch.setCompressionThreshold(compressionThreshold);
@@ -589,11 +577,16 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 
 	@Override
 	public boolean isConnected() {
-		return !ch.isClosed();
+		return ch.handle.isActive();
 	}
 
 	@Override
 	public Scoreboard getScoreboard() {
 		return serverSentScoreboard;
+	}
+	
+	@Deprecated
+	public void setServer(ServerConnection sc) {
+		server = sc;
 	}
 }

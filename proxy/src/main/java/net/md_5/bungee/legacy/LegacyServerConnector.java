@@ -12,7 +12,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.SimpleChannelInboundHandler;
-import net.md_5.bungee.BungeeCord;
+import lombok.val;
 import net.md_5.bungee.BungeeServerInfo;
 import net.md_5.bungee.EncryptionUtil;
 import net.md_5.bungee.ServerConnection;
@@ -56,10 +56,10 @@ public class LegacyServerConnector extends ServerConnector<LegacyUserConnection>
 	
 	@Override
 	public void connected() throws Exception {
-		LegacyLoginRequest lr = new LegacyLoginRequest(user.getPendingConnection().getLoginRequest());
+		val loginRequest = new LegacyLoginRequest(user.pendingConnection.getLoginRequest());
 		
 		if(ipForward())
-			lr.setHost(lr.getHost() + "\00" + user.getAddress().getHostString() + "\00" + user.getUUID());
+			loginRequest.setHost(loginRequest.getHost() + "\00" + user.getAddress().getHostString() + "\00" + user.getUUID());
 		
 		if(forgeSupport()) {
 			ChannelPipeline p = user.getCh().getHandle().pipeline();
@@ -71,7 +71,7 @@ public class LegacyServerConnector extends ServerConnector<LegacyUserConnection>
 					if(msg.packet instanceof PluginMessage) {
 						PluginMessage pm = (PluginMessage) msg.packet;
 						if(pm.getTag().equals("FML") && pm.getData()[0] == 1) {// client packet response
-							ch.write(pm);
+							channel.write(pm);
 							return;
 						}
 					}
@@ -83,12 +83,10 @@ public class LegacyServerConnector extends ServerConnector<LegacyUserConnection>
 			p.addBefore(PipelineUtil.BOSS, "legacy_fml_modlist_catcher", legacyFMLModlistCatcher);
 		}
 		
-		ch.write(lr);
+		channel.write(loginRequest);
 		
 		if(forgeSupport() && user.isForgeUser())
-			ch.write(user.getPendingConnection().getForgeLogin());
-		
-		server = new ServerConnection(user, ch, target);
+			channel.write(user.pendingConnection.getForgeLogin());
 	}
 	
 	@Override
@@ -114,16 +112,17 @@ public class LegacyServerConnector extends ServerConnector<LegacyUserConnection>
 	public void handle(Login login) throws Exception {
 		if(legacyFMLModlistCatcher != null)
 			user.getCh().getHandle().pipeline().remove(legacyFMLModlistCatcher);
-			
+		
+		ServerConnection server = new ServerConnection(user, channel, target);
 		ServerConnectedEvent event = new ServerConnectedEvent(user, server);
-		ProxyServer.getInstance().getPluginManager().callEvent(event);
+		bungee.pluginManager.callEvent(event);
 	
-		ch.write(BungeeCord.getInstance().registerChannels(user.getPendingConnection().getProtocol()));
+		channel.write(bungee.registerChannels(user.pendingConnection.getProtocol()));
 	
 		Queue<DefinedPacket> packetQueue = target.getPacketQueue();
 		synchronized (packetQueue) {
 			while (!packetQueue.isEmpty())
-				ch.write(packetQueue.poll());
+				channel.write(packetQueue.poll());
 		}
 	
 		/*for (PluginMessage message : user.getPendingConnection().getRelayMessages()) {
@@ -131,7 +130,7 @@ public class LegacyServerConnector extends ServerConnector<LegacyUserConnection>
 		}*/
 	
 		if (user.getSettings() != null) 
-			ch.write(user.getSettings());
+			channel.write(user.getSettings());
 		
 		if (user.getServer() == null) {
 			// Once again, first connection
@@ -149,7 +148,6 @@ public class LegacyServerConnector extends ServerConnector<LegacyUserConnection>
 	
 			user.setDimension(login.getDimension());
 		} else {
-			user.getServer().setObsolete(true);
 			user.getTabListHandler().onServerChange();
 	
 			Scoreboard serverScoreboard = user.getServerSentScoreboard();
@@ -170,7 +168,7 @@ public class LegacyServerConnector extends ServerConnector<LegacyUserConnection>
 			
 			user.getSentBossBars().clear();
 	
-			user.setDimensionChange(true);
+			//user.setDimensionChange(true);
 			if (login.getDimension() == user.getDimension())
 				user.unsafe().sendPacket(new Respawn((login.getDimension() >= 0 ? -1 : 0), login.getDifficulty(), login.getGameMode(), login.getWorldHeight(), login.getLevelType()));
 	
@@ -182,7 +180,7 @@ public class LegacyServerConnector extends ServerConnector<LegacyUserConnection>
 			user.getServer().disconnect("Quitting");
 		}
 		
-		finish();
+		finish(server);
 		
 		throw CancelSendSignal.INSTANCE;
 	}
@@ -197,13 +195,14 @@ public class LegacyServerConnector extends ServerConnector<LegacyUserConnection>
 		kg.init(128);
 		secret = kg.generateKey();
 
-		EncryptionResponse er = new EncryptionResponse();
-		er.setSharedSecret(EncryptionUtil.encrypt(pub, secret.getEncoded()));
-		er.setVerifyToken(EncryptionUtil.encrypt(pub, encryptionRequest.getVerifyToken()));
-		ch.write(er);
+		EncryptionResponse er = EncryptionResponse.builder()
+			.sharedSecret(EncryptionUtil.encrypt(pub, secret.getEncoded()))
+			.verifyToken(EncryptionUtil.encrypt(pub, encryptionRequest.getVerifyToken()))
+			.build();
+		channel.write(er);
 
 		BungeeCipher encrypt = EncryptionUtil.getCipher(true, secret);
-		ch.addBefore(PipelineUtil.PACKET_ENC, PipelineUtil.ENCRYPT, new CipherEncoder(encrypt));
+		channel.handle.pipeline().addBefore(PipelineUtil.PACKET_ENC, PipelineUtil.ENCRYPT, new CipherEncoder(encrypt));
 
 		throw CancelSendSignal.INSTANCE;
 	}
@@ -211,9 +210,9 @@ public class LegacyServerConnector extends ServerConnector<LegacyUserConnection>
 	@Override
 	public void handle(EncryptionResponse encryptionResponse) throws Exception {
 		BungeeCipher encrypt = EncryptionUtil.getCipher(false, secret);
-		ch.addBefore(PipelineUtil.PACKET_DEC, PipelineUtil.DECRYPT, new CipherDecoder(encrypt));
+		channel.handle.pipeline().addBefore(PipelineUtil.PACKET_DEC, PipelineUtil.DECRYPT, new CipherDecoder(encrypt));
 
-		ch.write(new LegacyClientCommand(0));
+		channel.write(new LegacyClientCommand(0));
 
 		throw CancelSendSignal.INSTANCE;
 	}

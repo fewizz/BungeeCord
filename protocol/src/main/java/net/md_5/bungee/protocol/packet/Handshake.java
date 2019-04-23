@@ -27,10 +27,11 @@ public class Handshake extends DefinedPacket {
 	private NetworkState requestedNetworkState;
 	
 	public Handshake(Handshake hs) {
-		hs.setProtocolVersion(hs.protocolVersion);
-		hs.setHost(host);
-		hs.setPort(port);
-		hs.setRequestedNetworkState(requestedNetworkState);
+		Handshake.builder()
+			.protocolVersion(protocolVersion)
+			.host(host)
+			.port(port)
+			.build();
 	}
 
 	@Override
