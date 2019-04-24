@@ -10,6 +10,7 @@ import java.util.logging.Level;
 import javax.crypto.SecretKey;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
 
 import io.netty.channel.Channel;
 import lombok.Getter;
@@ -22,7 +23,6 @@ import net.md_5.bungee.Util;
 import net.md_5.bungee.api.AbstractReconnectHandler;
 import net.md_5.bungee.api.Callback;
 import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.ServerPing;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -44,7 +44,6 @@ import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
-import net.md_5.bungee.util.BufUtil;
 
 public abstract class InitialHandler extends PacketHandler implements PendingConnection {
 	protected final BungeeCord bungee = BungeeCord.getInstance();
@@ -69,14 +68,9 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 	};
 	@Getter
 	private LoginResult loginProfile;
-
-	@Override
-	public boolean shouldHandle(PacketWrapper packet) throws Exception {
-		return ch.handle.isActive();
-	}
 	
 	public InitialHandler(Channel ch, ListenerInfo info) {
-		this.ch = ch.attr(PipelineUtil.CHANNEL_WRAPPER).get();
+		this.ch = PipelineUtil.getChannelWrapper(ch);
 		this.listener = info;
 	}
 
@@ -87,8 +81,7 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 
 	@Override
 	public void handle(PacketWrapper packet) throws Exception {
-		if (packet.packet == null)
-			throw new RuntimeException("Unexpected packet received during login process! " + BufUtil.dump(packet.content(), 16));
+		Preconditions.checkState(packet.packet != null, "Unexpected packet received during login process!");
 	}
 
 	protected void ping(Callback<ProxyPingEvent> cb) {
@@ -98,11 +91,11 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 		Callback<ServerPing> pingBack = (ServerPing result, Throwable e) -> { 
 			if (e != null) {
 				result = new ServerPing();
-				result.setDescription(ProxyServer.getInstance().getTranslation("ping_cannot_connect"));
-				bungee.getLogger().log(Level.WARNING, "Error pinging remote server", e);
+				result.setDescription(bungee.getTranslation("ping_cannot_connect"));
+				bungee.logger.log(Level.WARNING, "Error pinging remote server", e);
 			}
 
-			bungee.getPluginManager().callEvent(new ProxyPingEvent(InitialHandler.this, result, cb));
+			bungee.pluginManager.callEvent(new ProxyPingEvent(InitialHandler.this, result, cb));
 			
 			if (bungee.getConnectionThrottle() != null)
 				bungee.getConnectionThrottle().unthrottle(getAddress().getAddress());
@@ -125,7 +118,7 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 				new ServerPing.Protocol(bungee.getName() + " " + bungee.getGameVersion(), getProtocol().version),
 				new ServerPing.Players(listener.getMaxPlayers(), bungee.getOnlineCount(), null),
 				motd,
-				BungeeCord.getInstance().config.getFaviconObject())
+				bungee.config.getFaviconObject())
 			,
 			null
 		);
@@ -140,7 +133,7 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 		}
 		String encodedHash = URLEncoder.encode(new BigInteger(sha.digest()).toString(16), "UTF-8");
 
-		String preventProxy = ((BungeeCord.getInstance().config.isPreventProxyConnections()) ? "&ip=" + URLEncoder.encode(getAddress().getAddress().getHostAddress(), "UTF-8") : "");
+		String preventProxy = ((bungee.config.isPreventProxyConnections()) ? "&ip=" + URLEncoder.encode(getAddress().getAddress().getHostAddress(), "UTF-8") : "");
 		String authURL = "https://sessionserver.mojang.com/session/minecraft/hasJoined?username=" + encName + "&serverId=" + encodedHash + preventProxy;
 
 		HttpClient.get(authURL, ch.handle.eventLoop(), (result, error) -> {
@@ -155,7 +148,7 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 				disconnect(bungee.getTranslation("offline_mode_player"));
 			} else {
 				disconnect(bungee.getTranslation("mojang_fail"));
-				bungee.getLogger().log(Level.SEVERE, "Error authenticating " + getName() + " with minecraft.net", error);
+				bungee.logger.log(Level.SEVERE, "Error authenticating " + getName() + " with minecraft.net", error);
 			}
 		});
 	}
@@ -171,7 +164,7 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 			return;
 		}
 
-		int limit = BungeeCord.getInstance().config.getPlayerLimit();
+		int limit = bungee.config.getPlayerLimit();
 		if (limit > 0 && bungee.getOnlineCount() > limit) {
 			disconnect(bungee.getTranslation("proxy_full"));
 			return;
@@ -186,9 +179,7 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 
 
 		// fire pre login event
-		bungee.getPluginManager().callEvent(new PreLoginEvent(this, (PreLoginEvent result, Throwable error) -> {
-			if (!ch.handle.isActive())
-				return;
+		bungee.pluginManager.callEvent(new PreLoginEvent(this, (PreLoginEvent result, Throwable error) -> {
 			if (result.isCancelled()) {
 				disconnect(result.getCancelReasonComponents());
 				return;
@@ -228,7 +219,7 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 		}
 
 		// fire login event
-		bungee.getPluginManager().callEvent(new LoginEvent(this, (LoginEvent result, Throwable error) -> {
+		bungee.pluginManager.callEvent(new LoginEvent(this, (LoginEvent result, Throwable error) -> {
 			if (!ch.handle.isActive())
 				return;
 			if (result.isCancelled()) {
@@ -241,10 +232,10 @@ public abstract class InitialHandler extends PacketHandler implements PendingCon
 	}
 	
 	protected <IH extends InitialHandler, UC extends UserConnection<IH>> void postLogin(UC userCon) {
-		ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new UpstreamBridge<IH, UC>(userCon));
-		bungee.getPluginManager().callEvent(new PostLoginEvent(userCon));
+		ch.pipeline().get(HandlerBoss.class).setHandler(new UpstreamBridge<IH, UC>(userCon));
+		bungee.pluginManager.callEvent(new PostLoginEvent(userCon));
 		
-		bungee.getLogger().info(toString() + " Connected to listener(" + listener.getHost()+")");
+		bungee.logger.info(toString() + " Connected to listener(" + listener.getHost()+")");
 	
 		ServerInfo server;
 		

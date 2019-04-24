@@ -9,6 +9,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.connection.Server;
+import net.md_5.bungee.api.event.ServerSwitchEvent;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.packet.PluginMessage;
@@ -33,9 +34,14 @@ public class ServerConnection implements Server {
 		this.ch = ch;
 		this.info = info;
 		
+		BungeeCord bungee = BungeeCord.getInstance();
+		
+		bungee.pluginManager.callEvent(new ServerSwitchEvent(uc));
+		bungee.logger.info(toString()+" Connected to ["+info.getName()+"]");
+		
 		info.addPlayer(uc);
-		ch.getHandle().closeFuture().addListener(future -> {
-			BungeeCord.getInstance().getLogger().info("["+user.getAddress()+"/"+user.getName()+"] Disconnected from ["+info.getName()+"]");
+		ch.closeFuture().addListener(future -> {
+			bungee.logger.info("["+user.getAddress()+"/"+user.getName()+"] Disconnected from ["+info.getName()+"]");
 			info.removePlayer(user);
 		});
 	}
@@ -69,12 +75,12 @@ public class ServerConnection implements Server {
 
 	@Override
 	public InetSocketAddress getAddress() {
-		return getInfo().getAddress();
+		return info.getAddress();
 	}
 
 	@Override
 	public boolean isConnected() {
-		return ch.handle.isActive();
+		return ch.isActive();
 	}
 
 	@Override

@@ -34,7 +34,7 @@ import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.PermissionCheckEvent;
 import net.md_5.bungee.api.event.ServerConnectEvent;
-import net.md_5.bungee.api.event.ServerSwitchEvent;
+import net.md_5.bungee.api.event.ServerConnectedEvent;
 import net.md_5.bungee.api.score.Scoreboard;
 import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.connection.DownstreamBridge;
@@ -60,14 +60,14 @@ import net.md_5.bungee.util.ChatComponentTransformer;
 public abstract class UserConnection<IH extends InitialHandler> implements ProxiedPlayer {
 
 	/* ======================================================================== */
-	private final BungeeCord bungee = BungeeCord.getInstance();
+	protected final BungeeCord bungee = BungeeCord.getInstance();
 	@Getter
 	private final ChannelWrapper ch;
 	@Getter
 	public final IH pendingConnection;
 	/* ======================================================================== */
 	@Getter
-	private ServerConnection server;
+	protected ServerConnection server;
 	@Getter
 	@Setter
 	private int dimension;
@@ -91,6 +91,7 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 	// Used for trying multiple servers in order
 	@Setter
 	private Queue<String> serverJoinQueue;
+	ServerConnector<?> serverConnector;
 	/* ======================================================================== */
 	private final Collection<String> groups = new CaseInsensitiveSet();
 	private final Collection<String> permissions = new CaseInsensitiveSet();
@@ -196,9 +197,7 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 		connect(info, callback, retry, ServerConnectEvent.Reason.PLUGIN);
 	}
 
-	public void connect(ServerInfo info, final Callback<Boolean> callback, final boolean retry, ServerConnectEvent.Reason reason) {
-		Preconditions.checkNotNull(info, "info");
-
+	public void connect(@NonNull ServerInfo info, final Callback<Boolean> callback, final boolean retry, ServerConnectEvent.Reason reason) {
 		ServerConnectRequest.Builder builder =
 			ServerConnectRequest.builder()
 			.retry(retry)
@@ -215,8 +214,6 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 	}
 	
 	protected abstract ServerConnector<?> createServerConnector(ChannelWrapper ch, BungeeServerInfo target);
-	
-	ServerConnector<?> serverConnector;
 	
 	@Override
 	public void connect(@NonNull ServerConnectRequest request) {
@@ -251,18 +248,11 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 			serverConnector = null;
 		}
 		
-		connect1(request);
-	}
-	
-	private void connect1(final @NonNull ServerConnectRequest request) {
-		final val callback = request.getCallback();
-		final BungeeServerInfo target = (BungeeServerInfo) request.getTarget();
-		
 		Runnable onFail = () -> {
-			bungee.getLogger().info("["+ch.getRemoteAddress()+"/"+getName()+"] Couldn't connect to ["+target.getName()+"]");
+			bungee.logger.info("["+ch.getRemoteAddress()+"/"+getName()+"] Couldn't connect to ["+target.getName()+"]");
 
 			ServerInfo def = updateAndGetNextServer(target);
-			if (request.isRetry() && def != null && (getServer() == null || def != getServer().getInfo())) {
+			if (request.isRetry() && def != null && (getServer() == null || def != server.info)) {
 				sendMessage(bungee.getTranslation("fallback_lobby"));
 				connect(def, null, true, ServerConnectEvent.Reason.LOBBY_FALLBACK);
 			} 
@@ -271,29 +261,33 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 		
 		Bootstrap b = new Bootstrap();
 		b.channel(NettyUtil.bestSocketChannel());
-		b.group(ch.getHandle().eventLoop());
+		b.group(ch.handle.eventLoop());
 		b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, request.getConnectTimeout());
 		b.remoteAddress(target.getAddress());
 		
 		// Windows is bugged, multi homed users will just have to live with random
 		// connecting IPs
-		if (pendingConnection.getListener().isSetLocalAddress() && !PlatformDependent.isWindows())
-			b.localAddress(pendingConnection.getListener().getHost().getHostString(), 0);
+		if (pendingConnection.listener.isSetLocalAddress() && !PlatformDependent.isWindows())
+			b.localAddress(pendingConnection.listener.getHost().getHostString(), 0);
+		
 		
 		b.handler(new ChannelInitializer<Channel>() {
 			@Override
 			protected void initChannel(Channel ch) throws Exception {
 				PipelineUtil.addHandlers(ch, pendingConnection.getProtocol(), Side.SERVER);
-				serverConnector = createServerConnector(PipelineUtil.getChannelWrapper(ch), target);
-				serverConnector.loginFuture.addListener((Future<ServerConnection> future) -> {
+				ChannelWrapper cw = PipelineUtil.getChannelWrapper(ch);
+				ServerConnector<?> sc0 = serverConnector = createServerConnector(cw, target);
+				sc0.loginFuture.addListener((Future<Void> future) -> {
 					if(!future.isSuccess())
 						onFail.run();
 					else
-						UserConnection.this.ch.handle.eventLoop().execute(() -> onLoggedIn(future.getNow()));
+						onServerConnectorLoggedIn(sc0);
 				});
-				PipelineUtil.getChannelWrapper(ch).setPacketHandler(serverConnector);
+				cw.setPacketHandler(serverConnector);
 			}
 		});
+		
+		
 		b.connect().addListener(future -> {
 			if (callback != null)
 				callback.done((future.isSuccess()) ? ServerConnectRequest.Result.SUCCESS : ServerConnectRequest.Result.FAIL, future.cause());
@@ -303,14 +297,23 @@ public abstract class UserConnection<IH extends InitialHandler> implements Proxi
 		});
 	}
 	
-	private void onLoggedIn(ServerConnection con) {
-		setServerJoinQueue(null);
-		server = con;
-		ch.setPacketHandler(new DownstreamBridge(this));
-		con.getInfo().addPlayer(this);
-		bungee.pluginManager.callEvent(new ServerSwitchEvent(this));
-		bungee.logger.info(toString()+" Connected to ["+con.getInfo().getName()+"]");
+	
+	// Called from ServerConnection's thread
+	private void onServerConnectorLoggedIn(ServerConnector<?> con) {
+		//con.channel.setPacketHandler(ph);
+		ch.eventLoop().execute(() -> {
+			ServerConnection server = new ServerConnection(this, con.channel, con.target);
+			bungee.pluginManager.callEvent(new ServerConnectedEvent(this, server));
+			
+			onServerConnectorLoggedIn(con);
+			
+			setServerJoinQueue(null);
+			UserConnection.this.server = server;
+			ch.setPacketHandler(new DownstreamBridge(this));
+		});
 	}
+	
+	protected abstract void onServerConnectorLoggedIn0(ServerConnector<?> sc, ServerConnection con);
 	
 	@Override
 	public void disconnect(String reason) {

@@ -5,19 +5,18 @@ import com.google.common.base.Preconditions;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Promise;
 import lombok.Getter;
+import lombok.NonNull;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.packet.Kick;
-import net.md_5.bungee.util.QuietException;
 
 public abstract class ServerConnector<UC extends UserConnection<?>> extends PacketHandler {
 	protected final BungeeCord bungee = BungeeCord.getInstance();
 	protected final UC user;
-	//protected ServerConnection server;
 	@Getter
 	public final BungeeServerInfo target;
-	public final Promise<ServerConnection> loginFuture;
+	public final Promise<Void> loginFuture;
 	public final ChannelWrapper channel;
 	
 	public ServerConnector(ChannelWrapper channel, UC user, BungeeServerInfo info) {
@@ -27,24 +26,6 @@ public abstract class ServerConnector<UC extends UserConnection<?>> extends Pack
 		this.loginFuture = new DefaultPromise<>(channel.handle.eventLoop());
 	}
 	
-	protected boolean ipForward() {
-		return target
-			.getIpForward() != null ?
-			target.getIpForward()
-			:
-			bungee.config.isIpForward()
-		;
-	}
-	
-	protected boolean forgeSupport() {
-		return getTarget()
-			.getForgeSupport() != null ? 
-			target.getForgeSupport() 
-			:
-			bungee.config.isForgeSupport()
-		;
-	}
-	
 	@Override
 	public String toString() {
 		return "["+user.getAddress()+"/"+user.getName()+"] [SC]";
@@ -52,30 +33,24 @@ public abstract class ServerConnector<UC extends UserConnection<?>> extends Pack
 	
 	@Override
 	public void handle(Kick kick) throws Exception {
+		channel.close();
 		loginFuture.setFailure(new Exception("Kicked =( "));
 	}
 	
 	@Override
 	public void handle(PacketWrapper packet) throws Exception {
-		if (packet.packet == null)
-			throw new QuietException("Unexpected packet received during server login process!\n" +
-				"id, cs: " + channel
-					.getConnectionState()
-					.name()
-			);
+		Preconditions.checkState(packet.packet != null, "Unexpected packet received during server login process! Packet id: " + packet.id);
 	}
 	
 	@Override
 	public void exception(Throwable t) throws Exception {
-		//t.printStackTrace();
-		channel.handle.close();
+		channel.close();
 		if(!loginFuture.isDone())
 			loginFuture.setFailure(new Exception("Exception while connecting"));
 	}
 	
-	protected void finish(ServerConnection server) {
-		Preconditions.checkNotNull(server);
-		loginFuture.setSuccess(server);
+	protected void finish(@NonNull ServerConnection server) {
+		loginFuture.setSuccess(null);
 	}
 
 }

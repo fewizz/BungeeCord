@@ -54,10 +54,18 @@ public class BungeeServerInfo implements ServerInfo
     private final boolean restricted;
     @Getter
     private final Queue<DefinedPacket> packetQueue = new LinkedList<>();
-    @Getter
+    
     private final Boolean ipForward;
-    @Getter
+    
+    public boolean ipForward() {
+    	return ipForward != null ? ipForward : BungeeCord.getInstance().config.isIpForward();
+    }
+    
     private final Boolean forgeSupport;
+    
+    public boolean forgeSupport() {
+    	return forgeSupport != null ? forgeSupport : BungeeCord.getInstance().config.isForgeSupport();
+    }
 
     @Synchronized("players")
     public void addPlayer(ProxiedPlayer player)

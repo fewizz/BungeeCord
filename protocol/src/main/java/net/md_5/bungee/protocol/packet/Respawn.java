@@ -1,21 +1,24 @@
 package net.md_5.bungee.protocol.packet;
 
-import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.Protocol;
 import io.netty.buffer.ByteBuf;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
+import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Direction;
+import net.md_5.bungee.protocol.Protocol;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @EqualsAndHashCode(callSuper = false)
-public class Respawn extends DefinedPacket {
+public class Respawn extends DefinedPacket implements Cloneable {
 
+	public Respawn setDimension(int v) {this.dimension = v; return this;}
 	private int dimension;
 	private short difficulty;
 	private short gameMode;
@@ -45,5 +48,10 @@ public class Respawn extends DefinedPacket {
 	@Override
 	public void handle(AbstractPacketHandler handler) throws Exception {
 		handler.handle(this);
+	}
+	
+	@Override
+	public Respawn clone() {
+		return new Respawn(dimension, difficulty, gameMode, worldHeight, levelType);
 	}
 }

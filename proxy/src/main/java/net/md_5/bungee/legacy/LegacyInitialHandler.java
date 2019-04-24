@@ -5,6 +5,7 @@ import java.net.InetSocketAddress;
 import javax.crypto.SecretKey;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
 import com.google.common.hash.Hashing;
 
 import io.netty.channel.Channel;
@@ -14,7 +15,6 @@ import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ListenerInfo;
 import net.md_5.bungee.connection.InitialHandler;
-import net.md_5.bungee.jni.cipher.BungeeCipher;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.netty.cipher.CipherDecoder;
 import net.md_5.bungee.netty.cipher.CipherEncoder;
@@ -30,11 +30,13 @@ import net.md_5.bungee.protocol.packet.LegacyStatusRequest;
 import net.md_5.bungee.protocol.packet.Login;
 
 public class LegacyInitialHandler extends InitialHandler {
-	LegacyStatusRequest statusRequest;
+	private LegacyStatusRequest statusRequest;
 	@Getter
 	private LegacyLoginRequest loginRequest;
 	@Getter
 	private Login forgeLogin;
+	private EncryptionRequest encryptionRequest;
+	private EncryptionResponse encryptResponse;
 
 	public LegacyInitialHandler(Channel ch, ListenerInfo listener) {
 		super(ch, listener);
@@ -83,12 +85,10 @@ public class LegacyInitialHandler extends InitialHandler {
 			ch.close();
 		});
 	}
-
-	private EncryptionRequest encryptionRequest;
 	
 	@Override
-	public void handle(LegacyLoginRequest lr) throws Exception {
-		this.loginRequest = lr;
+	public void handle(LegacyLoginRequest loginRequest) throws Exception {
+		this.loginRequest = loginRequest;
 		
 		preLogin((result, error) -> {
 			encryptionRequest = EncryptionUtil.encryptRequest();
@@ -97,34 +97,6 @@ public class LegacyInitialHandler extends InitialHandler {
 			ch.write(encryptionRequest);
 		});
 	}
-
-	@Override
-	public void handle(LegacyClientCommand clientCommandOld) throws Exception {
-		if (clientCommandOld.command != 0)
-			throw new RuntimeException();
-
-		if(isOnlineMode())
-			auth(encryptionRequest, EncryptionUtil.getSecret(encryptResponse, encryptionRequest), () -> login());
-		else login();
-	}
-	
-	private void login() {
-		login((res, error) -> {
-			LegacyUserConnection con = new LegacyUserConnection(ch, this);
-			postLogin(con);
-		});
-	}
-	
-	@Override
-	public void handle(Login login) throws Exception {
-		if(login.getEntityId() != Hashing.murmur3_32().hashString("FML", Charsets.US_ASCII).asInt()
-				&& login.getDimension() != 2)
-			return;
-		// Forge client
-		forgeLogin = login;
-	}
-	
-	EncryptionResponse encryptResponse;
 	
 	@Override
 	public void handle(final EncryptionResponse encryptResponse) throws Exception {
@@ -134,10 +106,42 @@ public class LegacyInitialHandler extends InitialHandler {
 
 		ch.write(new EncryptionResponse());
 
-		BungeeCipher decrypt = EncryptionUtil.getCipher(false, sharedKey);
-		ch.handle.pipeline().addBefore(PipelineUtil.PACKET_DEC, PipelineUtil.DECRYPT, new CipherDecoder(decrypt));
-		BungeeCipher encrypt = EncryptionUtil.getCipher(true, sharedKey);
-		ch.handle.pipeline().addBefore(PipelineUtil.PACKET_ENC, PipelineUtil.ENCRYPT, new CipherEncoder(encrypt));
+		ch.pipeline().addBefore(
+			PipelineUtil.PACKET_DEC,
+			PipelineUtil.DECRYPT,
+			new CipherDecoder(EncryptionUtil.getCipher(false, sharedKey))
+		);
+		
+		ch.pipeline().addBefore(
+			PipelineUtil.PACKET_ENC,
+			PipelineUtil.ENCRYPT,
+			new CipherEncoder(EncryptionUtil.getCipher(true, sharedKey))
+		);
+	}
+
+	@Override
+	public void handle(LegacyClientCommand clientCommandOld) throws Exception {
+		if (clientCommandOld.commandCode != 0)
+			throw new RuntimeException();
+
+		Runnable login = () -> login((res, error) -> postLogin(new LegacyUserConnection(ch, this)));
+		
+		if(isOnlineMode())
+			auth(encryptionRequest, EncryptionUtil.getSecret(encryptResponse, encryptionRequest), login);
+		else
+			login.run();
+	}
+	
+	// Forge user
+	@Override
+	public void handle(Login login) throws Exception {
+		Preconditions.checkArgument(
+			login.getEntityId() != Hashing.murmur3_32().hashString("FML", Charsets.US_ASCII).asInt()
+			&& login.getDimension() != 2,
+			"Unexpected Login packet"
+		);
+			
+		forgeLogin = login;
 	}
 
 	@Override

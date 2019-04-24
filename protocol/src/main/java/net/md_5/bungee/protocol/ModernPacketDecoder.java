@@ -61,7 +61,7 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 				throw new RuntimeException("Did not read all bytes from packet " + packet.getClass() + " " + packetId + " cs " + networkState + " Direction " + direction);
 		}
 		
-		firePacket(packet, in.slice(0, in.writerIndex()), ctx);
+		firePacket(packet, in.slice(0, in.writerIndex()), packetId, ctx);
 	}
 	
 	@Override

@@ -11,14 +11,12 @@ import com.google.gson.Gson;
 
 import io.netty.channel.Channel;
 import lombok.Getter;
-import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.EncryptionUtil;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.config.ListenerInfo;
 import net.md_5.bungee.api.event.PlayerHandshakeEvent;
 import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.connection.InitialHandler;
-import net.md_5.bungee.jni.cipher.BungeeCipher;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.netty.cipher.CipherDecoder;
 import net.md_5.bungee.netty.cipher.CipherEncoder;
@@ -91,14 +89,13 @@ public class ModernInitialHandler extends InitialHandler {
 		if (handshake.getHost().endsWith("."))
 			handshake.setHost(handshake.getHost().substring(0, handshake.getHost().length() - 1));
 		
-		bungee.getPluginManager().callEvent(new PlayerHandshakeEvent(this, handshake));
+		bungee.pluginManager.callEvent(new PlayerHandshakeEvent(this, handshake));
 
 		switch (handshake.getRequestedNetworkState()) {
 		case STATUS:
 			// Ping
 			thisState = State.STATUS;
-			if(!isLegacy())
-				ch.setNetworkState(NetworkState.STATUS);
+			ch.setNetworkState(NetworkState.STATUS);
 			break;
 		case LOGIN:
 			// Login
@@ -107,9 +104,7 @@ public class ModernInitialHandler extends InitialHandler {
 			if (undefinedProtocol)
 				disconnect(bungee.getTranslation("unsupported_client"));
 			
-			if(!isLegacy())
-				ch.setNetworkState(NetworkState.LOGIN);
-			
+			ch.setNetworkState(NetworkState.LOGIN);
 			break;
 		default:
 			throw new IllegalArgumentException("Cannot request protocol " + handshake.getRequestedNetworkState());
@@ -122,7 +117,7 @@ public class ModernInitialHandler extends InitialHandler {
 
 		ping((pingResult, error) -> {
 			boolean useGsonLegacy = getProtocol().isBetweenInclusive(Protocol.MC_1_7_2, Protocol.MC_1_7_6);
-			Gson gson = useGsonLegacy ? BungeeCord.getInstance().gsonLegacy : BungeeCord.getInstance().gson;
+			Gson gson = useGsonLegacy ? bungee.gsonLegacy : bungee.gson;
 			unsafe.sendPacket(new StatusResponse(gson.toJson(pingResult.getResponse())));
 		});
 
@@ -161,10 +156,17 @@ public class ModernInitialHandler extends InitialHandler {
 
 		SecretKey sharedKey = EncryptionUtil.getSecret(encryptResponse, request);
 
-		BungeeCipher decrypt = EncryptionUtil.getCipher(false, sharedKey);
-		ch.handle.pipeline().addBefore(PipelineUtil.FRAME_DEC, PipelineUtil.DECRYPT, new CipherDecoder(decrypt));
-		BungeeCipher encrypt = EncryptionUtil.getCipher(true, sharedKey);
-		ch.handle.pipeline().addBefore(PipelineUtil.FRAME_ENC, PipelineUtil.ENCRYPT, new CipherEncoder(encrypt));
+		ch.pipeline().addBefore(
+			PipelineUtil.FRAME_DEC,
+			PipelineUtil.DECRYPT,
+			new CipherDecoder(EncryptionUtil.getCipher(false, sharedKey))
+		);
+		
+		ch.pipeline().addBefore(
+			PipelineUtil.FRAME_ENC,
+			PipelineUtil.ENCRYPT,
+			new CipherEncoder(EncryptionUtil.getCipher(true, sharedKey))
+		);
 
 		if(isOnlineMode())
 			auth(request, sharedKey, () -> login());
@@ -193,11 +195,11 @@ public class ModernInitialHandler extends InitialHandler {
 	protected void login() {
 		login((result, error) -> {
 			ModernUserConnection userCon = new ModernUserConnection(ch, this);
-			userCon.setCompressionThreshold(BungeeCord.getInstance().config.getCompressionThreshold());
+			userCon.setCompressionThreshold(bungee.config.getCompressionThreshold());
 
 			if (getProtocol().newerOrEqual(Protocol.MC_1_7_6))
 				unsafe.sendPacket(new LoginSuccess(getUniqueId().toString(), getName())); // With dashes in between
-			else if (!isLegacy())
+			else
 				unsafe.sendPacket(new LoginSuccess(getUUID(), getName())); // Without dashes, for older clients.
 
 			ch.setNetworkState(NetworkState.GAME);

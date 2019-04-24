@@ -3,6 +3,9 @@ package net.md_5.bungee.netty;
 import java.net.InetSocketAddress;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoop;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -52,7 +55,9 @@ public class ChannelWrapper {
 	}
 	
 	public void setPacketHandler(PacketHandler ph) {
-		handle.pipeline().get(HandlerBoss.class).setHandler(ph);
+		handle.pipeline()
+			.get(HandlerBoss.class)
+			.setHandler(ph);
 	}
 
 	public void setProtocol(@NonNull Protocol protocol) {
@@ -85,6 +90,18 @@ public class ChannelWrapper {
 
 	public void write(Object packet) {
 		handle.writeAndFlush(packet, handle.voidPromise());
+	}
+	
+	public ChannelPipeline pipeline() {
+		return handle.pipeline();
+	}
+	
+	public EventLoop eventLoop() {
+		return handle.eventLoop();
+	}
+	
+	public ChannelFuture closeFuture() {
+		return handle.closeFuture();
 	}
 
 	public void close() {

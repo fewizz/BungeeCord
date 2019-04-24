@@ -13,16 +13,16 @@ import net.md_5.bungee.protocol.DefinedPacket;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class LegacyClientCommand extends DefinedPacket {
-	public int command;
+	public int commandCode;
 
 	@Override
 	public void write(ByteBuf buf) {
-		buf.writeByte(command & 0xFF);
+		buf.writeByte(commandCode & 0xFF);
 	}
 	
 	@Override
 	public void read(ByteBuf buf) {
-		command = buf.readByte();
+		commandCode = buf.readByte();
 	}
 	
 	@Override
