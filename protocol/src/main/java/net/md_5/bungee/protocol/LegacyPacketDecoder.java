@@ -54,9 +54,9 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 		map = protocol.getIdToConstructorUnmodifiableMap(networkState, direction);
 	}
 	
-	public static final RuntimeException OMT = new RuntimeException();
+	public static final RuntimeException ONE_MORE_TIME = new RuntimeException();
 	ScheduledFuture<?> future = null;
-	boolean scheduledRead = false;
+	//boolean scheduledRead = false;
 	
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
@@ -75,31 +75,32 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 			//System.out.println("read, id: " + packetId);
 			if (packet == null)
 				throw new RuntimeException("Don't know that packet" + 
-						", id: " + packetId + 
-						", direction: " + direction.name() + 
-						", protocol: " + protocol);
+					", id: " + packetId + 
+					", direction: " + direction.name() + 
+					", protocol: " + protocol);
 			
-			ctx.fireChannelRead(new PacketPreparer(packet));
+			if(packet != null)
+				ctx.fireChannelRead(new PacketPreparer(packet));
 			
 			try {
 				read0(in, packet);
 			} catch(RuntimeException e) {
-				if(e != OMT)
+				if(e != ONE_MORE_TIME)
 					throw e;
 				
 				if(future == null) {
-					future = ctx.channel().eventLoop().schedule(() -> {
-						scheduledRead = true;
+					future = ctx.channel().eventLoop().schedule(() -> {}, 50, TimeUnit.MILLISECONDS);
+					future.addListener(o -> {
 						ctx.channel().read();
-					}, 200, TimeUnit.MILLISECONDS);
+					});
 				}
-				if(!scheduledRead) {
+				
+				if(!future.isDone()) {
 					in.readerIndex(begin);
 					return;
 				}
 			}
 			
-			scheduledRead = false;
 			future = null;
 			
 			// Do it manually, because when in becomes !in.isReadable, 

@@ -16,7 +16,6 @@ import net.md_5.bungee.protocol.ProtocolGen;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class Login extends DefinedPacket implements Cloneable {
-
 	private int entityId;
 	private short gameMode;
 	private int dimension;

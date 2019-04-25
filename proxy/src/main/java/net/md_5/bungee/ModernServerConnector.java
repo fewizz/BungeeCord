@@ -61,7 +61,7 @@ public class ModernServerConnector extends ServerConnector {
 
 		this.handshakeHandler = new ForgeServerHandler(user, ch, target);
 		Handshake originalHandshake = user.getPendingConnection().getHandshake();
-		Handshake copiedHandshake = new Handshake(originalHandshake.getProtocol(), originalHandshake.getHost(), originalHandshake.getPort(), NetworkState.LOGIN);
+		Handshake copiedHandshake = originalHandshake.clone();
 
 		if (ipForward()) {
 			String newHost = copiedHandshake.getHost() + "\00" + user.getAddress().getHostString() + "\00" + user.getUUID();

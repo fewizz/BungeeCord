@@ -57,10 +57,10 @@ public class LegacyServerConnector extends ServerConnector {
 	public void connected(ChannelWrapper channel) throws Exception {
 		super.connected(channel);
 		
-		Handshake copiedHandshake = user.getPendingConnection().getHandshake();
+		LegacyLoginRequest copiedLoginRequest = user.getPendingConnection().getLegacyLoginRequest().clone();
 		
 		if(ipForward())
-			copiedHandshake.setHost(copiedHandshake.getHost() + "\00" + user.getAddress().getHostString() + "\00" + user.getUUID());
+			copiedLoginRequest.setHost(copiedLoginRequest.getHost() + "\00" + user.getAddress().getHostString() + "\00" + user.getUUID());
 		
 		if(forgeSupport()) {
 			ChannelPipeline p = user.getCh().getHandle().pipeline();
@@ -84,12 +84,9 @@ public class LegacyServerConnector extends ServerConnector {
 			p.addBefore(PipelineUtil.BOSS, "legacy_fml_modlist_catcher", legacyFMLModlistCatcher);
 		}
 		
-		LegacyLoginRequest lr = new LegacyLoginRequest();
-		lr.setHost(copiedHandshake.getHost());
-		lr.setPort(copiedHandshake.getPort());
-		lr.setProtocolVersion(copiedHandshake.getProtocol().version);
-		lr.setUserName(user.getName());
-		channel.write(lr);
+		copiedLoginRequest.setProtocolVersion(user.getPendingConnection().getProtocol().version);
+		copiedLoginRequest.setUserName(user.getName());
+		channel.write(copiedLoginRequest);
 		
 		if(forgeSupport() && user.getPendingConnection().getForgeLogin() != null)
 			ch.write(user.getPendingConnection().getForgeLogin());
@@ -122,9 +119,9 @@ public class LegacyServerConnector extends ServerConnector {
 			user.getCh().getHandle().pipeline().remove(legacyFMLModlistCatcher);
 			
 		ServerConnectedEvent event = new ServerConnectedEvent(user, server);
-		ProxyServer.getInstance().getPluginManager().callEvent(event);
+		bungee.getPluginManager().callEvent(event);
 	
-		ch.write(BungeeCord.getInstance().registerChannels(user.getPendingConnection().getProtocol()));
+		ch.write(bungee.registerChannels(user.getPendingConnection().getProtocol()));
 	
 		Queue<DefinedPacket> packetQueue = target.getPacketQueue();
 		synchronized (packetQueue) {
@@ -192,7 +189,7 @@ public class LegacyServerConnector extends ServerConnector {
 		if (!user.isActive()) {
 			user.getServer().disconnect("Quitting");
 			// Silly server admins see stack trace and die
-			ProxyServer.getInstance().getLogger().warning("No client connected for pending server!");
+			bungee.getLogger().warning("No client connected for pending server!");
 			return;
 		}
 
@@ -206,7 +203,7 @@ public class LegacyServerConnector extends ServerConnector {
 		user.setServer(server);
 		ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new DownstreamBridge(user, user.getServer()));
 
-		ProxyServer.getInstance().getPluginManager().callEvent(new ServerSwitchEvent(user));
+		bungee.getPluginManager().callEvent(new ServerSwitchEvent(user));
 		
 		throw CancelSendSignal.INSTANCE;
 	}

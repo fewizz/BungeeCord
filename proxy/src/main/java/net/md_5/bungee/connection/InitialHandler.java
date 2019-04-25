@@ -48,9 +48,8 @@ import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.netty.cipher.CipherDecoder;
 import net.md_5.bungee.netty.cipher.CipherEncoder;
-import net.md_5.bungee.protocol.NetworkState;
-import net.md_5.bungee.protocol.PacketPreparer;
 import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.NetworkState;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolGen;
@@ -81,6 +80,10 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 	private final ListenerInfo listener;
 	@Getter
 	private Handshake handshake;
+	@Getter
+	private LegacyLoginRequest legacyLoginRequest;
+	@Getter
+	private Protocol protocol;
 	@Getter
 	private LoginRequest loginRequest;
 	private EncryptionRequest request;
@@ -128,6 +131,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 
 	@Override
 	public void exception(Throwable t) throws Exception {
+		t.printStackTrace();
 		disconnect(ChatColor.RED + Util.exception(t));
 	}
 
@@ -166,10 +170,10 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 					r.setMotd(pingResult.getResponse().getDescription());
 					r.setMcVersion("");
 					r.setProtocolVersion(pingResult.getConnection().getProtocol().version);
-					unsafe.sendPacket(new Kick(r.build(getProtocol()))); // TODO
+					unsafe.sendPacket(new Kick(r.build())); // TODO
 					ch.close();
 				} else {
-					Gson gson = getProtocol() == Protocol.MC_1_7_2 ? BungeeCord.getInstance().gsonLegacy : BungeeCord.getInstance().gson;
+					Gson gson = getProtocol() == Protocol.MC_1_7_2 ? bungee.gsonLegacy : bungee.gson;
 					unsafe.sendPacket(new StatusResponse(gson.toJson(pingResult.getResponse())));
 				}
 				
@@ -182,14 +186,14 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 		};
 
 		if (forced != null && listener.isPingPassthrough())
-			((BungeeServerInfo) forced).ping(pingBack, handshake.getProtocol());
+			((BungeeServerInfo) forced).ping(pingBack, getProtocol());
 		else
 			pingBack.done(
 				new ServerPing(
 					new ServerPing.Protocol(bungee.getName() + " " + bungee.getGameVersion(), getProtocol().version),
 					new ServerPing.Players(listener.getMaxPlayers(), bungee.getOnlineCount(), null),
 					motd,
-					BungeeCord.getInstance().config.getFaviconObject())
+					bungee.config.getFaviconObject())
 				,
 				null
 			);
@@ -203,27 +207,34 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 		unsafe.sendPacket(ping);
 		disconnect("");
 	}
+	
+	private boolean trySetProtocol(int version, ProtocolGen gen) {
+		protocol = Protocol.byNumber(version, gen);
+		boolean undefinedProtocol = protocol == null;
+		
+		if(bungee.getConfig().isHandshake()) {
+			String str = undefinedProtocol ? 
+					"Undefined protocol, version : " + version
+					: 
+					"Protocol: " + protocol.name();
+			str = "[" + ch.getRemoteAddress() + "] " + str;
+			bungee.getLogger().info(str);
+		}
+
+		if(undefinedProtocol)
+			protocol = ch.getProtocol();
+		
+		ch.setProtocol(protocol);
+		
+		return undefinedProtocol;
+	}
 
 	@Override
 	public void handle(Handshake handshake) throws Exception {
 		Preconditions.checkState(thisState == State.HANDSHAKE, "Not expecting HANDSHAKE");
 		this.handshake = handshake;
 		
-		boolean undefinedProtocol = handshake.getProtocol() == null;
-
-		if(bungee.getConfig().isHandshake()) {
-			String str = undefinedProtocol ? 
-					"Undefined protocol, version : " + handshake.getVersion()
-					: 
-					"Protocol: " + handshake.getProtocol().name();
-			str = "[" + ch.getRemoteAddress() + "] " + str;
-			bungee.getLogger().info(str);
-		}
-
-		if(undefinedProtocol)
-			handshake.setProtocol(ch.getProtocol());
-		
-		ch.setProtocol(handshake.getProtocol());
+		boolean undefinedProtocol = trySetProtocol(handshake.getProtocolVersion(), ProtocolGen.POST_NETTY);
 
 		// Starting with FML 1.8, a "\0FML\0" token is appended to the handshake. This
 		// interferes
@@ -234,19 +245,17 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 		// add their own data to the end of the string. So, we just take everything from
 		// the \0 character
 		// and save it for later.
-		if(handshake.getHost() != null) {
-			if (handshake.getHost().contains("\0")) {
-				String[] split = handshake.getHost().split("\0", 2);
-				handshake.setHost(split[0]);
-				extraDataInHandshake = "\0" + split[1];
-			}
-
-			// SRV records can end with a . depending on DNS / client.
-			if (handshake.getHost().endsWith("."))
-				handshake.setHost(handshake.getHost().substring(0, handshake.getHost().length() - 1));
-			
-			this.virtualHost = InetSocketAddress.createUnresolved(handshake.getHost(), handshake.getPort());
+		if (handshake.getHost().contains("\0")) {
+			String[] split = handshake.getHost().split("\0", 2);
+			handshake.setHost(split[0]);
+			extraDataInHandshake = "\0" + split[1];
 		}
+
+		// SRV records can end with a . depending on DNS / client.
+		if (handshake.getHost().endsWith("."))
+			handshake.setHost(handshake.getHost().substring(0, handshake.getHost().length() - 1));
+		
+		this.virtualHost = InetSocketAddress.createUnresolved(handshake.getHost(), handshake.getPort());
 			
 		if (bungee.getConfig().isLogPings())
 			bungee.getLogger().log(Level.INFO, "{0} has connected", this);
@@ -258,8 +267,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 		case STATUS:
 			// Ping
 			thisState = State.STATUS;
-			if(!isLegacy())
-				ch.setNetworkState(NetworkState.STATUS);
+			ch.setNetworkState(NetworkState.STATUS);
 			break;
 		case LOGIN:
 			// Login
@@ -271,8 +279,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 			if (undefinedProtocol)
 				disconnect(bungee.getTranslation("unsupported_client"));
 			
-			if(!isLegacy())
-				ch.setNetworkState(NetworkState.LOGIN);
+			ch.setNetworkState(NetworkState.LOGIN);
 			
 			break;
 		default:
@@ -504,11 +511,6 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 	}
 
 	@Override
-	public Protocol getProtocol() {
-		return handshake == null ? null : handshake.getProtocol();
-	}
-
-	@Override
 	public InetSocketAddress getAddress() {
 		return ch.getRemoteAddress();
 	}
@@ -548,35 +550,37 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 
 	@Override
 	public void handle(final LegacyStatusRequest request) throws Exception {
-		Handshake handshake = new Handshake();
 		
-		/*if(request.getProtocolVersion() == 0)
-			handshake.setProtocol(Protocol.MC_1_3);
-		else {*/
-			if(request.getHost() == null)
-				handshake.setProtocol(Protocol.MC_1_5_2);
-			else {
-				handshake.setHost(request.getHost());
-				handshake.setPort(request.getPort());
-				Protocol p = Protocol.byNumber(request.getProtocolVersion(), ProtocolGen.PRE_NETTY);
-				handshake.setProtocol(p != null ? p : Protocol.MC_1_6_4);
-			}
-		//}
+		int pv = request.getProtocolVersion();
+		trySetProtocol(pv == -1 ? Protocol.MC_1_5_2.version : pv, ProtocolGen.PRE_NETTY);
 		
-		handshake.setRequestedNetworkState(NetworkState.STATUS);
-		handle(handshake);
+		thisState = State.STATUS;
 		handle(new StatusRequest());
 	}
 
 	@Override
 	public void handle(LegacyLoginRequest lr) throws Exception {
 		Preconditions.checkState(thisState == State.HANDSHAKE, "Not expecting NADSHAKE");
-		Handshake handshake = new Handshake();
-		handshake.setProtocol(Protocol.byNumber(lr.getProtocolVersion(), ProtocolGen.PRE_NETTY));
-		handshake.setHost(lr.getHost());
-		handshake.setPort(lr.getPort());
-		handshake.setRequestedNetworkState(NetworkState.LOGIN);
-		handle(handshake);
+		
+		this.legacyLoginRequest = lr;
+		
+		int pv = lr.getProtocolVersion();
+		trySetProtocol(pv == -1 ? Protocol.MC_1_5_2.version : pv, ProtocolGen.PRE_NETTY);
+		
+		// SRV records can end with a . depending on DNS / client.
+		// literally just copied from handshake handler =P
+		if(lr.getHost() != null) {
+			if (lr.getHost().endsWith("."))
+				lr.setHost(lr.getHost().substring(0, lr.getHost().length() - 1));
+		
+			this.virtualHost = InetSocketAddress.createUnresolved(lr.getHost(), lr.getPort());
+		}			
+		
+		if (bungee.getConfig().isLogPings())
+			bungee.getLogger().log(Level.INFO, "{0} has connected", this);
+		
+		thisState = State.USERNAME;
+		
 		handle(new LoginRequest(lr.getUserName()));
 	}
 

@@ -15,7 +15,7 @@ import net.md_5.bungee.protocol.Protocol;
 @EqualsAndHashCode(callSuper = false)
 public class LegacyStatusRequest extends DefinedPacket {
 	String branding;
-	int protocolVersion;
+	int protocolVersion = -1;
 	String host;
 	int port;
 	
@@ -33,7 +33,7 @@ public class LegacyStatusRequest extends DefinedPacket {
 			host = readLegacyString(buf, 255);
 			port = buf.readInt();
 		} catch(Exception e) {
-			throw LegacyPacketDecoder.OMT;
+			throw LegacyPacketDecoder.ONE_MORE_TIME;
 		}
 	}
 	

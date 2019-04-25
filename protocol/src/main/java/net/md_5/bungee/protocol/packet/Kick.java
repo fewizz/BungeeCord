@@ -53,30 +53,21 @@ public class Kick extends DefinedPacket
     	public int players;
     	public int max;
     	
-    	public String build(Protocol p) {
+    	public String build() {
     		StringBuilder r = new StringBuilder();
     		
-    		/*if(p == Protocol.MC_1_3) {
-    			r.append(motd.replaceAll("\u00a7.", ""));
-        		r.append('\u00a7');
-        		r.append(String.valueOf(players));
-        		r.append('\u00a7');
-        		r.append(String.valueOf(max));
-    		}*/
-    		//else {
-	    		r.append('\u00a7');
-	    		r.append('1');
-	    		r.append('\u0000');
-	    		r.append(String.valueOf(protocolVersion));
-	    		r.append('\u0000');
-	    		r.append(mcVersion);
-	    		r.append('\u0000');
-	    		r.append(motd);
-	    		r.append('\u0000');
-	    		r.append(String.valueOf(players));
-	    		r.append('\u0000');
-	    		r.append(String.valueOf(max));
-    		//}
+    		r.append('\u00a7');
+    		r.append('1');
+    		r.append('\u0000');
+    		r.append(String.valueOf(protocolVersion));
+    		r.append('\u0000');
+    		r.append(mcVersion);
+    		r.append('\u0000');
+    		r.append(motd);
+    		r.append('\u0000');
+    		r.append(String.valueOf(players));
+    		r.append('\u0000');
+    		r.append(String.valueOf(max));
     		
     		return r.toString();
     	}

@@ -8,7 +8,6 @@ import static net.md_5.bungee.protocol.DefinedPacket.skipLegacyWatchableObjects;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
 
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.TObjectIntMap;

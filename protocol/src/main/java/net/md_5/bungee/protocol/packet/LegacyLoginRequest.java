@@ -10,7 +10,7 @@ import net.md_5.bungee.protocol.DefinedPacket;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class LegacyLoginRequest extends DefinedPacket {
+public class LegacyLoginRequest extends DefinedPacket implements Cloneable {
 	int protocolVersion;
 	String userName;
 	String host;
@@ -35,6 +35,16 @@ public class LegacyLoginRequest extends DefinedPacket {
 	@Override
 	public void handle(AbstractPacketHandler handler) throws Exception {
 		handler.handle(this);
+	}
+	
+	@Override
+	public LegacyLoginRequest clone() {
+		try {
+			return (LegacyLoginRequest) super.clone();
+		} catch (CloneNotSupportedException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 }

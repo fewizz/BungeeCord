@@ -20,6 +20,7 @@ import net.md_5.bungee.util.QuietException;
 
 @RequiredArgsConstructor
 public abstract class ServerConnector extends PacketHandler {
+	BungeeCord bungee = BungeeCord.getInstance();
 	final UserConnection user;
 	ServerConnection server;
 	ChannelWrapper ch;
@@ -29,7 +30,7 @@ public abstract class ServerConnector extends PacketHandler {
 	@Override
 	public void connected(ChannelWrapper channel) throws Exception {
 		this.ch = channel;
-		ProxyServer.getInstance().getLogger().info("[" + user.getName() + "] Connected to [" + target.getName() + "]");
+		bungee.getLogger().info("[" + user.getName() + "] Connected to [" + target.getName() + "]");
 	}
 	
 	protected boolean ipForward() {
@@ -37,7 +38,7 @@ public abstract class ServerConnector extends PacketHandler {
 			.getIpForward() != null ?
 				target.getIpForward()
 				:
-				BungeeCord.getInstance().config.isIpForward()
+				bungee.config.isIpForward()
 		;
 	}
 	
@@ -46,7 +47,7 @@ public abstract class ServerConnector extends PacketHandler {
 			.getForgeSupport() != null ? 
 				target.getForgeSupport() 
 				:
-				BungeeCord.getInstance().config.isForgeSupport()
+				bungee.config.isForgeSupport()
 		;
 	}
 	
@@ -72,13 +73,13 @@ public abstract class ServerConnector extends PacketHandler {
 			// Pre cancel the event if we are going to try another server
 			event.setCancelled(true);
 		}
-		ProxyServer.getInstance().getPluginManager().callEvent(event);
+		bungee.getPluginManager().callEvent(event);
 		if (event.isCancelled() && event.getCancelServer() != null) {
 			user.connect(event.getCancelServer(), ServerConnectEvent.Reason.KICK_REDIRECT);
 			throw CancelSendSignal.INSTANCE;
 		}
 
-		String message = ProxyServer.getInstance().getTranslation("connect_kick", target.getName(), event.getKickReason());
+		String message = bungee.getTranslation("connect_kick", target.getName(), event.getKickReason());
 		if (user.isDimensionChange())
 			user.disconnect(message);
 		else

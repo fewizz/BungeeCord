@@ -1,48 +1,34 @@
 package net.md_5.bungee.protocol.packet;
 
 import io.netty.buffer.ByteBuf;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.NetworkState;
-import net.md_5.bungee.protocol.Protocol;
-import net.md_5.bungee.protocol.ProtocolGen;
 
 @Data
 @NoArgsConstructor
-@RequiredArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class Handshake extends DefinedPacket {
+public class Handshake extends DefinedPacket implements Cloneable {
 
-	@NonNull
-	private Protocol protocol;
+	private int protocolVersion;
 	@NonNull
 	private String host;
-	@NonNull
 	private int port;
 	
 	@NonNull
 	@Setter
 	private NetworkState requestedNetworkState;
-	
-	int version;
-	
-	public Handshake(Handshake hs) {
-		hs.setProtocol(protocol);
-		hs.setHost(host);
-		hs.setPort(port);
-		hs.setVersion(version);
-	}
 
 	@Override
 	public void read(ByteBuf buf) {
-		version = readVarInt(buf);
-		protocol = Protocol.byNumber(version, ProtocolGen.POST_NETTY);
+		protocolVersion = readVarInt(buf);
 		host = readString(buf);
 		port = buf.readUnsignedShort();
 		requestedNetworkState = NetworkState.byID(readVarInt(buf));
@@ -50,7 +36,7 @@ public class Handshake extends DefinedPacket {
 
 	@Override
 	public void write(ByteBuf buf) {
-		writeVarInt(protocol.version, buf);
+		writeVarInt(protocolVersion, buf);
 		writeString(host, buf);
 		buf.writeShort(port);
 		writeVarInt(requestedNetworkState.getId(), buf);
@@ -59,5 +45,15 @@ public class Handshake extends DefinedPacket {
 	@Override
 	public void handle(AbstractPacketHandler handler) throws Exception {
 		handler.handle(this);
+	}
+	
+	@Override
+	public Handshake clone() {
+		try {
+			return (Handshake) super.clone();
+		} catch (CloneNotSupportedException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }
