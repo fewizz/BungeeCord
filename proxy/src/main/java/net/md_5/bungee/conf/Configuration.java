@@ -114,7 +114,7 @@ public class Configuration implements ProxyConfig
         handshake = adapter.getBoolean("debug.handshake", handshake);
         serverChange = adapter.getBoolean("debug.server_change", serverChange);
         logQueryErrors = adapter.getBoolean("debug.log_query_errors", logQueryErrors);
-        logErrors = adapter.getBoolean("log_errors", logErrors);
+        logErrors = adapter.getBoolean("debug.log_errors", logErrors);
 
         Preconditions.checkArgument( listeners != null && !listeners.isEmpty(), "No listeners defined." );
 
