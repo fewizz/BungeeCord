@@ -80,9 +80,9 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter {
 			if (shouldHandle)
 				handler.handle(wrapper);
 		} catch(Exception e) {
-			String msg0 = "Error occured during packet handling.";
+			String msg0 = "Error occured during packet handling, id: " + wrapper.id;
 			if(wrapper.packet != null)
-				msg0 += " Packet: " + wrapper.packet.getClass().getName();
+				msg0 += ", class: " + wrapper.packet.getClass().getName();
 			throw new Error(msg0, e);
 		}
 	}
@@ -93,7 +93,7 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter {
 			handler.exception(cause);
 			
 			if(bungee.config.isLogErrors())
-				bungee.getLogger().log(Level.WARNING, "Error while handling packet", cause);
+				bungee.getLogger().log(Level.WARNING, "Boss channel handler catched error", cause);
 		} catch (Exception ex) {
 			bungee.getLogger().log(Level.SEVERE, handler + " - exception processing exception", ex);
 		}
