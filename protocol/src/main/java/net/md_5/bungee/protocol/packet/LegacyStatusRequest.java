@@ -22,10 +22,10 @@ public class LegacyStatusRequest extends DefinedPacket {
 	@Override
 	public void read(ByteBuf buf) {
 		try {
-			protocolVersion = buf.readByte();
+			//protocolVersion = buf.readByte();
 			//if(!buf.isReadable())
 				//return;
-			buf.skipBytes(1);
+			buf.skipBytes(2);
 			branding = readLegacyString(buf, 255);
 			buf.skipBytes(2); //len
 			protocolVersion = buf.readUnsignedByte();

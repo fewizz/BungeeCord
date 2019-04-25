@@ -10,10 +10,10 @@ public interface PacketDecoder extends ChannelInboundHandler {
 	public NetworkState getNetworkState();
 	public void setNetworkState(NetworkState p);
 	
-	default void firePacket(DefinedPacket p, ByteBuf buf, ChannelHandlerContext ctx) {
+	default void firePacket(DefinedPacket p, ByteBuf buf, ChannelHandlerContext ctx, int id) {
 		int was = buf.refCnt();
 		buf.retain(); // for comp.
-		ctx.fireChannelRead(new PacketWrapper(p, buf));
+		ctx.fireChannelRead(new PacketWrapper(p, buf, id));
 		int dec = buf.refCnt() - was;
 		if(dec > 0)
 			buf.release(dec);

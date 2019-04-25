@@ -91,7 +91,8 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 				if(future == null) {
 					future = ctx.channel().eventLoop().schedule(() -> {}, 50, TimeUnit.MILLISECONDS);
 					future.addListener(o -> {
-						ctx.channel().read();
+						if(internalBuffer().refCnt() > 0)
+							LegacyPacketDecoder.this.decode(ctx, internalBuffer(), null);
 					});
 				}
 				
@@ -105,7 +106,12 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 			
 			// Do it manually, because when in becomes !in.isReadable, 
 			// super BTMD not sends last message immediately, so it releases bytebuf
-			firePacket(packet instanceof DefinedPacket ? (DefinedPacket)packet : null, in.slice(begin, in.readerIndex() - begin), ctx);
+			firePacket(
+				packet instanceof DefinedPacket ? (DefinedPacket)packet : null,
+				in.slice(begin, in.readerIndex() - begin),
+				ctx,
+				packetId
+			);
 		} catch (IndexOutOfBoundsException e) {// Temp. solution. //TODO
 			in.readerIndex(begin);
 		}

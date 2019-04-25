@@ -131,7 +131,6 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 
 	@Override
 	public void exception(Throwable t) throws Exception {
-		t.printStackTrace();
 		disconnect(ChatColor.RED + Util.exception(t));
 	}
 
@@ -547,14 +546,30 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 	public boolean isConnected() {
 		return !ch.isClosed();
 	}
+	
+	private String legacyInitital(int pv, String host, int port) {
+		trySetProtocol(pv == -1 ? Protocol.MC_1_5_2.version : pv, ProtocolGen.PRE_NETTY);
+		
+		if(host != null) {
+			if (host.endsWith("."))
+				host = host.substring(0, host.length() - 1);
+		
+			this.virtualHost = InetSocketAddress.createUnresolved(host, port);
+		}
+		
+		if (bungee.getConfig().isLogPings())
+			bungee.getLogger().log(Level.INFO, "{0} has connected", this);
+		
+		return host;
+	}
 
 	@Override
 	public void handle(final LegacyStatusRequest request) throws Exception {
-		
-		int pv = request.getProtocolVersion();
-		trySetProtocol(pv == -1 ? Protocol.MC_1_5_2.version : pv, ProtocolGen.PRE_NETTY);
+		Preconditions.checkState(thisState == State.HANDSHAKE, "Not expecting NADSHAKE");
+		legacyInitital(request.getProtocolVersion(), request.getHost(), request.getPort());
 		
 		thisState = State.STATUS;
+		
 		handle(new StatusRequest());
 	}
 
@@ -564,20 +579,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 		
 		this.legacyLoginRequest = lr;
 		
-		int pv = lr.getProtocolVersion();
-		trySetProtocol(pv == -1 ? Protocol.MC_1_5_2.version : pv, ProtocolGen.PRE_NETTY);
-		
-		// SRV records can end with a . depending on DNS / client.
-		// literally just copied from handshake handler =P
-		if(lr.getHost() != null) {
-			if (lr.getHost().endsWith("."))
-				lr.setHost(lr.getHost().substring(0, lr.getHost().length() - 1));
-		
-			this.virtualHost = InetSocketAddress.createUnresolved(lr.getHost(), lr.getPort());
-		}			
-		
-		if (bungee.getConfig().isLogPings())
-			bungee.getLogger().log(Level.INFO, "{0} has connected", this);
+		lr.setHost(legacyInitital(lr.getProtocolVersion(), lr.getHost(), lr.getPort()));
 		
 		thisState = State.USERNAME;
 		

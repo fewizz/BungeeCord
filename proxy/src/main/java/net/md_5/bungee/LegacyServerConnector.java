@@ -34,7 +34,6 @@ import net.md_5.bungee.protocol.PacketPreparer;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.protocol.packet.EncryptionResponse;
-import net.md_5.bungee.protocol.packet.Handshake;
 import net.md_5.bungee.protocol.packet.LegacyClientCommand;
 import net.md_5.bungee.protocol.packet.LegacyLoginRequest;
 import net.md_5.bungee.protocol.packet.Login;
