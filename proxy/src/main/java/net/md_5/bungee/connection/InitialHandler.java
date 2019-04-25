@@ -122,6 +122,10 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 
 	private enum State {
 		HANDSHAKE, STATUS, PING, USERNAME, ENCRYPT, FINISHED;
+		
+		void shouldBe(State s) {
+			Preconditions.checkState(s == this, "State is "+this.name()+", should be "+s.name());
+		}
 	}
 
 	@Override
@@ -149,7 +153,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 
 	@Override
 	public void handle(StatusRequest statusRequest) throws Exception {
-		Preconditions.checkState(thisState == State.STATUS, "Not expecting STATUS");
+		thisState.shouldBe(State.STATUS);
 
 		ServerInfo forced = AbstractReconnectHandler.getForcedHost(this);
 		final String motd = (forced != null) ? forced.getMotd() : listener.getMotd();
@@ -202,7 +206,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 
 	@Override
 	public void handle(PingPacket ping) throws Exception {
-		Preconditions.checkState(thisState == State.PING, "Not expecting PING");
+		thisState.shouldBe(State.PING);
 		unsafe.sendPacket(ping);
 		disconnect("");
 	}
@@ -230,7 +234,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 
 	@Override
 	public void handle(Handshake handshake) throws Exception {
-		Preconditions.checkState(thisState == State.HANDSHAKE, "Not expecting HANDSHAKE");
+		thisState.shouldBe(State.HANDSHAKE);
 		this.handshake = handshake;
 		
 		boolean undefinedProtocol = trySetProtocol(handshake.getProtocolVersion(), ProtocolGen.POST_NETTY);
@@ -288,7 +292,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 
 	@Override
 	public void handle(LoginRequest loginRequest) throws Exception {
-		Preconditions.checkState(thisState == State.USERNAME, "Not expecting USERNAME");
+		thisState.shouldBe(State.USERNAME);
 		this.loginRequest = loginRequest;
 
 		if (getName().contains(".")) {
@@ -565,7 +569,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 
 	@Override
 	public void handle(final LegacyStatusRequest request) throws Exception {
-		Preconditions.checkState(thisState == State.HANDSHAKE, "Not expecting NADSHAKE");
+		thisState.shouldBe(State.HANDSHAKE);
 		legacyInitital(request.getProtocolVersion(), request.getHost(), request.getPort());
 		
 		thisState = State.STATUS;
@@ -575,7 +579,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 
 	@Override
 	public void handle(LegacyLoginRequest lr) throws Exception {
-		Preconditions.checkState(thisState == State.HANDSHAKE, "Not expecting NADSHAKE");
+		thisState.shouldBe(State.HANDSHAKE);
 		
 		this.legacyLoginRequest = lr;
 		

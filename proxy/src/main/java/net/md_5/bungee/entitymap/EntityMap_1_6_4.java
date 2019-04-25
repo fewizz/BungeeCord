@@ -8,7 +8,7 @@ public class EntityMap_1_6_4 extends EntityMap {
 	static final EntityMap_1_6_4 INSTANCE = new EntityMap_1_6_4();
 	
 	private EntityMap_1_6_4() {
-		addRewrite(1, Direction.TO_CLIENT); // Login
+		//addRewrite(1, Direction.TO_CLIENT); // Login
 		addRewrite(5, Direction.TO_CLIENT); // Inventory
 		addRewrite(7, Direction.TO_CLIENT); // Use
 		addRewrite(17, Direction.TO_CLIENT); // Sleep
@@ -28,7 +28,7 @@ public class EntityMap_1_6_4 extends EntityMap {
 		addRewrite(32, Direction.TO_CLIENT); // EntityLook
 		addRewrite(33, Direction.TO_CLIENT); // RelEntityMoveLook
 		addRewrite(34, Direction.TO_CLIENT); // Entity teleport
-		addRewrite(34, Direction.TO_CLIENT); // Entity head rotation
+		addRewrite(35, Direction.TO_CLIENT); // Entity head rotation
 		addRewrite(38, Direction.TO_CLIENT); // Entity status
 		// 39 Attach entity
 		addRewrite(40, Direction.TO_CLIENT); // Entity metadata
@@ -43,10 +43,16 @@ public class EntityMap_1_6_4 extends EntityMap {
 		int begin = packet.readerIndex();
 		int packetID = packet.readUnsignedByte();
 		
+		if(packetID == 7) {
+			rewriteInt(packet, oldId, newId, begin + 1 + Integer.BYTES);
+		}
+		
 		if(packetID == 22) {
+			rewriteInt(packet, oldId, newId, begin + 1);
 			rewriteInt(packet, oldId, newId, begin + 1 + Integer.BYTES);
 		}
 		if(packetID == 23) {
+			rewriteInt(packet, oldId, newId, begin + 1);
 			rewriteInt(packet, oldId, newId, begin + 1 + Integer.BYTES*4 + 3);
 		}
 		if(packetID == 29) {
