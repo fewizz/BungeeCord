@@ -1,6 +1,5 @@
 package net.md_5.bungee.connection;
 
-
 import java.io.DataInput;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,11 +21,10 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
-import lombok.RequiredArgsConstructor;
+import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.ServerConnection;
 import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.Util;
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
@@ -62,14 +60,20 @@ import net.md_5.bungee.protocol.packet.SetCompression;
 import net.md_5.bungee.protocol.packet.TabCompleteResponse;
 import net.md_5.bungee.tab.TabList;
 
-
-@RequiredArgsConstructor
 public class DownstreamBridge extends PacketHandler
 {
-    
-    private final ProxyServer      bungee = ProxyServer.getInstance();
+    private final BungeeCord      bungee = BungeeCord.getInstance();
     private final UserConnection   con;
     private final ServerConnection server;
+    
+    public DownstreamBridge(UserConnection user, ServerConnection server) {
+    	this.con = user;
+    	this.server = server;
+    	
+    	if(bungee.config.isServerChange()) {
+            bungee.getLogger().info(this.toString()+" Connected");
+    	}
+	}
     
     @Override
     public void exception(Throwable t) throws Exception
@@ -616,6 +620,6 @@ public class DownstreamBridge extends PacketHandler
     @Override
     public String toString()
     {
-        return "[" + con.getName() + "] <-> DownstreamBridge <-> [" + server.getInfo().getName() + "]";
+        return "["+con.getAddress()+"/"+con.getName()+"]["+server.getInfo().getName()+"][DB]";
     }
 }

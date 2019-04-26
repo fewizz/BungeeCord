@@ -29,7 +29,7 @@ public abstract class ServerConnector extends PacketHandler {
 	@Override
 	public void connected(ChannelWrapper channel) throws Exception {
 		this.ch = channel;
-		bungee.getLogger().info("[" + user.getName() + "] Connected to [" + target.getName() + "]");
+		//bungee.getLogger().info("["+user.getAddress()+"/"+user.getName() + "] Connected to [" + target.getName() + "]");
 	}
 	
 	protected boolean ipForward() {

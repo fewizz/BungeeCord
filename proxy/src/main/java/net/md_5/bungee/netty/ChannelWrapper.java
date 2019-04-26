@@ -68,7 +68,7 @@ public class ChannelWrapper {
 
 		if (BungeeCord.getInstance().getConfig().isProtocolChange())
 			BungeeCord.getInstance().getLogger().info("[" + getRemoteAddress() + "] "
-					+ "Done changing protocol of cw, from: " + was.name() + ", to: " + protocol.name());
+					+ "Changed protocol of ChannelWrapper, from: " + was.name() + ", to: " + protocol.name());
 	}
 
 	public Protocol getProtocol() {

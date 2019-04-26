@@ -36,10 +36,10 @@ import net.md_5.bungee.protocol.packet.TabCompleteResponse;
 public class UpstreamBridge extends PacketHandler
 {
 
-    private final ProxyServer bungee;
+    private final BungeeCord bungee;
     private final UserConnection con;
 
-    public UpstreamBridge(ProxyServer bungee, UserConnection con)
+    public UpstreamBridge(BungeeCord bungee, UserConnection con)
     {
         this.bungee = bungee;
         this.con = con;
@@ -259,6 +259,9 @@ public class UpstreamBridge extends PacketHandler
     @Override
     public String toString()
     {
-        return "[" + con.getName() + "] -> UpstreamBridge";
+    	String result = "["+con.getAddress()+"/"+con.getName()+"]";
+    	if(con.getServer() != null)
+    		result += "[" + con.getServer().getInfo().getName()+"]";
+        return result + "[UB]";
     }
 }

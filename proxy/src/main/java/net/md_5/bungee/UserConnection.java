@@ -66,7 +66,7 @@ public final class UserConnection implements ProxiedPlayer {
 
 	/* ======================================================================== */
 	@NonNull
-	private final ProxyServer bungee;
+	private final BungeeCord bungee;
 	@NonNull
 	@Getter
 	private final ChannelWrapper ch;
@@ -267,8 +267,8 @@ public final class UserConnection implements ProxiedPlayer {
 
 		final BungeeServerInfo target = (BungeeServerInfo) event.getTarget(); // Update in case the event changed target
 		
-		if(BungeeCord.getInstance().config.isServerChange())
-			bungee.getLogger().info("[" + ch.getRemoteAddress() + "] Connecting to " + target);
+		//if(BungeeCord.getInstance().config.isServerChange())
+			//bungee.getLogger().info("["+ch.getRemoteAddress()+"/"+getName()+"] Connecting to ["+target.getName()+"]");
 
 		if (getServer() != null && Objects.equals(getServer().getInfo(), target)) {
 			if (callback != null)
@@ -320,7 +320,7 @@ public final class UserConnection implements ProxiedPlayer {
 				future.channel().close();
 				pendingConnects.remove(target);
 				
-				if(BungeeCord.getInstance().config.isServerChange())
+				if(bungee.config.isServerChange())
 					bungee.getLogger().info("[" + ch.getRemoteAddress() + "] Disconnected from " + target);
 
 				ServerInfo def = updateAndGetNextServer(target);
