@@ -23,7 +23,7 @@ public class ProxyPingEvent extends AsyncEvent<ProxyPingEvent>
     /**
      * The data to respond with.
      */
-    private ServerPing response;
+    public final ServerPing response;
 
     public ProxyPingEvent(PendingConnection connection, ServerPing response, Callback<ProxyPingEvent> done)
     {

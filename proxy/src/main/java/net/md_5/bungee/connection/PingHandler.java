@@ -14,6 +14,7 @@ import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.protocol.NetworkState;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
+import net.md_5.bungee.protocol.packet.Handshake;
 import net.md_5.bungee.protocol.packet.Kick;
 import net.md_5.bungee.protocol.packet.LegacyStatusRequest;
 import net.md_5.bungee.protocol.packet.StatusRequest;
@@ -34,6 +35,14 @@ public class PingHandler extends PacketHandler {
 		this.channel = channel;
 
 		if (!protocol.isLegacy()) {
+			channel.write(
+				new Handshake(
+					protocol.version,
+					target.getAddress().getHostString(),
+					target.getAddress().getPort(),
+					NetworkState.STATUS
+				)
+			);
 			channel.setNetworkState(NetworkState.STATUS);
 			channel.write(new StatusRequest());
 		} 

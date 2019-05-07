@@ -75,9 +75,4 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 			packetId
 		);
 	}
-	
-	@Override
-	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-		super.channelRead(ctx, msg);
-	}
 }
