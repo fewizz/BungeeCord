@@ -34,13 +34,11 @@ import net.md_5.bungee.protocol.packet.TabCompleteRequest;
 import net.md_5.bungee.protocol.packet.TabCompleteResponse;
 import net.md_5.bungee.protocol.packet.Team;
 import net.md_5.bungee.protocol.packet.Title;
+import net.md_5.bungee.protocol.packet.ViewDistance;
 
 public abstract class AbstractPacketHandler {
 
-	public void handle(TabCompleteResponse tabResponse) throws Exception {
-	}
-
-	public void handle(PingPacket ping) throws Exception {
+	public void handle(TabCompleteResponse tabCompleteResponse) throws Exception {
 	}
 
 	public void handle(StatusRequest statusRequest) throws Exception {
@@ -137,5 +135,12 @@ public abstract class AbstractPacketHandler {
 	}
 
 	public void handle(LegacyClientCommand clientCommandOld) throws Exception {
+	}
+	
+	public void handle(ViewDistance viewDistance) throws Exception {
+	}
+
+	public void handle(PingPacket ping) throws Exception {
+		
 	}
 }

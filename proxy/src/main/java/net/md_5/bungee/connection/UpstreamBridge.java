@@ -13,7 +13,6 @@ import io.netty.channel.Channel;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.Util;
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.ChatEvent;
 import net.md_5.bungee.api.event.PlayerDisconnectEvent;
@@ -28,6 +27,7 @@ import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.ClientSettings;
 import net.md_5.bungee.protocol.packet.KeepAlive;
+import net.md_5.bungee.protocol.packet.Kick;
 import net.md_5.bungee.protocol.packet.PlayerListItem;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 import net.md_5.bungee.protocol.packet.TabCompleteRequest;
@@ -59,12 +59,12 @@ public class UpstreamBridge extends PacketHandler
     public void disconnected(ChannelWrapper channel) throws Exception
     {
         // We lost connection to the client
-        PlayerDisconnectEvent event = new PlayerDisconnectEvent( con );
+        PlayerDisconnectEvent event = new PlayerDisconnectEvent(con);
         bungee.getPluginManager().callEvent( event );
         con.getTabListHandler().onDisconnect();
-        BungeeCord.getInstance().removeConnection( con );
+        bungee.removeConnection(con);
 
-        if ( con.getServer() != null )
+        if (con.getServer() != null)
         {
             // Manually remove from everyone's tab list
             // since the packet from the server arrives
@@ -89,6 +89,12 @@ public class UpstreamBridge extends PacketHandler
             }
             con.getServer().disconnect( "Quitting" );
         }
+    }
+    
+    @Override
+    public void handle(Kick kick) throws Exception {
+    	if(con.getPendingConnection().isLegacy())
+    		con.getCh().close();
     }
 
     @Override

@@ -16,7 +16,7 @@ import lombok.val;
 public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implements PacketDecoder {
 	@Getter
 	private NetworkState networkState = NetworkState.HANDSHAKE;
-	private final Direction direction;
+	private final Side side;
 	@Getter
 	private Protocol protocol;
 	
@@ -24,7 +24,7 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 
 	public ModernPacketDecoder(@NonNull Side side, @NonNull Protocol p) {
 		Preconditions.checkArgument(p.isModern());
-		this.direction = side.getOutboundDirection();
+		this.side = side;
 		this.protocol = p;
 		updateMap();
 	}
@@ -40,7 +40,7 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 	}
 	
 	private void updateMap() {
-		map = protocol.getIdToConstructorUnmodifiableMap(networkState, direction);
+		map = protocol.getIdToConstructorUnmodifiableMap(networkState, side.getOutboundDirection());
 	}
 
 	@Override
@@ -49,16 +49,23 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 
 		DefinedPacket packet = null;
 		val constructor = map.get(packetId);
-		if(constructor != null)
-			packet = (DefinedPacket) constructor.newInstance();
+		
+		try {
+			if(constructor != null)
+				packet = (DefinedPacket) constructor.newInstance();
+		} catch(Exception e) {
+			errorInstance(packetId, side);
+		}
 
 		if (packet == null)
 			in.skipBytes(in.readableBytes());
 		else {
-			packet.read(in, direction, protocol);
+			packet.read(in, side.getOutboundDirection(), protocol);
 			
 			if (in.isReadable())
-				throw new RuntimeException("Did not read all bytes from packet " + packet.getClass() + " " + packetId + " cs " + networkState + " Direction " + direction);
+				throw new RuntimeException(
+					"Did not read all bytes from packet " + packet.getClass() +
+					", id: " + packetId + ", ns: " + networkState.name() + ", side: " + side);
 		}
 		
 		firePacket(

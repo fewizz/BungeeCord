@@ -23,6 +23,7 @@ public class Login extends DefinedPacket implements Cloneable {
 	private short maxPlayers;
 	private String levelType;
 	private boolean reducedDebugInfo;
+	private int viewDistance;
 	private byte worldHeight = -1;
 	private boolean fmlVanillaComp = true;
 	
@@ -45,7 +46,10 @@ public class Login extends DefinedPacket implements Cloneable {
 		else
 			dimension = buf.readByte();
 
-		difficulty = buf.readUnsignedByte();
+		if ( protocolVersion.olderThan(Protocol.MC_1_14_0 ))
+        {
+            difficulty = buf.readUnsignedByte();
+        }
 
 		if (protocolVersion.isLegacy())
 			worldHeight = buf.readByte();
@@ -54,6 +58,9 @@ public class Login extends DefinedPacket implements Cloneable {
 
 		if (!protocolVersion.isLegacy())
 			levelType = readString(buf);
+		
+		if(protocolVersion.newerOrEqual(Protocol.MC_1_14_0))
+			viewDistance = readVarInt(buf);
 
 		if (protocolVersion.generation == ProtocolGen.POST_NETTY && protocolVersion.version >= 29)
 			reducedDebugInfo = buf.readBoolean();
@@ -73,7 +80,8 @@ public class Login extends DefinedPacket implements Cloneable {
 		else
 			buf.writeByte(dimension);
 
-		buf.writeByte(difficulty);
+		if(protocolVersion.olderThan(Protocol.MC_1_14_0))
+			buf.writeByte(difficulty);
 
 		if (protocolVersion.isLegacy())
 			buf.writeByte(worldHeight);
@@ -82,6 +90,9 @@ public class Login extends DefinedPacket implements Cloneable {
 
 		if (!protocolVersion.isLegacy())
 			writeString(levelType, buf);
+		
+		if(protocolVersion.newerOrEqual(Protocol.MC_1_14_0))
+			writeVarInt(viewDistance, buf);
 
 		if (protocolVersion.generation == ProtocolGen.POST_NETTY && protocolVersion.version >= 29)
 			buf.writeBoolean(reducedDebugInfo);

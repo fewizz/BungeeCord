@@ -17,8 +17,7 @@ import lombok.NonNull;
 public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketDecoder {
 	@Getter
 	private NetworkState networkState = NetworkState.LEGACY;
-	@Getter
-	private final Direction direction;
+	private final Side side;
 	@Getter
 	private Protocol protocol;
 	
@@ -26,14 +25,14 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 
 	public LegacyPacketDecoder(@NonNull Side side, @NonNull Protocol p) {
 		Preconditions.checkArgument(p.isLegacy());
-		this.direction = side.getOutboundDirection();
+		this.side = side;
 		this.protocol = p;
 		updateMap();
 	}
 	
 	public LegacyPacketDecoder(LegacyPacketDecoder lpd) {
 		this.networkState = lpd.networkState;
-		this.direction = lpd.direction;
+		this.side = lpd.side;
 		this.protocol = lpd.protocol;
 		updateMap();
 	}
@@ -51,7 +50,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 	}
 	
 	private void updateMap() {
-		map = protocol.getIdToConstructorUnmodifiableMap(networkState, direction);
+		map = protocol.getIdToConstructorUnmodifiableMap(networkState, side.getOutboundDirection());
 	}
 	
 	public static final RuntimeException ONE_MORE_TIME = new RuntimeException();
@@ -69,14 +68,14 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 			try {
 				packet = map.get(packetId).newInstance();
 			} catch (Exception e) {
-				(new RuntimeException("Can't create packet instance with id: " + packetId, e)).printStackTrace();
+				errorInstance(packetId, side);
 			}
 
 			//System.out.println("read, id: " + packetId);
 			if (packet == null)
 				throw new RuntimeException("Don't know that packet" + 
 					", id: " + packetId + 
-					", direction: " + direction.name() + 
+					", side: " + side.name() + 
 					", protocol: " + protocol);
 			
 			if(packet != null)
@@ -118,6 +117,6 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 	}
 	
 	protected void read0(ByteBuf buf, Packet p) {
-		p.read( buf, direction, protocol );
+		p.read( buf, side.getOutboundDirection(), protocol );
 	}
 }

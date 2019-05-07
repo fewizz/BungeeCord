@@ -44,6 +44,7 @@ import net.md_5.bungee.protocol.packet.TabCompleteRequest;
 import net.md_5.bungee.protocol.packet.TabCompleteResponse;
 import net.md_5.bungee.protocol.packet.Team;
 import net.md_5.bungee.protocol.packet.Title;
+import net.md_5.bungee.protocol.packet.ViewDistance;
 
 public enum Protocol {
 	MC_1_5_2(61, ProtocolGen.PRE_NETTY, "1.5.2") { void postInit() {
@@ -424,6 +425,35 @@ public enum Protocol {
 	}},
 	MC_1_13_2(404, ProtocolGen.POST_NETTY, "1.13.2") { void postInit() {
 		inherit(MC_1_13_1);
+	}},
+	MC_1_14_0(477, ProtocolGen.POST_NETTY, "1.14") { void postInit() {
+		inheritStatesFromProtocol(MC_1_13_2, NetworkState.HANDSHAKE, NetworkState.LOGIN, NetworkState.STATUS);
+		
+		forStatus(NetworkState.GAME, new Do() { void apply() {
+			serverbound(0x03, Chat.class);
+			serverbound(0x04, ClientSettings.class);
+			serverbound(0x06, TabCompleteRequest.class);
+			serverbound(0x0B, PluginMessage.class);
+			serverbound(0x0F, KeepAlive.class);
+			clientbound(0x0E, Chat.class);
+			clientbound(0x0C, BossBar.class);
+			clientbound(0x10, TabCompleteResponse.class);
+			clientbound(0x11, Commands.class);
+			clientbound(0x18, PluginMessage.class);
+			clientbound(0x1A, Kick.class);
+			clientbound(0x1B, EntityStatus.class);
+			clientbound(0x20, KeepAlive.class);
+			clientbound(0x25, Login.class);
+			clientbound(0x33, PlayerListItem.class);
+			clientbound(0x3A, Respawn.class);
+			clientbound(0x41, ViewDistance.class);
+			clientbound(0x42, ScoreboardDisplay.class);
+			clientbound(0x49, ScoreboardObjective.class);
+			clientbound(0x4B, Team.class);
+			clientbound(0x4C, ScoreboardScore.class);
+			clientbound(0x4F, Title.class);
+			clientbound(0x53, PlayerListHeaderFooter.class);
+		};});
 	}};
 	
 	private Protocol(int ver, ProtocolGen gen, String... versions) {

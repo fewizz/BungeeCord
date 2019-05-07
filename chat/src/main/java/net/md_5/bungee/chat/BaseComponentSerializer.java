@@ -1,17 +1,19 @@
 package net.md_5.bungee.chat;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Locale;
+
 import com.google.common.base.Preconditions;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
+
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.HoverEvent;
-
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Locale;
 
 public class BaseComponentSerializer
 {
@@ -83,7 +85,7 @@ public class BaseComponentSerializer
         if ( ComponentSerializer.serializedComponents.get() == null )
         {
             first = true;
-            ComponentSerializer.serializedComponents.set( new HashSet<BaseComponent>() );
+            ComponentSerializer.serializedComponents.set( Collections.newSetFromMap( new IdentityHashMap<BaseComponent, Boolean>() ) );
         }
         try
         {

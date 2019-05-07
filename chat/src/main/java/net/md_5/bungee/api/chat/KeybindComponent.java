@@ -1,5 +1,6 @@
 package net.md_5.bungee.api.chat;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -9,6 +10,7 @@ import net.md_5.bungee.api.ChatColor;
 @Getter
 @Setter
 @ToString
+@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 public final class KeybindComponent extends BaseComponent
 {

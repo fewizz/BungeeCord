@@ -1,6 +1,7 @@
 package net.md_5.bungee.api.chat;
 
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -21,6 +22,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
+@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 public final class SelectorComponent extends BaseComponent
 {

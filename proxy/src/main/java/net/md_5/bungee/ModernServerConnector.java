@@ -40,6 +40,7 @@ import net.md_5.bungee.protocol.packet.Respawn;
 import net.md_5.bungee.protocol.packet.ScoreboardObjective;
 import net.md_5.bungee.protocol.packet.ScoreboardScore;
 import net.md_5.bungee.protocol.packet.SetCompression;
+import net.md_5.bungee.protocol.packet.ViewDistance;
 import net.md_5.bungee.util.QuietException;
 
 public class ModernServerConnector extends ServerConnector {
@@ -225,6 +226,10 @@ public class ModernServerConnector extends ServerConnector {
 
 			user.setServerEntityId(login.getEntityId());
 			user.unsafe().sendPacket(new Respawn(login.getDimension(), login.getDifficulty(), login.getGameMode(), login.getWorldHeight(), login.getLevelType()));
+			if ( user.getPendingConnection().getProtocol().newerOrEqual(Protocol.MC_1_14_0 ))
+            {
+                user.unsafe().sendPacket( new ViewDistance( login.getViewDistance() ) );
+            }
 			user.setDimension(login.getDimension());
 
 			// Remove from old servers
@@ -233,7 +238,7 @@ public class ModernServerConnector extends ServerConnector {
 		
 		// TODO: Fix this?
 		if (!user.isActive()) {
-			user.getServer().disconnect("Quitting");
+			server.disconnect("Quitting");
 			// Silly server admins see stack trace and die
 			ProxyServer.getInstance().getLogger().warning("No client connected for pending server!");
 			return;

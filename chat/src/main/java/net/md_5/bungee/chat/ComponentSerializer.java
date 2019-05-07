@@ -1,5 +1,8 @@
 package net.md_5.bungee.chat;
 
+import java.lang.reflect.Type;
+import java.util.Set;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
@@ -8,15 +11,13 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.KeybindComponent;
 import net.md_5.bungee.api.chat.ScoreComponent;
 import net.md_5.bungee.api.chat.SelectorComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.TranslatableComponent;
-
-import java.lang.reflect.Type;
-import java.util.HashSet;
 
 public class ComponentSerializer implements JsonDeserializer<BaseComponent>
 {
@@ -30,7 +31,7 @@ public class ComponentSerializer implements JsonDeserializer<BaseComponent>
             registerTypeAdapter( SelectorComponent.class, new SelectorComponentSerializer() ).
             create();
 
-    public final static ThreadLocal<HashSet<BaseComponent>> serializedComponents = new ThreadLocal<HashSet<BaseComponent>>();
+    public final static ThreadLocal<Set<BaseComponent>> serializedComponents = new ThreadLocal<Set<BaseComponent>>();
 
     public static BaseComponent[] parse(String json)
     {

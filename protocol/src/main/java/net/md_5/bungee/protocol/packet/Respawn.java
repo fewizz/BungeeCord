@@ -25,7 +25,8 @@ public class Respawn extends DefinedPacket {
 	@Override
 	public void read(ByteBuf buf, Direction d, Protocol p) {
 		dimension = buf.readInt();
-		difficulty = buf.readUnsignedByte();
+		if(p.olderThan(Protocol.MC_1_14_0))
+			difficulty = buf.readUnsignedByte();
 		gameMode = buf.readUnsignedByte();
 		if(p.isLegacy())
 			worldHeight = buf.readShort();
@@ -35,6 +36,7 @@ public class Respawn extends DefinedPacket {
 	@Override
 	public void write(ByteBuf buf, Direction d, Protocol p) {
 		buf.writeInt(dimension);
+		if(p.olderThan(Protocol.MC_1_14_0))
 		buf.writeByte(difficulty);
 		buf.writeByte(gameMode);
 		if(p.isLegacy())

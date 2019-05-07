@@ -186,7 +186,7 @@ public class LegacyServerConnector extends ServerConnector {
 			
 		// TODO: Fix this?
 		if (!user.isActive()) {
-			user.getServer().disconnect("Quitting");
+			server.disconnect("Quitting");
 			// Silly server admins see stack trace and die
 			bungee.getLogger().warning("No client connected for pending server!");
 			return;

@@ -1,6 +1,7 @@
 package net.md_5.bungee.api.chat;
 
 import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -13,6 +14,7 @@ import net.md_5.bungee.api.chat.ComponentBuilder.FormatRetention;
 
 @Setter
 @ToString(exclude = "parent")
+@EqualsAndHashCode
 @NoArgsConstructor
 public abstract class BaseComponent
 {

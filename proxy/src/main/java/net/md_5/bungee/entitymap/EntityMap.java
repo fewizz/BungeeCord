@@ -64,6 +64,8 @@ public abstract class EntityMap
             case MC_1_13_1:
             case MC_1_13_2:
                 return EntityMap_1_13.INSTANCE;
+            case MC_1_14_0:
+            	return EntityMap_1_14.INSTANCE;
         }
         throw new RuntimeException( "Version " + version + " has no entity map" );
     }
@@ -151,18 +153,35 @@ public abstract class EntityMap
                         continue;
                     case 15: // particle
                         int particleId = DefinedPacket.readVarInt( packet );
-                        switch ( particleId )
-                        {
-                            case 3:
-                            case 20:
-                                DefinedPacket.readVarInt( packet ); // block state
-                                break;
-                            case 11: // dust
-                                packet.skipBytes( 16 ); // float, float, float, flat
-                                break;
-                            case 27: // item
-                                readSkipSlot( packet, protocolVersion );
-                                break;
+                        if(protocolVersion.newerOrEqual(Protocol.MC_1_14_0)) {
+                        	switch ( particleId )
+                            {
+                                case 3: // minecraft:block
+                                case 23: // minecraft:falling_dust
+                                    DefinedPacket.readVarInt( packet ); // block state
+                                    break;
+                                case 14: // minecraft:dust
+                                    packet.skipBytes( 16 ); // float, float, float, flat
+                                    break;
+                                case 32: // minecraft:item
+                                    readSkipSlot( packet, protocolVersion );
+                                    break;
+                            }
+                        }
+                        else {
+                        	switch ( particleId )
+                        	{
+                            	case 3:
+                            	case 20:
+                                	DefinedPacket.readVarInt( packet ); // block state
+                                	break;
+                            	case 11: // dust
+                                	packet.skipBytes( 16 ); // float, float, float, flat
+                                	break;
+                            	case 27: // item
+                                	readSkipSlot( packet, protocolVersion );
+                                	break;
+                        	}
                         }
                         continue;
                     default:
@@ -233,6 +252,23 @@ public abstract class EntityMap
                     {
                         throw Throwables.propagate( ex );
                     }
+                    break;
+                case 15:
+                    DefinedPacket.readVarInt( packet );
+                    DefinedPacket.readVarInt( packet );
+                    DefinedPacket.readVarInt( packet );
+                    break;
+                case 16:
+                    if ( index == metaIndex )
+                    {
+                        int position = packet.readerIndex();
+                        rewriteVarInt( packet, oldId + 1, newId + 1, position );
+                        packet.readerIndex( position );
+                    }
+                    DefinedPacket.readVarInt( packet );
+                    break;
+                case 17:
+                    DefinedPacket.readVarInt( packet );
                     break;
                 default:
                     throw new IllegalArgumentException( "Unknown meta type " + type );

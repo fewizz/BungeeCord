@@ -391,12 +391,12 @@ public final class UserConnection implements ProxiedPlayer {
 
 	@Override
 	public void sendMessage(BaseComponent... message) {
-		sendMessage(ChatMessageType.CHAT, message);
+		sendMessage(ChatMessageType.SYSTEM, message);
 	}
 
 	@Override
 	public void sendMessage(BaseComponent message) {
-		sendMessage(ChatMessageType.CHAT, message);
+		sendMessage(ChatMessageType.SYSTEM, message);
 	}
 
 	private void sendMessage(ChatMessageType position, String message) {

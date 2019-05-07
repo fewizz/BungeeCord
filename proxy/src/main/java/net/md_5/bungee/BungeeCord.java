@@ -134,6 +134,7 @@ public class BungeeCord extends ProxyServer
     /**
      * Server socket listener.
      */
+    @Getter
     private final Collection<Channel> listeners = new HashSet<>();
     /**
      * Fully qualified connections.
@@ -678,15 +679,24 @@ public class BungeeCord extends ProxyServer
     @Override
     public void broadcast(BaseComponent... message)
     {
+    	connectionLock.readLock().lock();
+        try
+        {
+            for ( UserConnection con : connections.values() )
+            {
+            	con.sendMessage(message);
+            }
+        } finally
+        {
+            connectionLock.readLock().unlock();
+        }
         getConsole().sendMessage( BaseComponent.toLegacyText( message ) );
-        broadcast( new Chat( ComponentSerializer.toString( message ) ) );
     }
 
     @Override
     public void broadcast(BaseComponent message)
     {
-        getConsole().sendMessage( message.toLegacyText() );
-        broadcast( new Chat( ComponentSerializer.toString( message ) ) );
+        broadcast(new BaseComponent[] {message}/* ^ */);
     }
 
     public void addConnection(UserConnection con)
@@ -738,15 +748,12 @@ public class BungeeCord extends ProxyServer
             return Collections.singleton( exactMatch );
         }
 
-        return Sets.newHashSet( Iterables.filter( getPlayers(), new Predicate<ProxiedPlayer>()
-        {
-
-            @Override
-            public boolean apply(ProxiedPlayer input)
-            {
-                return ( input == null ) ? false : input.getName().toLowerCase( Locale.ROOT ).startsWith( partialName.toLowerCase( Locale.ROOT ) );
-            }
-        } ) );
+        return Sets.newHashSet(
+    		Iterables.filter(
+				getPlayers(),
+				input -> ( input == null ) ? false : input.getName().toLowerCase(Locale.ROOT).startsWith(partialName.toLowerCase( Locale.ROOT ) 
+			))
+		);
     }
 
     @Override

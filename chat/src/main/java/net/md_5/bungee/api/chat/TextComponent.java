@@ -1,6 +1,7 @@
 package net.md_5.bungee.api.chat;
 
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import net.md_5.bungee.api.ChatColor;
@@ -12,6 +13,7 @@ import java.util.regex.Pattern;
 
 @Getter
 @Setter
+@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 public final class TextComponent extends BaseComponent
 {

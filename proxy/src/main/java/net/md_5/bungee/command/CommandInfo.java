@@ -3,6 +3,7 @@ package net.md_5.bungee.command;
 import java.util.function.Function;
 
 import io.netty.channel.Channel;
+import io.netty.channel.socket.ServerSocketChannel;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.ServerConnection;
 import net.md_5.bungee.UserConnection;
@@ -29,7 +30,7 @@ public class CommandInfo extends Command {
 			sb.append("\t["+t.getName() +"] " + t.getState().name()+"\n");
 		}
 		
-		sb.append("channels:\n");
+		sb.append("players:\n");
 		BungeeCord.getInstance().getPlayers().forEach(p -> {
 			UserConnection uc = (UserConnection) p;
 			Channel ch = uc.getCh().getHandle();
@@ -47,6 +48,15 @@ public class CommandInfo extends Command {
 			if(server != null)
 				sb.append("\t\t[bungee<->server] " + s.apply(server.getCh().getHandle()) + "\n");
 		});
+		
+		/*sb.append("listeners:\n");
+		BungeeCord.getInstance().getListeners().forEach(ch -> {
+			sb.append("\t"+ch.remoteAddress()+", active: "+ch.isActive()+"\n");
+			
+			if(ch instanceof ServerSocketChannel) {
+				ServerSocketChannel ch0 = (ServerSocketChannel) ch;
+			}
+		});*/
 		sender.sendMessage(sb.toString());
 	}
 

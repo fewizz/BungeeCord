@@ -20,4 +20,12 @@ public interface PacketDecoder extends ChannelInboundHandler {
 		else if(dec < 0)
 			throw new RuntimeException("Packet's ByteBuf was decreased more than one time");
 	}
+	
+	default void errorInstance(int id, Side side) {
+		throw new RuntimeException(
+				"Can't create packet instance with id: " + id +
+				", protocol: " + getProtocol().name() +
+				", ns: " + getNetworkState().name() +
+				", side: " + side.name());
+	}
 }
