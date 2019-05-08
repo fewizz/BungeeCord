@@ -1,5 +1,6 @@
 package net.md_5.bungee.protocol;
 
+import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.util.List;
 
@@ -23,7 +24,7 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 	private Protocol protocol;
 	@Setter
 	@Getter
-	private boolean trace;
+	private OutputStream trace;
 	
 	private TIntObjectMap<Constructor<? extends Packet>> map;
 
@@ -83,7 +84,7 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 		);
 		
 		} catch(RuntimeException e) {
-			throw new RuntimeException("Error while decoding/handling packet. " + info(packet, packetId), e);
+			throw new RuntimeException("Error while decoding packet. " + info(packet, packetId), e);
 		}
 	}
 }

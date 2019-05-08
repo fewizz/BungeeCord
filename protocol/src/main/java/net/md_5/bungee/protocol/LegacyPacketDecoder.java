@@ -1,5 +1,6 @@
 package net.md_5.bungee.protocol;
 
+import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -24,7 +25,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 	private Protocol protocol;
 	@Setter
 	@Getter
-	private boolean trace;
+	private OutputStream trace;
 	
 	private TIntObjectMap<Constructor<? extends Packet>> map;
 
@@ -105,15 +106,13 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 					return;
 				}
 			}
-		} catch (IndexOutOfBoundsException e) {// Temp. solution. //TODO
+		} catch (IndexOutOfBoundsException e) {
 			in.readerIndex(begin);
 			return;
 		}
 			
 		future = null;
-			
-		// Do it manually, because when in becomes !in.isReadable, 
-		// super BTMD not sends last message immediately, so it releases bytebuf
+		
 		firePacket(
 			packet instanceof DefinedPacket ? (DefinedPacket)packet : null,
 			in.slice(begin, in.readerIndex() - begin),
@@ -121,7 +120,7 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 			packetId
 		);
 		} catch(Exception e) {
-			throw new RuntimeException("Error while decoding/handling packet", e);
+			throw new RuntimeException("Error while decoding packet. "+info(packet, packetId), e);
 		}
 	}
 	
