@@ -90,10 +90,10 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter {
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
 		try {
-			handler.exception(cause);
-			
 			if(bungee.config.isLogErrors())
 				bungee.getLogger().log(Level.WARNING, "Boss channel handler catched error", cause);
+			
+			handler.exception(cause);
 		} catch (Exception ex) {
 			bungee.getLogger().log(Level.SEVERE, handler + " - exception processing exception", ex);
 		}

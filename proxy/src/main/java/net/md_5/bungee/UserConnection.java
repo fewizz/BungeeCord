@@ -74,7 +74,7 @@ public final class UserConnection implements ProxiedPlayer {
 	@NonNull
 	private final String name;
 	@Getter
-	private final InitialHandler pendingConnection;
+	public final InitialHandler pendingConnection;
 	/* ======================================================================== */
 	@Getter
 	@Setter

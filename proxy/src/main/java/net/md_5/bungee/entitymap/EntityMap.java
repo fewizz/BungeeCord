@@ -308,7 +308,7 @@ public abstract class EntityMap
     private static void rewrite(ByteBuf packet, int oldId, int newId, boolean[] ints, boolean[] varints, Protocol pv)
     {
         int readerIndex = packet.readerIndex();
-        int packetId = pv.newerThan(MC_1_6_4) ? DefinedPacket.readVarInt( packet ) : packet.readUnsignedByte();
+        int packetId = pv.isModern() ? DefinedPacket.readVarInt( packet ) : packet.readUnsignedByte();
         int packetIdLength = packet.readerIndex() - readerIndex;
 
         if(packetId>=0) {

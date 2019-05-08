@@ -39,13 +39,9 @@ public class EntityMap_1_6_4 extends EntityMap {
 	
 	@Override
 	public void rewriteClientbound(ByteBuf packet, int oldId, int newId, Protocol pv) {
-		super.rewriteServerbound(packet, oldId, newId, pv);
+		super.rewriteClientbound(packet, oldId, newId, pv);
 		int begin = packet.readerIndex();
 		int packetID = packet.readUnsignedByte();
-		
-		if(packetID == 7) {
-			rewriteInt(packet, oldId, newId, begin + 1 + Integer.BYTES);
-		}
 		
 		if(packetID == 22) {
 			rewriteInt(packet, oldId, newId, begin + 1);
@@ -65,6 +61,20 @@ public class EntityMap_1_6_4 extends EntityMap {
 			rewriteInt(packet, oldId, newId, begin + 1);
 			rewriteInt(packet, oldId, newId, begin + 1 + Integer.BYTES);
 		}
+		packet.readerIndex(begin);
+	}
+	
+	@Override
+	public void rewriteServerbound(ByteBuf packet, int oldId, int newId, Protocol pv) {
+		super.rewriteServerbound(packet, oldId, newId, pv);
+		
+		int begin = packet.readerIndex();
+		int packetID = packet.readUnsignedByte();
+		
+		if(packetID == 7) {
+			rewriteInt(packet, oldId, newId, begin + 1 + Integer.BYTES);
+		}
+		
 		packet.readerIndex(begin);
 	}
 }

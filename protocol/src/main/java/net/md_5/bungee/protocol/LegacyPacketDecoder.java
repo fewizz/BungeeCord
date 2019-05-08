@@ -13,13 +13,18 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.util.concurrent.ScheduledFuture;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketDecoder {
 	@Getter
 	private NetworkState networkState = NetworkState.LEGACY;
+	@Getter
 	private final Side side;
 	@Getter
 	private Protocol protocol;
+	@Setter
+	@Getter
+	private boolean trace;
 	
 	private TIntObjectMap<Constructor<? extends Packet>> map;
 
@@ -59,24 +64,24 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 	
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+		int packetId = -1;
+		Packet packet = null;
+		
+		try {
 		int begin = in.readerIndex();
 
 		try {
-			int packetId = in.readUnsignedByte();
+			packetId = in.readUnsignedByte();
 
-			Packet packet = null;
+			packet = null;
 			try {
 				packet = map.get(packetId).newInstance();
 			} catch (Exception e) {
-				errorInstance(packetId, side);
+				throw new RuntimeException("Can't create packet instance");
 			}
 
-			//System.out.println("read, id: " + packetId);
 			if (packet == null)
-				throw new RuntimeException("Don't know that packet" + 
-					", id: " + packetId + 
-					", side: " + side.name() + 
-					", protocol: " + protocol);
+				throw new RuntimeException("Undefined packet id");
 			
 			if(packet != null)
 				ctx.fireChannelRead(new PacketPreparer(packet));
@@ -100,19 +105,23 @@ public class LegacyPacketDecoder extends ByteToMessageDecoder implements PacketD
 					return;
 				}
 			}
-			
-			future = null;
-			
-			// Do it manually, because when in becomes !in.isReadable, 
-			// super BTMD not sends last message immediately, so it releases bytebuf
-			firePacket(
-				packet instanceof DefinedPacket ? (DefinedPacket)packet : null,
-				in.slice(begin, in.readerIndex() - begin),
-				ctx,
-				packetId
-			);
 		} catch (IndexOutOfBoundsException e) {// Temp. solution. //TODO
 			in.readerIndex(begin);
+			return;
+		}
+			
+		future = null;
+			
+		// Do it manually, because when in becomes !in.isReadable, 
+		// super BTMD not sends last message immediately, so it releases bytebuf
+		firePacket(
+			packet instanceof DefinedPacket ? (DefinedPacket)packet : null,
+			in.slice(begin, in.readerIndex() - begin),
+			ctx,
+			packetId
+		);
+		} catch(Exception e) {
+			throw new RuntimeException("Error while decoding/handling packet", e);
 		}
 	}
 	

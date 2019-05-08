@@ -9,8 +9,13 @@ public interface PacketDecoder extends ChannelInboundHandler {
 	public void setProtocol(Protocol pv);
 	public NetworkState getNetworkState();
 	public void setNetworkState(NetworkState p);
+	public void setTrace(boolean b);
+	public boolean isTrace();
+	public Side getSide();
 	
 	default void firePacket(DefinedPacket p, ByteBuf buf, ChannelHandlerContext ctx, int id) {
+		if(isTrace())
+			System.out.println(info(p, id));
 		int was = buf.refCnt();
 		buf.retain(); // for comp.
 		ctx.fireChannelRead(new PacketWrapper(p, buf, id));
@@ -21,11 +26,12 @@ public interface PacketDecoder extends ChannelInboundHandler {
 			throw new RuntimeException("Packet's ByteBuf was decreased more than one time");
 	}
 	
-	default void errorInstance(int id, Side side) {
-		throw new RuntimeException(
-				"Can't create packet instance with id: " + id +
-				", protocol: " + getProtocol().name() +
-				", ns: " + getNetworkState().name() +
-				", side: " + side.name());
+	default String info(Packet p, int id) {
+		return
+			"protocol: " + getProtocol().name() +
+			", ns: " + getNetworkState().name() + 
+			", side: " + getSide().name() +
+			", id: " + id +
+			(p != null ? "class: " + p.getClass() : "");
 	}
 }

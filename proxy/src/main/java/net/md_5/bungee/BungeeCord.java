@@ -84,6 +84,7 @@ import net.md_5.bungee.command.CommandIP;
 import net.md_5.bungee.command.CommandInfo;
 import net.md_5.bungee.command.CommandPerms;
 import net.md_5.bungee.command.CommandReload;
+import net.md_5.bungee.command.CommandTrace;
 import net.md_5.bungee.command.ConsoleCommandSender;
 import net.md_5.bungee.compress.CompressFactory;
 import net.md_5.bungee.conf.Configuration;
@@ -233,6 +234,7 @@ public class BungeeCord extends ProxyServer
         getPluginManager().registerCommand( null, new CommandBungee() );
         getPluginManager().registerCommand( null, new CommandPerms() );
         getPluginManager().registerCommand( null, new CommandInfo());
+        getPluginManager().registerCommand( null, new CommandTrace());
 
         if ( !Boolean.getBoolean( "net.md_5.bungee.native.disable" ) ) {
             if ( EncryptionUtil.nativeFactory.load() )

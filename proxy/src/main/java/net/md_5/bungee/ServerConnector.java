@@ -1,6 +1,8 @@
 package net.md_5.bungee;
 
+import java.util.ArrayDeque;
 import java.util.Locale;
+import java.util.Queue;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,8 @@ public abstract class ServerConnector extends PacketHandler {
 	ChannelWrapper ch;
 	@Getter
 	final BungeeServerInfo target;
+	protected final Queue<PacketWrapper> packets = new ArrayDeque<>();
+	protected boolean catchPackets = false;
 	
 	@Override
 	public void connected(ChannelWrapper channel) throws Exception {
@@ -59,14 +63,14 @@ public abstract class ServerConnector extends PacketHandler {
 	public void handle(Kick kick) throws Exception {
 		ServerInfo def = user.updateAndGetNextServer(target);
 		ServerKickEvent event = new ServerKickEvent(
-				user,
-				target,
-				user.getPendingConnection().isLegacy() ? 
-					TextComponent.fromLegacyText(kick.getMessage())
-					:
-					ComponentSerializer.parse(kick.getMessage()),
-				def,
-				ServerKickEvent.State.CONNECTING
+			user,
+			target,
+			user.pendingConnection.isLegacy() ? 
+				TextComponent.fromLegacyText(kick.getMessage())
+				:
+				ComponentSerializer.parse(kick.getMessage()),
+			def,
+			ServerKickEvent.State.CONNECTING
 		);
 		if (event.getKickReason().toLowerCase(Locale.ROOT).contains("outdated") && def != null) {
 			// Pre cancel the event if we are going to try another server
@@ -89,9 +93,12 @@ public abstract class ServerConnector extends PacketHandler {
 	
 	@Override
 	public void handle(PacketWrapper packet) throws Exception {
-		if (packet.packet == null)
+		if (packet.packet == null && !catchPackets)
 			throw new QuietException("Unexpected packet received during server login process!\n" +
 				", cs: " + ch.getConnectionState().name());
+		
+		if(catchPackets)
+			packets.add(packet.copyPacket());
 	}
 	
 	@Override

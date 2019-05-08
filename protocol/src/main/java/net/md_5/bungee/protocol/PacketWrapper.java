@@ -13,5 +13,9 @@ public class PacketWrapper extends DefaultByteBufHolder {
 		this.id = id;
 	}
 	
+	public PacketWrapper copyPacket() {
+		return new PacketWrapper(packet, content().copy(), id);
+	}
+	
 	public void trySingleRelease() { } // old stuff
 }

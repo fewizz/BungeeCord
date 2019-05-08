@@ -53,6 +53,11 @@ public class LegacyServerConnector extends ServerConnector {
 	}
 	
 	@Override
+	public void handle(PacketWrapper packet) throws Exception {
+		super.handle(packet);
+	}
+	
+	@Override
 	public void connected(ChannelWrapper channel) throws Exception {
 		super.connected(channel);
 		
@@ -120,7 +125,7 @@ public class LegacyServerConnector extends ServerConnector {
 		ServerConnectedEvent event = new ServerConnectedEvent(user, server);
 		bungee.getPluginManager().callEvent(event);
 	
-		ch.write(bungee.registerChannels(user.getPendingConnection().getProtocol()));
+		ch.write(bungee.registerChannels(user.pendingConnection.getProtocol()));
 	
 		Queue<DefinedPacket> packetQueue = target.getPacketQueue();
 		synchronized (packetQueue) {
@@ -135,74 +140,86 @@ public class LegacyServerConnector extends ServerConnector {
 		if (user.getSettings() != null) 
 			ch.write(user.getSettings());
 		
-		if (user.getServer() == null) {
-			// Once again, first connection
-			user.setClientEntityId(login.getEntityId());
-			user.setServerEntityId(login.getEntityId());
-	
-			// Set tab list size, this sucks balls, TODO: what shall we do about packet
-			// mutability
-			// Forge allows dimension ID's > 127
-			user.unsafe().sendPacket(login.clone().setMaxPlayers(user.getPendingConnection().getListener().getTabListSize()));
-
-			MinecraftOutput out = new MinecraftOutput();
-			out.writeStringUTF8WithoutLengthHeaderBecauseDinnerboneStuffedUpTheMCBrandPacket(ProxyServer.getInstance().getName() + " (" + ProxyServer.getInstance().getVersion() + ")");
-			user.unsafe().sendPacket(new PluginMessage("MC|Brand", out.toArray(), false));
-	
-			user.setDimension(login.getDimension());
-		} else {
-			user.getServer().setObsolete(true);
-			user.getTabListHandler().onServerChange();
-	
-			Scoreboard serverScoreboard = user.getServerSentScoreboard();
-			for (Objective objective : serverScoreboard.getObjectives())
-				user.unsafe().sendPacket(new ScoreboardObjective(objective.getName(), objective.getValue(), objective.getType() == null ? null : ScoreboardObjective.HealthDisplay.fromString(objective.getType()), (byte) 1)); // Travertine - 1.7
-			
-			for (Score score : serverScoreboard.getScores())
-				user.unsafe().sendPacket(new ScoreboardScore(score.getItemName(), (byte) 1, score.getScoreName(), score.getValue()));
-			
-			for (Team team : serverScoreboard.getTeams())
-				user.unsafe().sendPacket(new net.md_5.bungee.protocol.packet.Team(team.getName()));
-			
-			serverScoreboard.clear();
-			
-			// Send remove bossbar packet
-			for (UUID bossbar : user.getSentBossBars())
-				user.unsafe().sendPacket(new net.md_5.bungee.protocol.packet.BossBar(bossbar, 1));
-			
-			user.getSentBossBars().clear();
-	
-			user.setDimensionChange(true);
-			if (login.getDimension() == user.getDimension())
-				user.unsafe().sendPacket(new Respawn((login.getDimension() >= 0 ? -1 : 0), login.getDifficulty(), login.getGameMode(), login.getWorldHeight(), login.getLevelType()));
-	
-			user.setServerEntityId(login.getEntityId());
-			user.unsafe().sendPacket(new Respawn(login.getDimension(), login.getDifficulty(), login.getGameMode(), login.getWorldHeight(), login.getLevelType()));
-			user.setDimension(login.getDimension());
-	
-			// Remove from old servers
-			user.getServer().disconnect("Quitting");
-		}
-			
-		// TODO: Fix this?
-		if (!user.isActive()) {
-			server.disconnect("Quitting");
-			// Silly server admins see stack trace and die
-			bungee.getLogger().warning("No client connected for pending server!");
-			return;
-		}
-
-		// Add to new server
-		// TODO: Move this to the connected() method of DownstreamBridge
-		target.addPlayer(user);
-		user.getPendingConnects().remove(target);
-		user.setServerJoinQueue(null);
-		user.setDimensionChange(false);
+		catchPackets = true;
 		
-		user.setServer(server);
-		ch.getHandle().pipeline().get(HandlerBoss.class).setHandler(new DownstreamBridge(user, user.getServer()));
-
-		bungee.getPluginManager().callEvent(new ServerSwitchEvent(user));
+		user.getCh().eventLoop().execute(() -> {
+			if (user.getServer() == null) {
+				// Once again, first connection
+				user.setClientEntityId(login.getEntityId());
+				user.setServerEntityId(login.getEntityId());
+		
+				// Set tab list size, this sucks balls, TODO: what shall we do about packet
+				// mutability
+				// Forge allows dimension ID's > 127
+				user.unsafe().sendPacket(login.clone().setMaxPlayers(user.getPendingConnection().getListener().getTabListSize()));
+	
+				MinecraftOutput out = new MinecraftOutput();
+				out.writeStringUTF8WithoutLengthHeaderBecauseDinnerboneStuffedUpTheMCBrandPacket(ProxyServer.getInstance().getName() + " (" + ProxyServer.getInstance().getVersion() + ")");
+				user.unsafe().sendPacket(new PluginMessage("MC|Brand", out.toArray(), false));
+		
+				user.setDimension(login.getDimension());
+			} else {
+				user.getServer().setObsolete(true);
+				user.getTabListHandler().onServerChange();
+		
+				Scoreboard serverScoreboard = user.getServerSentScoreboard();
+				for (Objective objective : serverScoreboard.getObjectives())
+					user.unsafe().sendPacket(new ScoreboardObjective(objective.getName(), objective.getValue(), objective.getType() == null ? null : ScoreboardObjective.HealthDisplay.fromString(objective.getType()), (byte) 1)); // Travertine - 1.7
+				
+				for (Score score : serverScoreboard.getScores())
+					user.unsafe().sendPacket(new ScoreboardScore(score.getItemName(), (byte) 1, score.getScoreName(), score.getValue()));
+				
+				for (Team team : serverScoreboard.getTeams())
+					user.unsafe().sendPacket(new net.md_5.bungee.protocol.packet.Team(team.getName()));
+				
+				serverScoreboard.clear();
+				
+				// Send remove bossbar packet
+				for (UUID bossbar : user.getSentBossBars())
+					user.unsafe().sendPacket(new net.md_5.bungee.protocol.packet.BossBar(bossbar, 1));
+				
+				user.getSentBossBars().clear();
+		
+				user.setDimensionChange(true);
+				if (login.getDimension() == user.getDimension())
+					user.unsafe().sendPacket(new Respawn((login.getDimension() >= 0 ? -1 : 0), login.getDifficulty(), login.getGameMode(), login.getWorldHeight(), login.getLevelType()));
+		
+				user.setServerEntityId(login.getEntityId());
+				user.unsafe().sendPacket(new Respawn(login.getDimension(), login.getDifficulty(), login.getGameMode(), login.getWorldHeight(), login.getLevelType()));
+				user.setDimension(login.getDimension());
+		
+				// Remove from old servers
+				user.getServer().disconnect("Quitting");
+			}
+				
+			// TODO: Fix this?
+			/*if (!user.isActive()) {
+				server.disconnect("Quitting");
+				// Silly server admins see stack trace and die
+				bungee.getLogger().warning("No client connected for pending server!");
+				return;
+			}*/
+	
+			// Add to new server
+			// TODO: Move this to the connected() method of DownstreamBridge
+			user.getPendingConnects().remove(target);
+			user.setServerJoinQueue(null);
+			user.setDimensionChange(false);
+			
+			user.setServer(server);
+			
+			ch.eventLoop().execute(() -> {
+				target.addPlayer(user);
+				ch.handle.pipeline().get(HandlerBoss.class).setHandler(new DownstreamBridge(user, user.getServer()));
+				
+				packets.forEach(pw -> {
+					ch.handle.pipeline().fireChannelRead(pw);
+					pw.release();
+				});
+				
+				bungee.getPluginManager().callEvent(new ServerSwitchEvent(user));
+			});
+		});
 		
 		throw CancelSendSignal.INSTANCE;
 	}

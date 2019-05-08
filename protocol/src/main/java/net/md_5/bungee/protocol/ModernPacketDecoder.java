@@ -11,14 +11,19 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.val;
 
 public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implements PacketDecoder {
 	@Getter
 	private NetworkState networkState = NetworkState.HANDSHAKE;
+	@Getter
 	private final Side side;
 	@Getter
 	private Protocol protocol;
+	@Setter
+	@Getter
+	private boolean trace;
 	
 	private TIntObjectMap<Constructor<? extends Packet>> map;
 
@@ -45,16 +50,20 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-		int packetId = DefinedPacket.readVarInt(in);
-
+		int packetId = -1;
 		DefinedPacket packet = null;
+		
+		try {
+		
+		packetId = DefinedPacket.readVarInt(in);
+
 		val constructor = map.get(packetId);
 		
 		try {
 			if(constructor != null)
 				packet = (DefinedPacket) constructor.newInstance();
 		} catch(Exception e) {
-			errorInstance(packetId, side);
+			throw new RuntimeException("Can't create instance", e);
 		}
 
 		if (packet == null)
@@ -63,9 +72,7 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 			packet.read(in, side.getOutboundDirection(), protocol);
 			
 			if (in.isReadable())
-				throw new RuntimeException(
-					"Did not read all bytes from packet " + packet.getClass() +
-					", id: " + packetId + ", ns: " + networkState.name() + ", side: " + side);
+				throw new RuntimeException("Did not read all bytes from packet");
 		}
 		
 		firePacket(
@@ -74,5 +81,9 @@ public class ModernPacketDecoder extends MessageToMessageDecoder<ByteBuf> implem
 			ctx,
 			packetId
 		);
+		
+		} catch(RuntimeException e) {
+			throw new RuntimeException("Error while decoding/handling packet. " + info(packet, packetId), e);
+		}
 	}
 }
