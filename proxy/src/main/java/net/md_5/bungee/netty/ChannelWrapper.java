@@ -24,7 +24,7 @@ import net.md_5.bungee.protocol.packet.Kick;
 
 public class ChannelWrapper {
 
-	public final Channel handle;
+	public final Channel ch;
 	@Getter
 	@Setter
 	private InetSocketAddress remoteAddress;
@@ -34,33 +34,33 @@ public class ChannelWrapper {
 	private volatile boolean closing;
 
 	public ChannelWrapper(ChannelHandlerContext ctx) {
-		this.handle = ctx.channel();
-		this.remoteAddress = (InetSocketAddress) this.handle.remoteAddress();
+		this.ch = ctx.channel();
+		this.remoteAddress = (InetSocketAddress) this.ch.remoteAddress();
 	}
 
 	public void setNetworkState(NetworkState state) {
 		if (getProtocol().isLegacy() && state != NetworkState.LEGACY)
 			throw new RuntimeException("You can't use NetworkState other than Legacy, when protocol is legacy itself");
 
-		((PacketDecoder) handle.pipeline().get(PipelineUtil.PACKET_DEC)).setNetworkState(state);
-		((PacketEncoder) handle.pipeline().get(PipelineUtil.PACKET_ENC)).setNetworkState(state);
+		((PacketDecoder) ch.pipeline().get(PipelineUtil.PACKET_DEC)).setNetworkState(state);
+		((PacketEncoder) ch.pipeline().get(PipelineUtil.PACKET_ENC)).setNetworkState(state);
 	}
 
 	public NetworkState getConnectionState() {
-		return handle.pipeline().get(PacketEncoder.class).getNetworkState();
+		return ch.pipeline().get(PacketEncoder.class).getNetworkState();
 	}
 
 	public void setProtocol(@NonNull Protocol protocol) {
 		Protocol was = getProtocol();
 
-		PacketDecoder dec = (PacketDecoder) handle.pipeline().get(PipelineUtil.PACKET_DEC);
+		PacketDecoder dec = (PacketDecoder) ch.pipeline().get(PipelineUtil.PACKET_DEC);
 
 		Preconditions.checkNotNull(dec, "decoder is null");
 
 		if (was.generation != protocol.generation)
 			throw new RuntimeException("Incompatible generation");
 
-		PacketEncoder enc = (PacketEncoder) handle.pipeline().get(PipelineUtil.PACKET_ENC);
+		PacketEncoder enc = (PacketEncoder) ch.pipeline().get(PipelineUtil.PACKET_ENC);
 
 		Preconditions.checkNotNull(enc, "encoder is null");
 
@@ -73,14 +73,14 @@ public class ChannelWrapper {
 	}
 
 	public Protocol getProtocol() {
-		return handle.pipeline().get(PacketEncoder.class).getProtocol();
+		return ch.pipeline().get(PacketEncoder.class).getProtocol();
 	}
 
 	public void write(Object packet) {
 		if (closed)
 			return;
 
-		handle.writeAndFlush(packet, handle.voidPromise());
+		ch.writeAndFlush(packet, ch.voidPromise());
 	}
 
 	public void markClosed() {
@@ -88,7 +88,7 @@ public class ChannelWrapper {
 	}
 	
 	public EventLoop eventLoop() {
-		return handle.eventLoop();
+		return ch.eventLoop();
 	}
 
 	public void close() {
@@ -100,18 +100,18 @@ public class ChannelWrapper {
 		if (!closed) {
 			closed = closing = true;
 
-			if (packet != null && handle.isActive()) {
-				handle.writeAndFlush(packet).addListeners(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE,
+			if (packet != null && ch.isActive()) {
+				ch.writeAndFlush(packet).addListeners(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE,
 						ChannelFutureListener.CLOSE);
-				handle.eventLoop().schedule(new Runnable() {
+				ch.eventLoop().schedule(new Runnable() {
 					@Override
 					public void run() {
-						handle.close();
+						ch.close();
 					}
 				}, 250, TimeUnit.MILLISECONDS);
 			} else {
-				handle.flush();
-				handle.close();
+				ch.flush();
+				ch.close();
 			}
 		}
 	}
@@ -125,35 +125,35 @@ public class ChannelWrapper {
 			// will crash it.
 			// Delay 250ms to ensure that the protocol switch (if any) has definitely taken
 			// place.
-			handle.eventLoop().schedule(() -> close(kick), 250, TimeUnit.MILLISECONDS);
+			ch.eventLoop().schedule(() -> close(kick), 250, TimeUnit.MILLISECONDS);
 		}
 	}
 
 	public void addBefore(String baseName, String name, ChannelHandler handler) {
-		Preconditions.checkState(handle.eventLoop().inEventLoop(), "cannot add handler outside of event loop");
-		handle.pipeline().flush();
-		handle.pipeline().addBefore(baseName, name, handler);
+		Preconditions.checkState(ch.eventLoop().inEventLoop(), "cannot add handler outside of event loop");
+		ch.pipeline().flush();
+		ch.pipeline().addBefore(baseName, name, handler);
 	}
 
 	public Channel getHandle() {
-		return handle;
+		return ch;
 	}
 
 	public void setCompressionThreshold(int compressionThreshold) {
-		if (handle.pipeline().get(PacketCompressor.class) == null && compressionThreshold != -1) {
+		if (ch.pipeline().get(PacketCompressor.class) == null && compressionThreshold != -1) {
 			addBefore(PipelineUtil.PACKET_ENC, "compress", new PacketCompressor());
 		}
 		if (compressionThreshold != -1) {
-			handle.pipeline().get(PacketCompressor.class).setThreshold(compressionThreshold);
+			ch.pipeline().get(PacketCompressor.class).setThreshold(compressionThreshold);
 		} else {
-			handle.pipeline().remove("compress");
+			ch.pipeline().remove("compress");
 		}
 
-		if (handle.pipeline().get(PacketDecompressor.class) == null && compressionThreshold != -1) {
+		if (ch.pipeline().get(PacketDecompressor.class) == null && compressionThreshold != -1) {
 			addBefore(PipelineUtil.PACKET_DEC, "decompress", new PacketDecompressor());
 		}
 		if (compressionThreshold == -1) {
-			handle.pipeline().remove("decompress");
+			ch.pipeline().remove("decompress");
 		}
 	}
 }

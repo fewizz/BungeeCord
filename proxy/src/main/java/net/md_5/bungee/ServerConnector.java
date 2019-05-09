@@ -23,12 +23,11 @@ import net.md_5.bungee.util.QuietException;
 public abstract class ServerConnector extends PacketHandler {
 	BungeeCord bungee = BungeeCord.getInstance();
 	final UserConnection user;
-	ServerConnection server;
 	ChannelWrapper ch;
 	@Getter
 	final BungeeServerInfo target;
-	protected final Queue<PacketWrapper> packets = new ArrayDeque<>();
-	protected boolean catchPackets = false;
+	//protected final Queue<PacketWrapper> packets = new ArrayDeque<>();
+	//protected boolean catchPackets = false;
 	
 	@Override
 	public void connected(ChannelWrapper channel) throws Exception {
@@ -93,12 +92,12 @@ public abstract class ServerConnector extends PacketHandler {
 	
 	@Override
 	public void handle(PacketWrapper packet) throws Exception {
-		if (packet.packet == null && !catchPackets)
+		if (packet.packet == null)// && !catchPackets)
 			throw new QuietException("Unexpected packet received during server login process!\n" +
 				", cs: " + ch.getConnectionState().name());
 		
-		if(catchPackets)
-			packets.add(packet.copyPacket());
+		//if(catchPackets)
+		//	packets.add(packet.copyPacket());
 	}
 	
 	@Override

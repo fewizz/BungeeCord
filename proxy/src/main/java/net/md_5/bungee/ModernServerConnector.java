@@ -101,8 +101,6 @@ public class ModernServerConnector extends ServerConnector {
 		channel.setNetworkState(NetworkState.LOGIN);
 		thisState = State.LOGIN_SUCCESS;
 		channel.write(new LoginRequest(user.getName()));
-		
-		server = new ServerConnection(ch, target);
 	}
 
 	@Override
@@ -140,10 +138,11 @@ public class ModernServerConnector extends ServerConnector {
 	public void handle(Login login) throws Exception {	
 		Preconditions.checkState(thisState == State.LOGIN, "Not expecting " + thisState.name());
 		
+		ServerConnection server = new ServerConnection(ch, target);
 		ServerConnectedEvent event = new ServerConnectedEvent(user, server);
-		ProxyServer.getInstance().getPluginManager().callEvent(event);
+		bungee.getPluginManager().callEvent(event);
 
-		ch.write(BungeeCord.getInstance().registerChannels(user.getPendingConnection().getProtocol()));
+		ch.write(bungee.registerChannels(user.getPendingConnection().getProtocol()));
 
 		Queue<DefinedPacket> packetQueue = target.getPacketQueue();
 		synchronized (packetQueue) {

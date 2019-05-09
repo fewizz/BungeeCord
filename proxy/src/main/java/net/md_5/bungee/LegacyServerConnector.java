@@ -12,7 +12,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.SimpleChannelInboundHandler;
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.event.ServerConnectedEvent;
 import net.md_5.bungee.api.event.ServerSwitchEvent;
 import net.md_5.bungee.api.score.Objective;
@@ -92,10 +91,8 @@ public class LegacyServerConnector extends ServerConnector {
 		copiedLoginRequest.setUserName(user.getName());
 		channel.write(copiedLoginRequest);
 		
-		if(forgeSupport() && user.getPendingConnection().getForgeLogin() != null)
-			ch.write(user.getPendingConnection().getForgeLogin());
-		
-		server = new ServerConnection(ch, target);
+		if(forgeSupport() && user.pendingConnection.getForgeLogin() != null)
+			ch.write(user.pendingConnection.getForgeLogin());
 	}
 	
 	@Override
@@ -121,7 +118,8 @@ public class LegacyServerConnector extends ServerConnector {
 	public void handle(Login login) throws Exception {
 		if(legacyFMLModlistCatcher != null)
 			user.getCh().getHandle().pipeline().remove(legacyFMLModlistCatcher);
-			
+		
+		ServerConnection server = new ServerConnection(ch, target);
 		ServerConnectedEvent event = new ServerConnectedEvent(user, server);
 		bungee.getPluginManager().callEvent(event);
 	
@@ -140,86 +138,90 @@ public class LegacyServerConnector extends ServerConnector {
 		if (user.getSettings() != null) 
 			ch.write(user.getSettings());
 		
-		catchPackets = true;
+		//catchPackets = true;
 		
-		user.getCh().eventLoop().execute(() -> {
-			if (user.getServer() == null) {
-				// Once again, first connection
-				user.setClientEntityId(login.getEntityId());
-				user.setServerEntityId(login.getEntityId());
-		
-				// Set tab list size, this sucks balls, TODO: what shall we do about packet
-				// mutability
-				// Forge allows dimension ID's > 127
-				user.unsafe().sendPacket(login.clone().setMaxPlayers(user.getPendingConnection().getListener().getTabListSize()));
+		//user.getCh().eventLoop().execute(() -> {
+		if (user.getServer() == null) {
+			// Once again, first connection
+			user.setClientEntityId(login.getEntityId());
+			user.setServerEntityId(login.getEntityId());
 	
-				MinecraftOutput out = new MinecraftOutput();
-				out.writeStringUTF8WithoutLengthHeaderBecauseDinnerboneStuffedUpTheMCBrandPacket(ProxyServer.getInstance().getName() + " (" + ProxyServer.getInstance().getVersion() + ")");
-				user.unsafe().sendPacket(new PluginMessage("MC|Brand", out.toArray(), false));
-		
-				user.setDimension(login.getDimension());
-			} else {
-				user.getServer().setObsolete(true);
-				user.getTabListHandler().onServerChange();
-		
-				Scoreboard serverScoreboard = user.getServerSentScoreboard();
-				for (Objective objective : serverScoreboard.getObjectives())
-					user.unsafe().sendPacket(new ScoreboardObjective(objective.getName(), objective.getValue(), objective.getType() == null ? null : ScoreboardObjective.HealthDisplay.fromString(objective.getType()), (byte) 1)); // Travertine - 1.7
-				
-				for (Score score : serverScoreboard.getScores())
-					user.unsafe().sendPacket(new ScoreboardScore(score.getItemName(), (byte) 1, score.getScoreName(), score.getValue()));
-				
-				for (Team team : serverScoreboard.getTeams())
-					user.unsafe().sendPacket(new net.md_5.bungee.protocol.packet.Team(team.getName()));
-				
-				serverScoreboard.clear();
-				
-				// Send remove bossbar packet
-				for (UUID bossbar : user.getSentBossBars())
-					user.unsafe().sendPacket(new net.md_5.bungee.protocol.packet.BossBar(bossbar, 1));
-				
-				user.getSentBossBars().clear();
-		
-				user.setDimensionChange(true);
-				if (login.getDimension() == user.getDimension())
-					user.unsafe().sendPacket(new Respawn((login.getDimension() >= 0 ? -1 : 0), login.getDifficulty(), login.getGameMode(), login.getWorldHeight(), login.getLevelType()));
-		
-				user.setServerEntityId(login.getEntityId());
-				user.unsafe().sendPacket(new Respawn(login.getDimension(), login.getDifficulty(), login.getGameMode(), login.getWorldHeight(), login.getLevelType()));
-				user.setDimension(login.getDimension());
-		
-				// Remove from old servers
-				user.getServer().disconnect("Quitting");
-			}
-				
-			// TODO: Fix this?
-			/*if (!user.isActive()) {
-				server.disconnect("Quitting");
-				// Silly server admins see stack trace and die
-				bungee.getLogger().warning("No client connected for pending server!");
-				return;
-			}*/
+			// Set tab list size, this sucks balls, TODO: what shall we do about packet
+			// mutability
+			// Forge allows dimension ID's > 127
+			user.unsafe().sendPacket(login.clone().setMaxPlayers(user.pendingConnection.getListener().getTabListSize()));
+
+			MinecraftOutput out = new MinecraftOutput();
+			out.writeStringUTF8WithoutLengthHeaderBecauseDinnerboneStuffedUpTheMCBrandPacket(bungee.getName() + " (" + bungee.getVersion() + ")");
+			user.unsafe().sendPacket(new PluginMessage("MC|Brand", out.toArray(), false));
 	
-			// Add to new server
-			// TODO: Move this to the connected() method of DownstreamBridge
-			user.getPendingConnects().remove(target);
-			user.setServerJoinQueue(null);
-			user.setDimensionChange(false);
+			user.setDimension(login.getDimension());
+		} else {
+			user.getServer().setObsolete(true);
+			user.getTabListHandler().onServerChange();
+	
+			Scoreboard serverScoreboard = user.getServerSentScoreboard();
+			for (Objective objective : serverScoreboard.getObjectives())
+				user.unsafe().sendPacket(new ScoreboardObjective(objective.getName(), objective.getValue(), objective.getType() == null ? null : ScoreboardObjective.HealthDisplay.fromString(objective.getType()), (byte) 1)); // Travertine - 1.7
 			
-			user.setServer(server);
+			for (Score score : serverScoreboard.getScores())
+				user.unsafe().sendPacket(new ScoreboardScore(score.getItemName(), (byte) 1, score.getScoreName(), score.getValue()));
 			
-			ch.eventLoop().execute(() -> {
-				target.addPlayer(user);
-				ch.handle.pipeline().get(HandlerBoss.class).setHandler(new DownstreamBridge(user, user.getServer()));
-				
-				packets.forEach(pw -> {
-					ch.handle.pipeline().fireChannelRead(pw);
-					pw.release();
-				});
-				
-				bungee.getPluginManager().callEvent(new ServerSwitchEvent(user));
+			for (Team team : serverScoreboard.getTeams())
+				user.unsafe().sendPacket(new net.md_5.bungee.protocol.packet.Team(team.getName()));
+			
+			serverScoreboard.clear();
+			
+			// Send remove bossbar packet
+			for (UUID bossbar : user.getSentBossBars())
+				user.unsafe().sendPacket(new net.md_5.bungee.protocol.packet.BossBar(bossbar, 1));
+			
+			user.getSentBossBars().clear();
+	
+			user.setDimensionChange(true);
+			if (login.getDimension() == user.getDimension())
+				user.unsafe().sendPacket(new Respawn((login.getDimension() >= 0 ? -1 : 0), login.getDifficulty(), login.getGameMode(), login.getWorldHeight(), login.getLevelType()));
+	
+			user.setServerEntityId(login.getEntityId());
+			user.unsafe().sendPacket(new Respawn(login.getDimension(), login.getDifficulty(), login.getGameMode(), login.getWorldHeight(), login.getLevelType()));
+			user.setDimension(login.getDimension());
+	
+			// Remove from old servers
+			user.getServer().disconnect("Quitting");
+		}
+			
+		// TODO: Fix this?
+		/*if (!user.isActive()) {
+			server.disconnect("Quitting");
+			// Silly server admins see stack trace and die
+			bungee.getLogger().warning("No client connected for pending server!");
+			return;
+		}*/
+
+		// Add to new server
+		// TODO: Move this to the connected() method of DownstreamBridge
+		user.getPendingConnects().remove(target);
+		user.setServerJoinQueue(null);
+		user.setDimensionChange(false);
+		
+		user.setServer(server);
+		
+		
+		ch.ch.pipeline().get(HandlerBoss.class).setHandler(new DownstreamBridge(user, user.getServer()));
+		target.addPlayer(user);
+		
+		bungee.getPluginManager().callEvent(new ServerSwitchEvent(user));
+		/*ch.eventLoop().execute(() -> {
+			target.addPlayer(user);
+			ch.ch.pipeline().get(HandlerBoss.class).setHandler(new DownstreamBridge(user, user.getServer()));
+			
+			packets.forEach(pw -> {
+				ch.ch.pipeline().fireChannelRead(pw);
+				pw.release();
 			});
-		});
+			packets.clear();
+		});*/
+		//});
 		
 		throw CancelSendSignal.INSTANCE;
 	}

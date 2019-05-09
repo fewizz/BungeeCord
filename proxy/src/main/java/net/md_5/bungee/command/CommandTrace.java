@@ -25,7 +25,7 @@ public class CommandTrace extends Command {
 		if(what.equals("packets")) {
 			String userName = args[1];
 			UserConnection uc = (UserConnection) BungeeCord.getInstance().getPlayer(userName);
-			PacketDecoder dec = (PacketDecoder) uc.getCh().handle.pipeline().get(PipelineUtil.PACKET_DEC);
+			PacketDecoder dec = (PacketDecoder) uc.getCh().ch.pipeline().get(PipelineUtil.PACKET_DEC);
 			
 			File f = new File("trace/" + userName + "/");
 			if(!f.exists()) {
@@ -47,7 +47,7 @@ public class CommandTrace extends Command {
 			
 			ServerConnection server = uc.getServer();
 			if(server != null) {
-				dec = (PacketDecoder) server.getCh().handle.pipeline().get(PipelineUtil.PACKET_DEC);
+				dec = (PacketDecoder) server.getCh().ch.pipeline().get(PipelineUtil.PACKET_DEC);
 				dec.setTrace(fos);
 			}
 		}
