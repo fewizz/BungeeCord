@@ -455,9 +455,9 @@ public enum Protocol {
 			clientbound(0x53, PlayerListHeaderFooter.class);
 		};});
 	}},
-	MC_1_14_1(480, ProtocolGen.POST_NETTY, "1.14.1") {
-		
-	};
+	MC_1_14_1(480, ProtocolGen.POST_NETTY, "1.14.1") { void postInit() {
+		inherit(Protocol.MC_1_14_0);
+	}};
 	
 	private Protocol(int ver, ProtocolGen gen, String... versions) {
 		this.version = ver;
