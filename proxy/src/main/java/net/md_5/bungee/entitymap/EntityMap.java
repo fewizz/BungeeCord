@@ -2,7 +2,6 @@ package net.md_5.bungee.entitymap;
 
 import static net.md_5.bungee.protocol.Protocol.MC_1_13_0;
 import static net.md_5.bungee.protocol.Protocol.MC_1_13_2;
-import static net.md_5.bungee.protocol.Protocol.MC_1_6_4;
 
 import java.io.IOException;
 
@@ -12,11 +11,10 @@ import com.google.common.base.Throwables;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
-import net.md_5.bungee.protocol.Direction;
-import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.Protocol;
-
 import lombok.NonNull;
+import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.Direction;
+import net.md_5.bungee.protocol.Protocol;
 
 /**
  * Class to rewrite integers within packets.
@@ -65,6 +63,7 @@ public abstract class EntityMap
             case MC_1_13_2:
                 return EntityMap_1_13.INSTANCE;
             case MC_1_14_0:
+            case MC_1_14_1:
             	return EntityMap_1_14.INSTANCE;
         }
         throw new RuntimeException( "Version " + version + " has no entity map" );

@@ -454,7 +454,10 @@ public enum Protocol {
 			clientbound(0x4F, Title.class);
 			clientbound(0x53, PlayerListHeaderFooter.class);
 		};});
-	}};
+	}},
+	MC_1_14_1(480, ProtocolGen.POST_NETTY, "1.14.1") {
+		
+	};
 	
 	private Protocol(int ver, ProtocolGen gen, String... versions) {
 		this.version = ver;
