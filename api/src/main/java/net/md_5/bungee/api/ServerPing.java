@@ -81,7 +81,7 @@ public class ServerPing
     @Data
     public static class ModInfo
     {
-        private String type = "FML";
+        private String type = "VANILLA";
         private List<ModItem> modList = new ArrayList<>();
     }
 

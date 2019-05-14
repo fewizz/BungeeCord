@@ -159,7 +159,6 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 		ServerInfo forced = AbstractReconnectHandler.getForcedHost(this);
 		final String motd = (forced != null) ? forced.getMotd() : listener.getMotd();
 
-		
 		ServerPing def = new ServerPing(
 			new ServerPing.Protocol(bungee.getName() + " " + bungee.getGameVersion(), getProtocol().version),
 			new ServerPing.Players(listener.getMaxPlayers(), bungee.getOnlineCount(), null),
@@ -171,32 +170,28 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 			if (e != null) {
 				result = new ServerPing();
 				result.setDescription(bungee.getTranslation("ping_cannot_connect"));
-				bungee.getLogger().log(Level.WARNING, "Error pinging remote server", e);
 			}
 
 			Callback<ProxyPingEvent> callback = (ProxyPingEvent pingResult, Throwable error) -> {
+				if(pingResult.response.getPlayers() == null || !listener.isRemotePlayers()) {
+					pingResult.response.setPlayers(def.getPlayers());
+				}
+				
+				if(pingResult.response.getDescription() == null || !listener.isRemoteMotd())
+					pingResult.response.setDescriptionComponent(def.getDescriptionComponent());
+				
 				if (isLegacy()) {
 					val r = Kick.StatusResponce.builder();
-					if(pingResult.response.getPlayers() == null || !listener.isRemotePlayers()) {
-						r.max(def.getPlayers().getMax());
-						r.players(def.getPlayers().getOnline());
-					}
-					else {
-						r.max(pingResult.response.getPlayers().getMax());
-						r.players(pingResult.response.getPlayers().getOnline());
-					}
-					
-					if(pingResult.response.getDescription() == null || !listener.isRemoteMotd())
-						r.motd(def.getDescription());
-					else r.motd(pingResult.response.getDescription());
-					
-					r.mcVersion("");
+					r.motd(pingResult.response.getDescription());
+					r.max(pingResult.response.getPlayers().getMax());
+					r.players(pingResult.response.getPlayers().getOnline());
+					r.mcVersion(pingResult.getConnection().getProtocol().versions.get(0));
 					r.protocolVersion(pingResult.getConnection().getProtocol().version);
-					unsafe.sendPacket(new Kick(r.build().toString())); // TODO
+					unsafe.sendPacket(new Kick(r.build().toString()));
 					ch.close();
 				} else {
 					Gson gson = getProtocol() == Protocol.MC_1_7_2 ? bungee.gsonLegacy : bungee.gson;
-					unsafe.sendPacket(new StatusResponse(gson.toJson(pingResult.getResponse())));
+					unsafe.sendPacket(new StatusResponse(gson.toJson(pingResult.response)));
 				}
 				
 				if (bungee.getConnectionThrottle() != null)
@@ -208,7 +203,12 @@ public class InitialHandler extends PacketHandler implements PendingConnection {
 		};
 
 		if (forced != null && listener.isPingPassthrough())
-			((BungeeServerInfo) forced).ping(pingBack, getProtocol());
+			((BungeeServerInfo) forced).ping((ServerPing result, Throwable e) -> {
+				if(e != null) {
+					bungee.getLogger().log(Level.WARNING, toString() + " Error pinging remote server " + forced, e);
+				}
+				pingBack.done(result, e);
+			}, getProtocol());
 		else
 			pingBack.done(def, null);
 

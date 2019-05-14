@@ -48,7 +48,7 @@ public class PipelineUtil {
     public static void modernPacketHandlers(@NonNull Channel ch,@NonNull Protocol protocol, @NonNull Side side) {
     	Preconditions.checkArgument(protocol.isModern());
     	
-		ch.pipeline().addFirst(FRAME_DEC, new Varint21FrameDecoder());
+		ch.pipeline().addBefore(BOSS, FRAME_DEC, new Varint21FrameDecoder());
 		ch.pipeline().addAfter(
 			FRAME_DEC,
 			PACKET_DEC,
@@ -58,7 +58,7 @@ public class PipelineUtil {
 			)
 		);
 		
-		ch.pipeline().addFirst(FRAME_ENC, new Varint21LengthFieldPrepender());
+		ch.pipeline().addBefore(BOSS, FRAME_ENC, new Varint21LengthFieldPrepender());
 		ch.pipeline().addAfter(
 			FRAME_ENC,
 			PACKET_ENC,
@@ -71,7 +71,8 @@ public class PipelineUtil {
     }
     
     public static void legacyPacketHandlers(@NonNull Channel ch, @NonNull Protocol protocol, @NonNull Side side) {
-		ch.pipeline().addFirst(
+		ch.pipeline().addBefore(
+			BOSS,
 			PACKET_DEC,
 			new LegacyPacketDecoder(
 				side,
@@ -79,7 +80,8 @@ public class PipelineUtil {
 			)
 		);
 		
-		ch.pipeline().addFirst(
+		ch.pipeline().addBefore(
+			BOSS,
 			PACKET_ENC,
 			new PacketEncoder(
 				NetworkState.LEGACY,

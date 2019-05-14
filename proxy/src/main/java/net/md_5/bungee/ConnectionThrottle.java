@@ -15,17 +15,17 @@ public class ConnectionThrottle
     public ConnectionThrottle(int throttleTime, int throttleLimit)
     {
         this.throttle = CacheBuilder.newBuilder()
-                .concurrencyLevel( Runtime.getRuntime().availableProcessors() )
-                .initialCapacity( 100 )
-                .expireAfterWrite( throttleTime, TimeUnit.MILLISECONDS )
-                .build( new CacheLoader<InetAddress, Integer>()
+            .concurrencyLevel( Runtime.getRuntime().availableProcessors() )
+            .initialCapacity( 100 )
+            .expireAfterWrite( throttleTime, TimeUnit.MILLISECONDS )
+            .build( new CacheLoader<InetAddress, Integer>()
+            {
+                @Override
+                public Integer load(InetAddress key) throws Exception
                 {
-                    @Override
-                    public Integer load(InetAddress key) throws Exception
-                    {
-                        return 0;
-                    }
-                } );
+                    return 0;
+                }
+            } );
         this.throttleLimit = throttleLimit;
     }
 

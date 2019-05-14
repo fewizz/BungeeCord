@@ -71,16 +71,16 @@ public class PingHandler extends PacketHandler {
 	@Override
 	@SuppressFBWarnings("UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
 	public void handle(StatusResponse statusResponse) throws Exception {
+		channel.close();
 		Gson gson = protocol == Protocol.MC_1_7_2 ? BungeeCord.getInstance().gsonLegacy : BungeeCord.getInstance().gson;
 		callback.done(gson.fromJson(statusResponse.getResponse(), ServerPing.class), null);
-		channel.close();
 	}
 
 	@Override
 	public void handle(Kick kick) throws Exception {
+		channel.close();
 		Kick.StatusResponce r = new Kick.StatusResponce();
 		r.parse(kick.getMessage());
-
 		callback.done(new ServerPing(new ServerPing.Protocol("", r.protocolVersion), new ServerPing.Players(r.max, r.players, new ServerPing.PlayerInfo[0]), r.motd, (Favicon) null), null);
 	}
 

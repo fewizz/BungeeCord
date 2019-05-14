@@ -16,7 +16,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Synchronized;
@@ -29,10 +28,9 @@ import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.connection.Server;
 import net.md_5.bungee.connection.PingHandler;
-import net.md_5.bungee.netty.HandlerBoss;
+import net.md_5.bungee.netty.NettyUtil;
 import net.md_5.bungee.netty.PipelineUtil;
 import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.Direction;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.Side;
 import net.md_5.bungee.protocol.packet.PluginMessage;
@@ -136,7 +134,7 @@ public class BungeeServerInfo implements ServerInfo
         Preconditions.checkNotNull( callback, "callback" );
 
         new Bootstrap()
-            .channel( NioSocketChannel.class )
+            .channel(NettyUtil.bestSocketChannel())
             .group( BungeeCord.getInstance().eventLoops )
             .handler( new ChannelInitializer<Channel>() {
 				@Override
